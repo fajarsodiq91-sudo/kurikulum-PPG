@@ -75,3 +75,15 @@ Route::middleware(['auth', 'permission:manage-learning-attendance'])->group(func
     Route::post('/session-attendances', [\App\Http\Controllers\SessionAttendanceController::class, 'store'])
         ->name('session-attendances.store');
 });
+
+Route::middleware(['auth', 'permission:manage-evaluations'])->group(function () {
+    Route::get('/evaluations', [\App\Http\Controllers\EvaluationController::class, 'index'])
+        ->name('evaluations.index');
+    Route::post('/evaluations', [\App\Http\Controllers\EvaluationController::class, 'store'])
+        ->name('evaluations.store');
+
+    Route::get('/evaluation-scores', [\App\Http\Controllers\EvaluationScoreController::class, 'index'])
+        ->name('evaluation-scores.index');
+    Route::post('/evaluation-scores', [\App\Http\Controllers\EvaluationScoreController::class, 'store'])
+        ->name('evaluation-scores.store');
+});
