@@ -141,3 +141,10 @@ Route::middleware(['auth', 'permission:manage-milestones'])->group(function () {
     Route::post('/milestones', [\App\Http\Controllers\MilestoneController::class, 'store'])
         ->name('milestones.store');
 });
+
+Route::middleware(['auth', 'permission:manage-annual-audit'])->group(function () {
+    Route::get('/annual-audits', [\App\Http\Controllers\AnnualAuditController::class, 'index'])
+        ->name('annual-audits.index');
+    Route::post('/annual-audits', [\App\Http\Controllers\AnnualAuditController::class, 'store'])
+        ->name('annual-audits.store');
+});
