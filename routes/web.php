@@ -47,3 +47,17 @@ Route::middleware(['auth', 'permission:manage-guardians'])->group(function () {
     Route::post('/guardians', [\App\Http\Controllers\GuardianController::class, 'store'])
         ->name('guardians.store');
 });
+
+Route::middleware(['auth', 'permission:manage-curriculum'])->group(function () {
+    Route::get('/curriculum-programs', [\App\Http\Controllers\CurriculumProgramController::class, 'index'])
+        ->name('curriculum-programs.index');
+    Route::post('/curriculum-programs', [\App\Http\Controllers\CurriculumProgramController::class, 'store'])
+        ->name('curriculum-programs.store');
+});
+
+Route::middleware(['auth', 'permission:manage-learning-materials'])->group(function () {
+    Route::get('/learning-materials', [\App\Http\Controllers\LearningMaterialController::class, 'index'])
+        ->name('learning-materials.index');
+    Route::post('/learning-materials', [\App\Http\Controllers\LearningMaterialController::class, 'store'])
+        ->name('learning-materials.store');
+});
