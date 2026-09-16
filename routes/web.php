@@ -155,3 +155,10 @@ Route::middleware(['auth', 'permission:manage-organization-units'])->group(funct
     Route::post('/organization-units', [\App\Http\Controllers\OrganizationUnitController::class, 'store'])
         ->name('organization-units.store');
 });
+
+Route::middleware(['auth', 'permission:manage-assignments'])->group(function () {
+    Route::get('/assignments', [\App\Http\Controllers\AssignmentController::class, 'index'])
+        ->name('assignments.index');
+    Route::post('/assignments', [\App\Http\Controllers\AssignmentController::class, 'store'])
+        ->name('assignments.store');
+});
