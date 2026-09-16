@@ -169,3 +169,10 @@ Route::middleware(['auth', 'permission:manage-activity-schedules'])->group(funct
     Route::post('/activity-schedules', [\App\Http\Controllers\ActivityScheduleController::class, 'store'])
         ->name('activity-schedules.store');
 });
+
+Route::middleware(['auth', 'permission:manage-activity-executions'])->group(function () {
+    Route::get('/activity-executions', [\App\Http\Controllers\ActivityExecutionController::class, 'index'])
+        ->name('activity-executions.index');
+    Route::post('/activity-executions', [\App\Http\Controllers\ActivityExecutionController::class, 'store'])
+        ->name('activity-executions.store');
+});
