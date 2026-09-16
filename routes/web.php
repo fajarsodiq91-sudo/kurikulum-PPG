@@ -127,3 +127,10 @@ Route::middleware(['auth', 'permission:manage-follow-ups'])->group(function () {
     Route::post('/follow-ups', [\App\Http\Controllers\FollowUpController::class, 'store'])
         ->name('follow-ups.store');
 });
+
+Route::middleware(['auth', 'permission:manage-progress-tracking'])->group(function () {
+    Route::get('/progress-tracks', [\App\Http\Controllers\ProgressTrackController::class, 'index'])
+        ->name('progress-tracks.index');
+    Route::post('/progress-tracks', [\App\Http\Controllers\ProgressTrackController::class, 'store'])
+        ->name('progress-tracks.store');
+});
