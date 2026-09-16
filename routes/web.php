@@ -61,3 +61,17 @@ Route::middleware(['auth', 'permission:manage-learning-materials'])->group(funct
     Route::post('/learning-materials', [\App\Http\Controllers\LearningMaterialController::class, 'store'])
         ->name('learning-materials.store');
 });
+
+Route::middleware(['auth', 'permission:manage-learning-sessions'])->group(function () {
+    Route::get('/learning-sessions', [\App\Http\Controllers\LearningSessionController::class, 'index'])
+        ->name('learning-sessions.index');
+    Route::post('/learning-sessions', [\App\Http\Controllers\LearningSessionController::class, 'store'])
+        ->name('learning-sessions.store');
+});
+
+Route::middleware(['auth', 'permission:manage-learning-attendance'])->group(function () {
+    Route::get('/session-attendances', [\App\Http\Controllers\SessionAttendanceController::class, 'index'])
+        ->name('session-attendances.index');
+    Route::post('/session-attendances', [\App\Http\Controllers\SessionAttendanceController::class, 'store'])
+        ->name('session-attendances.store');
+});
