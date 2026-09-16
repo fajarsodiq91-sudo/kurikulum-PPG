@@ -1,43 +1,64 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | PPG</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="bg-slate-100 text-slate-800">
-    <div class="min-h-screen p-8">
-        <div class="max-w-6xl mx-auto">
-            <div class="flex items-center justify-between mb-8">
-                <div>
-                    <h1 class="text-3xl font-bold">Dashboard</h1>
-                    <p class="text-slate-500">Selamat datang di sistem PPG Management</p>
-                </div>
-                <div class="flex items-center gap-3">
-                    <a href="{{ route('reports.index') }}" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700">Laporan</a>
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" class="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white">Logout</button>
-                    </form>
-                </div>
-            </div>
+@extends('layouts.app')
 
-            <div class="grid gap-4 md:grid-cols-3">
-                <div class="rounded-xl bg-white p-5 shadow-sm border border-slate-200">
-                    <p class="text-sm text-slate-500">Generus</p>
-                    <p class="mt-2 text-3xl font-bold">{{ $generusCount }}</p>
+@section('title', 'Dashboard')
+@section('page-title', 'Dashboard Utama')
+@section('breadcrumb', 'Dashboard Utama')
+
+@section('content')
+    <div class="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        <div>
+            <p class="text-sm font-semibold text-amber-600">Ringkasan sistem</p>
+            <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Selamat datang, {{ auth()->user()->name }}</h2>
+            <p class="mt-2 max-w-2xl text-sm text-slate-500">Pantau data pembinaan dan aktivitas PPG Karawang Timur dari satu tempat.</p>
+        </div>
+        @if (auth()->user()->hasPermission('view-reports'))
+            <a href="{{ route('reports.index') }}" class="inline-flex items-center justify-center rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">Buka laporan</a>
+        @endif
+    </div>
+
+    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        @foreach ([['label' => 'Total Generus', 'value' => $generusCount, 'tone' => 'amber'], ['label' => 'Total Guru', 'value' => $teacherCount, 'tone' => 'sky'], ['label' => 'Program Pelatihan', 'value' => $trainingCount, 'tone' => 'emerald']] as $card)
+            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="flex items-start justify-between gap-4">
+                    <p class="text-sm font-medium text-slate-500">{{ $card['label'] }}</p>
+                    <span class="h-2.5 w-2.5 rounded-full bg-{{ $card['tone'] }}-400"></span>
                 </div>
-                <div class="rounded-xl bg-white p-5 shadow-sm border border-slate-200">
-                    <p class="text-sm text-slate-500">Guru</p>
-                    <p class="mt-2 text-3xl font-bold">{{ $teacherCount }}</p>
-                </div>
-                <div class="rounded-xl bg-white p-5 shadow-sm border border-slate-200">
-                    <p class="text-sm text-slate-500">Pelatihan</p>
-                    <p class="mt-2 text-3xl font-bold">{{ $trainingCount }}</p>
+                <p class="mt-4 text-3xl font-bold tracking-tight text-slate-950">{{ $card['value'] }}</p>
+                <p class="mt-1 text-xs text-slate-400">Data aktual database</p>
+            </div>
+        @endforeach
+    </div>
+
+    <div class="mt-6 grid gap-6 xl:grid-cols-[1.4fr_1fr]">
+        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="flex items-center justify-between gap-4">
+                <div>
+                    <h2 class="font-bold text-slate-950">Akses cepat</h2>
+                    <p class="mt-1 text-sm text-slate-500">Buka modul yang paling sering digunakan.</p>
                 </div>
             </div>
-        </div>
+            <div class="mt-5 grid gap-3 sm:grid-cols-2">
+                @if (auth()->user()->hasPermission('manage-generus'))
+                    <a href="{{ route('generus.create') }}" class="rounded-xl border border-slate-200 p-4 transition hover:border-amber-300 hover:bg-amber-50"><span class="text-sm font-semibold text-slate-900">Tambah Generus</span><span class="mt-1 block text-xs text-slate-500">Daftarkan generus baru</span></a>
+                @endif
+                @if (auth()->user()->hasPermission('manage-learning-sessions'))
+                    <a href="{{ route('learning-sessions.index') }}" class="rounded-xl border border-slate-200 p-4 transition hover:border-amber-300 hover:bg-amber-50"><span class="text-sm font-semibold text-slate-900">Kelola Sesi KBM</span><span class="mt-1 block text-xs text-slate-500">Lihat dan buat sesi pembelajaran</span></a>
+                @endif
+                @if (auth()->user()->hasPermission('manage-evaluations'))
+                    <a href="{{ route('evaluations.index') }}" class="rounded-xl border border-slate-200 p-4 transition hover:border-amber-300 hover:bg-amber-50"><span class="text-sm font-semibold text-slate-900">Input Evaluasi</span><span class="mt-1 block text-xs text-slate-500">Catat evaluasi pembinaan</span></a>
+                @endif
+                @if (auth()->user()->hasPermission('view-reports'))
+                    <a href="{{ route('reports.index') }}" class="rounded-xl border border-slate-200 p-4 transition hover:border-amber-300 hover:bg-amber-50"><span class="text-sm font-semibold text-slate-900">Lihat Laporan</span><span class="mt-1 block text-xs text-slate-500">Buka ringkasan pelaporan</span></a>
+                @endif
+            </div>
+        </section>
+
+        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 class="font-bold text-slate-950">Aktivitas terbaru</h2>
+            <div class="mt-5 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+                <p class="text-sm font-semibold text-slate-700">Belum ada aktivitas</p>
+                <p class="mt-1 text-xs leading-5 text-slate-500">Activity log belum tersedia pada modul saat ini.</p>
+            </div>
+        </section>
     </div>
-</body>
-</html>
+@endsection
