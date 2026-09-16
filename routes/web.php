@@ -148,3 +148,10 @@ Route::middleware(['auth', 'permission:manage-annual-audit'])->group(function ()
     Route::post('/annual-audits', [\App\Http\Controllers\AnnualAuditController::class, 'store'])
         ->name('annual-audits.store');
 });
+
+Route::middleware(['auth', 'permission:manage-organization-units'])->group(function () {
+    Route::get('/organization-units', [\App\Http\Controllers\OrganizationUnitController::class, 'index'])
+        ->name('organization-units.index');
+    Route::post('/organization-units', [\App\Http\Controllers\OrganizationUnitController::class, 'store'])
+        ->name('organization-units.store');
+});
