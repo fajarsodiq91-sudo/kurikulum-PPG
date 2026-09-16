@@ -14,24 +14,27 @@
                     <h1 class="text-3xl font-bold">Dashboard</h1>
                     <p class="text-slate-500">Selamat datang di sistem PPG Management</p>
                 </div>
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white">Logout</button>
-                </form>
+                <div class="flex items-center gap-3">
+                    <a href="{{ route('reports.index') }}" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700">Laporan</a>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white">Logout</button>
+                    </form>
+                </div>
             </div>
 
             <div class="grid gap-4 md:grid-cols-3">
                 <div class="rounded-xl bg-white p-5 shadow-sm border border-slate-200">
-                    <p class="text-sm text-slate-500">Daerah</p>
-                    <p class="mt-2 text-3xl font-bold">0</p>
-                </div>
-                <div class="rounded-xl bg-white p-5 shadow-sm border border-slate-200">
-                    <p class="text-sm text-slate-500">Desa</p>
-                    <p class="mt-2 text-3xl font-bold">0</p>
-                </div>
-                <div class="rounded-xl bg-white p-5 shadow-sm border border-slate-200">
                     <p class="text-sm text-slate-500">Generus</p>
-                    <p class="mt-2 text-3xl font-bold">0</p>
+                    <p class="mt-2 text-3xl font-bold">{{ $generusCount }}</p>
+                </div>
+                <div class="rounded-xl bg-white p-5 shadow-sm border border-slate-200">
+                    <p class="text-sm text-slate-500">Guru</p>
+                    <p class="mt-2 text-3xl font-bold">{{ $teacherCount }}</p>
+                </div>
+                <div class="rounded-xl bg-white p-5 shadow-sm border border-slate-200">
+                    <p class="text-sm text-slate-500">Pelatihan</p>
+                    <p class="mt-2 text-3xl font-bold">{{ $trainingCount }}</p>
                 </div>
             </div>
         </div>

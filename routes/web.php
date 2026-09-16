@@ -18,6 +18,11 @@ Route::middleware(['auth', 'permission:view-dashboard'])->group(function () {
         ->name('dashboard');
 });
 
+Route::middleware(['auth', 'permission:view-reports'])->group(function () {
+    Route::get('/reports', [\App\Http\Controllers\ReportController::class, 'index'])
+        ->name('reports.index');
+});
+
 Route::middleware(['auth', 'permission:view-master-data'])->group(function () {
     Route::get('/master-data/regions', [\App\Http\Controllers\MasterData\RegionController::class, 'index'])
         ->name('master-data.regions.index');

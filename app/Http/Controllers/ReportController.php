@@ -7,14 +7,15 @@ use App\Models\Teacher;
 use App\Models\Training;
 use Illuminate\View\View;
 
-class DashboardController extends Controller
+class ReportController extends Controller
 {
     public function index(): View
     {
-        return view('dashboard.index', [
+        return view('reports.index', [
             'generusCount' => Generus::count(),
             'teacherCount' => Teacher::count(),
             'trainingCount' => Training::count(),
+            'trainings' => Training::with('academicYear')->latest()->take(5)->get(),
         ]);
     }
 }
