@@ -13,6 +13,11 @@ class AuthAndAuthorizationTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_guest_is_redirected_to_login_from_application_root(): void
+    {
+        $this->get('/')->assertRedirect('/login');
+    }
+
     public function test_guest_is_redirected_to_login_when_accessing_dashboard(): void
     {
         $response = $this->get('/dashboard');
