@@ -1,0 +1,42 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\AcademicYear;
+use App\Models\Generus;
+use App\Models\Milestone;
+use App\Models\Semester;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
+
+class MilestoneController extends Controller
+{
+    public function index(): View
+    {
+        return view('milestones.index', [
+            'milestones' => Milestone::with(['generus', 'academicYear', 'semester'])->latest()->get(),
+            'generus' => Generus::all(),
+            'academicYears' => AcademicYear::where('is_active', true)->get(),
+            'semesters' => Semester::where('is_active', true)->get(),
+        ]);
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'generus_id' => ['required', 'exists:generus,id'],
+            'academic_year_id' => ['required', 'exists:academic_years,id'],
+            'semester_id' => ['required', 'exists:semesters,id'],
+            'title' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'achievement_date' => ['required', 'date'],
+            'status' => ['required', 'string', 'max:50'],
+            'score' => ['nullable', 'numeric', 'min:0', 'max:100'],
+        ]);
+
+        Milestone::create($validated);
+
+        return redirect()->route('milestones.index')->with('success', 'Milestone berhasil ditambahkan.');
+    }
+}

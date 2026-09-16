@@ -134,3 +134,10 @@ Route::middleware(['auth', 'permission:manage-progress-tracking'])->group(functi
     Route::post('/progress-tracks', [\App\Http\Controllers\ProgressTrackController::class, 'store'])
         ->name('progress-tracks.store');
 });
+
+Route::middleware(['auth', 'permission:manage-milestones'])->group(function () {
+    Route::get('/milestones', [\App\Http\Controllers\MilestoneController::class, 'index'])
+        ->name('milestones.index');
+    Route::post('/milestones', [\App\Http\Controllers\MilestoneController::class, 'store'])
+        ->name('milestones.store');
+});
