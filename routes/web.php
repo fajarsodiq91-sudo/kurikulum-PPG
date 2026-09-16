@@ -162,3 +162,10 @@ Route::middleware(['auth', 'permission:manage-assignments'])->group(function () 
     Route::post('/assignments', [\App\Http\Controllers\AssignmentController::class, 'store'])
         ->name('assignments.store');
 });
+
+Route::middleware(['auth', 'permission:manage-activity-schedules'])->group(function () {
+    Route::get('/activity-schedules', [\App\Http\Controllers\ActivityScheduleController::class, 'index'])
+        ->name('activity-schedules.index');
+    Route::post('/activity-schedules', [\App\Http\Controllers\ActivityScheduleController::class, 'store'])
+        ->name('activity-schedules.store');
+});
