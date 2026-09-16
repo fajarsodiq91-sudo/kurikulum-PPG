@@ -106,3 +106,17 @@ Route::middleware(['auth', 'permission:manage-communication'])->group(function (
     Route::post('/communications', [\App\Http\Controllers\CommunicationController::class, 'store'])
         ->name('communications.store');
 });
+
+Route::middleware(['auth', 'permission:manage-munaqosah'])->group(function () {
+    Route::get('/munaqosahs', [\App\Http\Controllers\MunaqosahController::class, 'index'])
+        ->name('munaqosahs.index');
+    Route::post('/munaqosahs', [\App\Http\Controllers\MunaqosahController::class, 'store'])
+        ->name('munaqosahs.store');
+});
+
+Route::middleware(['auth', 'permission:manage-report-cards'])->group(function () {
+    Route::get('/report-cards', [\App\Http\Controllers\ReportCardController::class, 'index'])
+        ->name('report-cards.index');
+    Route::post('/report-cards', [\App\Http\Controllers\ReportCardController::class, 'store'])
+        ->name('report-cards.store');
+});
