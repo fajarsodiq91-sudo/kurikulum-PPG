@@ -33,3 +33,17 @@ Route::middleware(['auth', 'permission:manage-generus'])->group(function () {
     Route::post('/generus', [\App\Http\Controllers\GenerusController::class, 'store'])
         ->name('generus.store');
 });
+
+Route::middleware(['auth', 'permission:manage-teachers'])->group(function () {
+    Route::get('/teachers', [\App\Http\Controllers\TeacherController::class, 'index'])
+        ->name('teachers.index');
+    Route::post('/teachers', [\App\Http\Controllers\TeacherController::class, 'store'])
+        ->name('teachers.store');
+});
+
+Route::middleware(['auth', 'permission:manage-guardians'])->group(function () {
+    Route::get('/guardians', [\App\Http\Controllers\GuardianController::class, 'index'])
+        ->name('guardians.index');
+    Route::post('/guardians', [\App\Http\Controllers\GuardianController::class, 'store'])
+        ->name('guardians.store');
+});
