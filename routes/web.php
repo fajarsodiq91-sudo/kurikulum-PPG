@@ -87,3 +87,17 @@ Route::middleware(['auth', 'permission:manage-evaluations'])->group(function () 
     Route::post('/evaluation-scores', [\App\Http\Controllers\EvaluationScoreController::class, 'store'])
         ->name('evaluation-scores.store');
 });
+
+Route::middleware(['auth', 'permission:manage-training'])->group(function () {
+    Route::get('/trainings', [\App\Http\Controllers\TrainingController::class, 'index'])
+        ->name('trainings.index');
+    Route::post('/trainings', [\App\Http\Controllers\TrainingController::class, 'store'])
+        ->name('trainings.store');
+});
+
+Route::middleware(['auth', 'permission:manage-communication'])->group(function () {
+    Route::get('/communications', [\App\Http\Controllers\CommunicationController::class, 'index'])
+        ->name('communications.index');
+    Route::post('/communications', [\App\Http\Controllers\CommunicationController::class, 'store'])
+        ->name('communications.store');
+});
