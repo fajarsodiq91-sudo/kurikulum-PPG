@@ -120,3 +120,10 @@ Route::middleware(['auth', 'permission:manage-report-cards'])->group(function ()
     Route::post('/report-cards', [\App\Http\Controllers\ReportCardController::class, 'store'])
         ->name('report-cards.store');
 });
+
+Route::middleware(['auth', 'permission:manage-follow-ups'])->group(function () {
+    Route::get('/follow-ups', [\App\Http\Controllers\FollowUpController::class, 'index'])
+        ->name('follow-ups.index');
+    Route::post('/follow-ups', [\App\Http\Controllers\FollowUpController::class, 'store'])
+        ->name('follow-ups.store');
+});
