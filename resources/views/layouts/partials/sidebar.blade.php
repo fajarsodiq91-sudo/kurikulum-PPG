@@ -51,6 +51,12 @@
             ['label' => 'Rapor', 'permission' => 'manage-report-cards', 'items' => [
                 ['label' => 'Rapor Generus', 'route' => 'report-cards.index'],
             ]],
+            ['label' => 'Pelatihan Guru', 'permission' => 'manage-training', 'items' => [
+                ['label' => 'Program Pelatihan', 'route' => 'trainings.index'],
+            ]],
+            ['label' => 'Komunikasi', 'permission' => 'manage-communication', 'items' => [
+                ['label' => 'Pesan dan Riwayat', 'route' => 'communications.index'],
+            ]],
             ['label' => 'Laporan', 'permission' => 'view-reports', 'route' => 'reports.index', 'icon' => '▤'],
         ];
     @endphp

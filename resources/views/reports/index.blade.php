@@ -1,23 +1,17 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laporan | PPG</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="bg-slate-100 text-slate-800">
-    <div class="min-h-screen p-8">
-        <div class="max-w-6xl mx-auto">
-            <div class="mb-8 flex items-center justify-between">
-                <div>
-                    <h1 class="text-3xl font-bold">Laporan</h1>
-                    <p class="text-slate-500">Ringkasan capaian program PPG</p>
-                </div>
-                <a href="{{ route('dashboard') }}" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700">Kembali ke Dashboard</a>
-            </div>
+@extends('layouts.app')
 
-            <div class="grid gap-4 md:grid-cols-3 mb-8">
+@section('title', 'Laporan')
+@section('page-title', 'Laporan')
+@section('breadcrumb', 'Laporan')
+
+@section('content')
+    <div class="mb-8">
+        <p class="text-sm font-semibold text-amber-600">Laporan</p>
+        <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Ringkasan Program PPG</h2>
+        <p class="mt-2 text-sm text-slate-500">Pantau ringkasan capaian dan jadwal pelatihan terbaru.</p>
+    </div>
+
+            <div class="mb-8 grid gap-4 md:grid-cols-3">
                 <div class="rounded-xl bg-white p-5 shadow-sm border border-slate-200">
                     <p class="text-sm text-slate-500">Generus</p>
                     <p class="mt-2 text-3xl font-bold">{{ $generusCount }}</p>
@@ -59,7 +53,5 @@
                     </table>
                 </div>
             </div>
-        </div>
     </div>
-</body>
-</html>
+@endsection

@@ -207,6 +207,69 @@ class AuthAndAuthorizationTest extends TestCase
         $this->assertFalse($user->hasPermission('view-dashboard-soft-delete'));
     }
 
+    public function test_inactive_user_does_not_receive_permission(): void
+    {
+        $role = Role::create([
+            'name' => 'Inactive Role',
+            'slug' => 'inactive-user-role',
+            'is_active' => true,
+        ]);
+
+        $permission = Permission::create([
+            'name' => 'View Dashboard',
+            'slug' => 'view-dashboard-inactive-user',
+            'module' => 'dashboard',
+            'is_active' => true,
+        ]);
+
+        $role->permissions()->attach($permission->id);
+
+        $user = User::create([
+            'name' => 'Inactive User',
+            'email' => 'inactive-user@ppg.test',
+            'password' => Hash::make('password123'),
+            'status' => 'inactive',
+        ]);
+
+        $user->assignRole($role->id);
+
+        $this->assertFalse($user->hasPermission('view-dashboard-inactive-user'));
+    }
+
+    public function test_sidebar_hides_modules_without_permission(): void
+    {
+        $role = Role::create([
+            'name' => 'Reports User',
+            'slug' => 'reports-user',
+            'is_active' => true,
+        ]);
+
+        $permission = Permission::create([
+            'name' => 'View Reports',
+            'slug' => 'view-reports',
+            'module' => 'reports',
+            'is_active' => true,
+        ]);
+
+        $role->permissions()->attach($permission->id);
+
+        $user = User::create([
+            'name' => 'Reports User',
+            'email' => 'reports-user@ppg.test',
+            'password' => Hash::make('password123'),
+            'status' => 'active',
+        ]);
+
+        $user->assignRole($role->id);
+
+        $this->actingAs($user)
+            ->get('/reports')
+            ->assertOk()
+            ->assertSee('Laporan')
+            ->assertDontSee('Data Generus')
+            ->assertDontSee('Program Kurikulum');
+    }
+
     public function test_integrated_module_pages_are_available_to_authorized_users(): void
     {
         $role = Role::create([
@@ -230,6 +293,9 @@ class AuthAndAuthorizationTest extends TestCase
             ['name' => 'Manage Evaluations', 'slug' => 'manage-evaluations', 'module' => 'evaluations'],
             ['name' => 'Manage Munaqosah', 'slug' => 'manage-munaqosah', 'module' => 'munaqosah'],
             ['name' => 'Manage Report Cards', 'slug' => 'manage-report-cards', 'module' => 'report-cards'],
+            ['name' => 'Manage Training', 'slug' => 'manage-training', 'module' => 'training'],
+            ['name' => 'Manage Communication', 'slug' => 'manage-communication', 'module' => 'communication'],
+            ['name' => 'View Reports', 'slug' => 'view-reports', 'module' => 'reports'],
         ])->map(fn (array $permission) => Permission::create([...$permission, 'is_active' => true]));
 
         $role->permissions()->attach($permissions->pluck('id'));
@@ -322,5 +388,20 @@ class AuthAndAuthorizationTest extends TestCase
             ->get('/report-cards')
             ->assertOk()
             ->assertViewIs('report-cards.index');
+
+        $this->actingAs($user)
+            ->get('/trainings')
+            ->assertOk()
+            ->assertViewIs('trainings.index');
+
+        $this->actingAs($user)
+            ->get('/communications')
+            ->assertOk()
+            ->assertViewIs('communications.index');
+
+        $this->actingAs($user)
+            ->get('/reports')
+            ->assertOk()
+            ->assertViewIs('reports.index');
     }
 }

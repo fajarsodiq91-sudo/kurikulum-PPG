@@ -44,6 +44,10 @@ class User extends Authenticatable
 
     public function hasPermission(string $permissionSlug): bool
     {
+        if ($this->status !== 'active') {
+            return false;
+        }
+
         $permission = Permission::query()
             ->where('slug', $permissionSlug)
             ->where('is_active', true)
