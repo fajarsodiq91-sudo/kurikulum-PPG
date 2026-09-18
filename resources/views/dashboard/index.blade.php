@@ -16,8 +16,16 @@
         @endif
     </div>
 
-    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        @foreach ([['label' => 'Total Generus', 'value' => $generusCount, 'tone' => 'amber'], ['label' => 'Total Guru', 'value' => $teacherCount, 'tone' => 'sky'], ['label' => 'Program Pelatihan', 'value' => $trainingCount, 'tone' => 'emerald']] as $card)
+    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        @foreach ([
+            ['label' => 'Generus Aktif', 'value' => $generusCount, 'tone' => 'amber'],
+            ['label' => 'Guru Aktif', 'value' => $teacherCount, 'tone' => 'sky'],
+            ['label' => 'Desa / Wilayah', 'value' => $regionCount, 'tone' => 'emerald'],
+            ['label' => 'Kelompok', 'value' => $groupCount, 'tone' => 'rose'],
+            ['label' => 'Sesi KBM', 'value' => $learningSessionCount, 'tone' => 'violet'],
+            ['label' => 'Munaqosah', 'value' => $munaqosahCount, 'tone' => 'orange'],
+            ['label' => 'Pelatihan Aktif', 'value' => $trainingCount, 'tone' => 'cyan'],
+        ] as $card)
             <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div class="flex items-start justify-between gap-4">
                     <p class="text-sm font-medium text-slate-500">{{ $card['label'] }}</p>
@@ -61,4 +69,11 @@
             </div>
         </section>
     </div>
+
+    @if ($generusCount === 0 && $teacherCount === 0 && $learningSessionCount === 0)
+        <section class="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6">
+            <h2 class="font-bold text-slate-900">Belum ada data operasional</h2>
+            <p class="mt-1 max-w-2xl text-sm leading-6 text-slate-500">Dashboard siap digunakan. Mulai dengan menambahkan generus, guru, atau sesi KBM melalui menu yang tersedia.</p>
+        </section>
+    @endif
 @endsection

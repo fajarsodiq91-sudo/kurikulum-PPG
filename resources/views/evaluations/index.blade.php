@@ -1,19 +1,15 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Evaluasi</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="bg-slate-100 text-slate-800">
-    <div class="max-w-6xl mx-auto py-10 px-4">
-        <div class="flex items-center justify-between mb-6">
-            <div>
-                <h1 class="text-3xl font-bold">Evaluasi</h1>
-                <p class="text-slate-500">Kelola penilaian dan ujian pembelajaran</p>
-            </div>
-        </div>
+@extends('layouts.app')
+
+@section('title', 'Evaluasi')
+@section('page-title', 'Evaluasi')
+@section('breadcrumb', 'Evaluasi / Daftar Evaluasi')
+
+@section('content')
+    <div class="mb-6">
+        <p class="text-sm font-semibold text-amber-600">Evaluasi</p>
+        <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Evaluasi</h2>
+        <p class="mt-2 text-sm text-slate-500">Kelola penilaian dan ujian pembelajaran.</p>
+    </div>
 
         @if (session('success'))
             <div class="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
@@ -21,7 +17,7 @@
             </div>
         @endif
 
-        <div class="grid gap-6 lg:grid-cols-3">
+        <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">
             <div class="lg:col-span-1 rounded-xl bg-white p-6 shadow-sm border border-slate-200">
                 <h2 class="text-xl font-semibold mb-4">Tambah Evaluasi</h2>
                 <form method="POST" action="{{ route('evaluations.store') }}">
@@ -123,5 +119,4 @@
             </div>
         </div>
     </div>
-</body>
-</html>
+@endsection

@@ -1,19 +1,15 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rapor</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="bg-slate-100 text-slate-800">
-    <div class="max-w-6xl mx-auto py-10 px-4">
-        <div class="flex items-center justify-between mb-6">
-            <div>
-                <h1 class="text-3xl font-bold">Rapor</h1>
-                <p class="text-slate-500">Kelola penilaian akhir dan predikat generus</p>
-            </div>
-        </div>
+@extends('layouts.app')
+
+@section('title', 'Rapor Generus')
+@section('page-title', 'Rapor Generus')
+@section('breadcrumb', 'Rapor / Rapor Generus')
+
+@section('content')
+    <div class="mb-6">
+        <p class="text-sm font-semibold text-amber-600">Rapor</p>
+        <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Rapor Generus</h2>
+        <p class="mt-2 text-sm text-slate-500">Kelola penilaian akhir dan predikat generus.</p>
+    </div>
 
         @if (session('success'))
             <div class="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
@@ -21,7 +17,7 @@
             </div>
         @endif
 
-        <div class="grid gap-6 lg:grid-cols-3">
+        <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">
             <div class="lg:col-span-1 rounded-xl bg-white p-6 shadow-sm border border-slate-200">
                 <h2 class="text-xl font-semibold mb-4">Tambah Rapor</h2>
                 <form method="POST" action="{{ route('report-cards.store') }}">
@@ -102,5 +98,4 @@
             </div>
         </div>
     </div>
-</body>
-</html>
+@endsection

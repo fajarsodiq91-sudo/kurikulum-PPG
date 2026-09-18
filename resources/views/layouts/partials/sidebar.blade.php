@@ -24,10 +24,18 @@
                 ['label' => 'Struktur Organisasi', 'route' => 'organization-units.index'],
                 ['label' => 'Penempatan', 'route' => 'assignments.index', 'permission' => 'manage-assignments'],
             ]],
+            ['label' => 'Master Data', 'permission' => 'view-master-data', 'items' => [
+                ['label' => 'Daerah', 'route' => 'master-data.regions.index'],
+            ]],
             ['label' => 'Kurikulum', 'permission' => 'manage-curriculum', 'items' => [
                 ['label' => 'Program Kurikulum', 'route' => 'curriculum-programs.index'],
                 ['label' => 'Materi', 'route' => 'learning-materials.index', 'permission' => 'manage-learning-materials'],
                 ['label' => 'Progress Tracking', 'route' => 'progress-tracks.index', 'permission' => 'manage-progress-tracking'],
+            ]],
+            ['label' => 'Program Pembinaan', 'permission' => 'manage-activity-schedules', 'items' => [
+                ['label' => 'Jadwal Program', 'route' => 'activity-schedules.index'],
+                ['label' => 'Pelaksanaan Program', 'route' => 'activity-executions.index', 'permission' => 'manage-activity-executions'],
+                ['label' => 'Milestone', 'route' => 'milestones.index', 'permission' => 'manage-milestones'],
             ]],
             ['label' => 'KBM', 'permission' => 'manage-learning-sessions', 'items' => [
                 ['label' => 'Sesi KBM', 'route' => 'learning-sessions.index'],
@@ -36,6 +44,12 @@
             ['label' => 'Evaluasi', 'permission' => 'manage-evaluations', 'items' => [
                 ['label' => 'Evaluasi', 'route' => 'evaluations.index'],
                 ['label' => 'Nilai Evaluasi', 'route' => 'evaluation-scores.index'],
+            ]],
+            ['label' => 'Munaqosah', 'permission' => 'manage-munaqosah', 'items' => [
+                ['label' => 'Daftar Munaqosah', 'route' => 'munaqosahs.index'],
+            ]],
+            ['label' => 'Rapor', 'permission' => 'manage-report-cards', 'items' => [
+                ['label' => 'Rapor Generus', 'route' => 'report-cards.index'],
             ]],
             ['label' => 'Laporan', 'permission' => 'view-reports', 'route' => 'reports.index', 'icon' => '▤'],
         ];

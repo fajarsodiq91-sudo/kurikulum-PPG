@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -45,15 +44,24 @@ class User extends Authenticatable
 
     public function hasPermission(string $permissionSlug): bool
     {
-        $permission = Permission::query()->where('slug', $permissionSlug)->first();
+        $permission = Permission::query()
+            ->where('slug', $permissionSlug)
+            ->where('is_active', true)
+            ->first();
 
         if (! $permission) {
             return false;
         }
 
         return $this->roles()
+            ->whereNull('roles.deleted_at')
+            ->where('roles.is_active', true)
             ->where('user_roles.is_active', true)
-            ->whereHas('permissions', fn ($query) => $query->where('permissions.id', $permission->id))
+            ->whereHas('permissions', function ($query) use ($permission) {
+                $query->where('permissions.id', $permission->id)
+                    ->whereNull('permissions.deleted_at')
+                    ->where('permissions.is_active', true);
+            })
             ->exists();
     }
 

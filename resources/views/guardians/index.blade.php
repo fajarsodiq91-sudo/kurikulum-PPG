@@ -1,111 +1,94 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Data Orang Tua/Wali</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="bg-slate-100 text-slate-800">
-    <div class="max-w-6xl mx-auto py-10 px-4">
-        <div class="flex items-center justify-between mb-6">
-            <div>
-                <h1 class="text-3xl font-bold">Data Orang Tua/Wali</h1>
-                <p class="text-slate-500">Kelola keterkaitan keluarga generus</p>
-            </div>
-        </div>
+@extends('layouts.app')
 
-        @if (session('success'))
-            <div class="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-                {{ session('success') }}
-            </div>
-        @endif
+@section('title', 'Data Orang Tua / Wali')
+@section('page-title', 'Data Orang Tua / Wali')
+@section('breadcrumb', 'Orang Tua / Wali / Data')
 
-        <div class="grid gap-6 lg:grid-cols-3">
-            <div class="lg:col-span-1 rounded-xl bg-white p-6 shadow-sm border border-slate-200">
-                <h2 class="text-xl font-semibold mb-4">Tambah Wali</h2>
+@section('content')
+    <div class="mb-6">
+        <p class="text-sm font-semibold text-amber-600">Orang Tua / Wali</p>
+        <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Data Orang Tua / Wali</h2>
+        <p class="mt-2 text-sm text-slate-500">Kelola keterkaitan keluarga generus.</p>
+    </div>
 
-                <form method="POST" action="{{ route('guardians.store') }}">
+    @if (session('success'))
+        <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">{{ session('success') }}</div>
+    @endif
+
+    <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">
+        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 class="text-lg font-bold text-slate-950">Tambah Wali</h2>
+            <p class="mt-1 text-sm text-slate-500">Tambahkan data orang tua atau wali.</p>
+
+            <form class="mt-6" method="POST" action="{{ route('guardians.store') }}">
                     @csrf
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="full_name">Nama Lengkap</label>
-                        <input id="full_name" name="full_name" type="text" required class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="relationship">Hubungan</label>
-                        <select id="relationship" name="relationship" required class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="mb-2 block text-sm font-medium text-slate-700" for="full_name">Nama Lengkap <span class="text-rose-500">*</span></label>
+                            <input id="full_name" name="full_name" type="text" required value="{{ old('full_name') }}" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-sm font-medium text-slate-700" for="relationship">Hubungan <span class="text-rose-500">*</span></label>
+                            <select id="relationship" name="relationship" required class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
                             <option value="">-- Pilih --</option>
                             <option value="ayah">Ayah</option>
                             <option value="ibu">Ibu</option>
                             <option value="wali">Wali</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="phone">Telepon</label>
-                        <input id="phone" name="phone" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="address">Alamat</label>
-                        <textarea id="address" name="address" rows="3" class="w-full rounded-lg border border-slate-300 px-3 py-2"></textarea>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="status">Status</label>
-                        <select id="status" name="status" class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                            </select>
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-sm font-medium text-slate-700" for="phone">Telepon</label>
+                            <input id="phone" name="phone" type="text" value="{{ old('phone') }}" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-sm font-medium text-slate-700" for="address">Alamat</label>
+                            <textarea id="address" name="address" rows="3" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">{{ old('address') }}</textarea>
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-sm font-medium text-slate-700" for="status">Status</label>
+                            <select id="status" name="status" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
                             <option value="active">Aktif</option>
                             <option value="inactive">Nonaktif</option>
-                        </select>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-sm font-medium text-slate-700" for="notes">Catatan</label>
+                            <textarea id="notes" name="notes" rows="3" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">{{ old('notes') }}</textarea>
+                        </div>
                     </div>
 
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="notes">Catatan</label>
-                        <textarea id="notes" name="notes" rows="3" class="w-full rounded-lg border border-slate-300 px-3 py-2"></textarea>
-                    </div>
-
-                    <button type="submit" class="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">
-                        Simpan
+                    <button type="submit" class="mt-6 w-full rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">
+                        Simpan Wali
                     </button>
                 </form>
-            </div>
+        </section>
 
-            <div class="lg:col-span-2 rounded-xl bg-white p-6 shadow-sm border border-slate-200">
-                <h2 class="text-xl font-semibold mb-4">Daftar Orang Tua/Wali</h2>
+        <section class="min-w-0 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 class="text-lg font-bold text-slate-950">Daftar Orang Tua / Wali</h2>
+            <p class="mt-1 text-sm text-slate-500">{{ $guardians->count() }} wali terdaftar.</p>
 
-                <div class="overflow-x-auto">
-                    <table class="min-w-full text-left text-sm">
-                        <thead>
-                            <tr class="border-b border-slate-200">
-                                <th class="py-3 pr-4">Nama</th>
-                                <th class="py-3 pr-4">Hubungan</th>
-                                <th class="py-3 pr-4">Status</th>
+            <div class="mt-5 overflow-x-auto">
+                <table class="min-w-full text-left text-sm">
+                    <thead class="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-400">
+                        <tr>
+                            <th class="py-3 pr-4 font-semibold">Nama</th>
+                            <th class="py-3 pr-4 font-semibold">Hubungan</th>
+                            <th class="py-3 pr-4 font-semibold">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($guardians as $guardian)
+                            <tr class="border-b border-slate-100 last:border-0">
+                                <td class="py-3 pr-4">{{ $guardian->full_name }}</td>
+                                <td class="py-3 pr-4">{{ $guardian->relationship }}</td>
+                                <td class="py-3 pr-4"><span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $guardian->status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600' }}">{{ $guardian->status === 'active' ? 'Aktif' : 'Nonaktif' }}</span></td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($guardians as $guardian)
-                                <tr class="border-b border-slate-100">
-                                    <td class="py-3 pr-4">{{ $guardian->full_name }}</td>
-                                    <td class="py-3 pr-4">{{ $guardian->relationship }}</td>
-                                    <td class="py-3 pr-4">
-                                        @if($guardian->status === 'active')
-                                            <span class="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">Aktif</span>
-                                        @else
-                                            <span class="rounded-full bg-slate-200 px-2 py-1 text-xs font-medium text-slate-600">Nonaktif</span>
-                                        @endif
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="3" class="py-6 text-center text-slate-500">Belum ada data orang tua/wali.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
+                        @empty
+                            <tr><td colspan="3" class="py-10 text-center"><p class="font-semibold text-slate-700">Belum ada data orang tua / wali</p><p class="mt-1 text-sm text-slate-500">Tambahkan wali pertama untuk mulai mengelola relasi keluarga.</p></td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
-        </div>
+        </section>
     </div>
-</body>
-</html>
+@endsection
