@@ -47,6 +47,7 @@
             </div>
             <div class="mt-5 grid gap-3 sm:grid-cols-2">
                 @if (auth()->user()->hasPermission('manage-generus'))
+                    <a href="{{ route('generus.index') }}" class="rounded-xl border border-slate-200 p-4 transition hover:border-amber-300 hover:bg-amber-50"><span class="text-sm font-semibold text-slate-900">Data Generus</span><span class="mt-1 block text-xs text-slate-500">Lihat, import, dan export database generus</span></a>
                     <a href="{{ route('generus.create') }}" class="rounded-xl border border-slate-200 p-4 transition hover:border-amber-300 hover:bg-amber-50"><span class="text-sm font-semibold text-slate-900">Tambah Generus</span><span class="mt-1 block text-xs text-slate-500">Daftarkan generus baru</span></a>
                 @endif
                 @if (auth()->user()->hasPermission('manage-learning-sessions'))

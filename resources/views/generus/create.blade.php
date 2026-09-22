@@ -67,6 +67,40 @@
             </div>
 
             <div class="mt-8 border-t border-slate-200 pt-6">
+                <h3 class="text-lg font-bold text-slate-950">Data Referensi Lama</h3>
+                <p class="mt-1 text-sm text-slate-500">Kolom ini menampung data dari aplikasi generus sebelumnya.</p>
+            </div>
+            <div class="mt-6 grid gap-5 md:grid-cols-2">
+                @foreach([
+                    ['record_number', 'Nomor Data'],
+                    ['school_name', 'Madrasah'],
+                    ['nis', 'NIS'],
+                    ['father_name', 'Nama Ayah'],
+                    ['mother_name', 'Nama Ibu'],
+                    ['father_occupation', 'Pekerjaan Ayah'],
+                    ['mother_occupation', 'Pekerjaan Ibu'],
+                    ['phone_number', 'Nomor WhatsApp'],
+                    ['birth_place', 'Tempat Lahir'],
+                    ['school_grade', 'Kelas Sekolah'],
+                    ['learning_class', 'Kelas KBM'],
+                    ['educational_level', 'Jenjang Generus'],
+                ] as [$field, $label])
+                    <div>
+                        <label class="mb-2 block text-sm font-medium text-slate-700" for="{{ $field }}">{{ $label }}</label>
+                        <input id="{{ $field }}" name="{{ $field }}" type="text" value="{{ old($field) }}" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
+                    </div>
+                @endforeach
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-slate-700" for="birth_order">Anak Ke</label>
+                    <input id="birth_order" name="birth_order" type="number" min="1" value="{{ old('birth_order') }}" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
+                </div>
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-slate-700" for="sibling_count">Jumlah Saudara</label>
+                    <input id="sibling_count" name="sibling_count" type="number" min="0" value="{{ old('sibling_count') }}" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
+                </div>
+            </div>
+
+            <div class="mt-8 border-t border-slate-200 pt-6">
                 <h3 class="text-lg font-bold text-slate-950">Penempatan</h3>
                 <p class="mt-1 text-sm text-slate-500">Pilih wilayah, jenjang, dan tahun pembinaan.</p>
             </div>

@@ -18,10 +18,14 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        User::updateOrCreate(
+            ['email' => 'test@example.com'],
+            [
+                'name' => 'Test User',
+                'password' => Hash::make('password'),
+                'status' => 'active',
+            ],
+        );
 
         $permissions = collect([
             ['name' => 'View Dashboard', 'slug' => 'view-dashboard', 'module' => 'dashboard'],

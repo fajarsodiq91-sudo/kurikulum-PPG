@@ -11,12 +11,39 @@
             <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Data Generus</h2>
             <p class="mt-2 text-sm text-slate-500">Kelola identitas dan riwayat penempatan generus.</p>
         </div>
-        <a href="{{ route('generus.create') }}" class="inline-flex items-center justify-center rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">Tambah Generus</a>
+        <div class="flex flex-wrap gap-3">
+            <a href="{{ route('generus.export') }}" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Export XLSX</a>
+            <a href="{{ route('generus.create') }}" class="inline-flex items-center justify-center rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">Tambah Generus</a>
+        </div>
     </div>
 
     @if (session('success'))
         <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">{{ session('success') }}</div>
     @endif
+
+    @if ($errors->any())
+        <div class="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+            <p class="font-semibold">Import XLSX gagal.</p>
+            <ul class="mt-2 list-inside list-disc space-y-1">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    <section class="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="text-lg font-bold text-slate-950">Import Database Generus</h2>
+        <p class="mt-1 text-sm text-slate-500">Gunakan file XLSX hasil export aplikasi ini agar kode master wilayah dapat dipetakan dengan benar.</p>
+        <form method="POST" action="{{ route('generus.import') }}" enctype="multipart/form-data" class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+            @csrf
+            <div class="flex-1">
+                <label class="mb-2 block text-sm font-medium text-slate-700" for="file">File XLSX</label>
+                <input id="file" name="file" type="file" accept=".xlsx" required class="block w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm">
+            </div>
+            <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-600">Import XLSX</button>
+        </form>
+    </section>
 
     <section class="min-w-0 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div class="flex items-center justify-between gap-4">

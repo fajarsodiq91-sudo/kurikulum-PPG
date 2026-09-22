@@ -11,13 +11,36 @@ class Generus extends Model
 
     protected $fillable = [
         'registration_number',
+        'record_number',
         'full_name',
+        'school_name',
+        'nis',
+        'father_name',
+        'mother_name',
+        'father_occupation',
+        'mother_occupation',
+        'phone_number',
         'gender',
+        'birth_place',
         'birth_date',
+        'birth_order',
+        'sibling_count',
+        'school_grade',
+        'learning_class',
+        'educational_level',
         'photo',
         'status',
         'notes',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'birth_date' => 'date',
+            'birth_order' => 'integer',
+            'sibling_count' => 'integer',
+        ];
+    }
 
     public function assignments(): HasMany
     {

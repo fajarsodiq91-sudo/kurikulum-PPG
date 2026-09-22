@@ -40,7 +40,14 @@ class DashboardAndReportTest extends TestCase
             'is_active' => true,
         ]);
 
-        $role->permissions()->attach([$dashboardPermission->id, $reportPermission->id]);
+        $generusPermission = Permission::create([
+            'name' => 'Manage Generus',
+            'slug' => 'manage-generus',
+            'module' => 'generus',
+            'is_active' => true,
+        ]);
+
+        $role->permissions()->attach([$dashboardPermission->id, $reportPermission->id, $generusPermission->id]);
 
         $user = User::create([
             'name' => 'Admin PPG',
@@ -109,6 +116,8 @@ class DashboardAndReportTest extends TestCase
             ->assertOk()
             ->assertSee('2')
             ->assertSee('Generus')
+            ->assertSee('Data Generus')
+            ->assertSee(route('generus.index'))
             ->assertSee('2')
             ->assertSee('Guru');
 
