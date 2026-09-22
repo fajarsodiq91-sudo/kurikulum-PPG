@@ -87,8 +87,6 @@ class GenerusTest extends TestCase
 
         $this->actingAs($user)
             ->post('/generus', [
-                'registration_number' => 'PPG-001',
-                'record_number' => '001',
                 'full_name' => 'Ayu Lestari',
                 'school_name' => 'Madrasah A',
                 'nis' => 'NIS-001',
@@ -116,15 +114,15 @@ class GenerusTest extends TestCase
             ])
             ->assertRedirect('/generus');
 
-        $this->assertDatabaseHas('generus', [
-            'registration_number' => 'PPG-001',
-            'full_name' => 'Ayu Lestari',
-            'nis' => 'NIS-001',
-            'father_name' => 'Budi Lestari',
-            'birth_place' => 'Karawang',
-            'birth_order' => 2,
-            'sibling_count' => 3,
-        ]);
+        $created = Generus::query()->where('full_name', 'Ayu Lestari')->firstOrFail();
+
+        $this->assertMatchesRegularExpression('/^\d{8}$/', $created->registration_number);
+        $this->assertSame($created->registration_number, $created->nis);
+        $this->assertSame('0001', $created->record_number);
+        $this->assertSame('Budi Lestari', $created->father_name);
+        $this->assertSame('Karawang', $created->birth_place);
+        $this->assertSame(2, $created->birth_order);
+        $this->assertSame(3, $created->sibling_count);
 
         $this->assertDatabaseHas('generus_assignments', [
             'status' => 'active',
@@ -155,6 +153,62 @@ class GenerusTest extends TestCase
         $this->actingAs($user)
             ->get('/generus/export')
             ->assertDownload('generus.xlsx');
+    }
+
+    public function test_internal_transfer_uses_the_newest_registered_placement(): void
+    {
+        [$user, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+
+        $this->actingAs($user)
+            ->post('/generus', [
+                'full_name' => 'Generus Pindah Internal',
+                'status' => 'pindah_sambung',
+                'transfer_destination' => 'internal',
+                'region_id' => $region->id,
+                'village_id' => $village->id,
+                'group_id' => $group->id,
+                'level_id' => $level->id,
+                'academic_year_id' => $year->id,
+                'assignment_status' => 'active',
+            ])
+            ->assertRedirect('/generus');
+
+        $generus = Generus::query()->where('full_name', 'Generus Pindah Internal')->firstOrFail();
+
+        $this->assertSame('pindah_sambung', $generus->status);
+        $this->assertSame('internal', $generus->transfer_destination);
+        $this->assertDatabaseHas('generus_assignments', [
+            'generus_id' => $generus->id,
+            'region_id' => $region->id,
+            'village_id' => $village->id,
+            'group_id' => $group->id,
+            'status' => 'active',
+        ]);
+    }
+
+    public function test_external_transfer_can_be_saved_without_registered_placement(): void
+    {
+        [$user] = $this->createGenerusImportContext();
+
+        $this->actingAs($user)
+            ->post('/generus', [
+                'full_name' => 'Generus Pindah Eksternal',
+                'status' => 'pindah_sambung',
+                'transfer_destination' => 'external',
+                'assignment_status' => 'active',
+            ])
+            ->assertRedirect('/generus');
+
+        $generus = Generus::query()->where('full_name', 'Generus Pindah Eksternal')->firstOrFail();
+
+        $this->assertSame('external', $generus->transfer_destination);
+        $this->assertDatabaseHas('generus_assignments', [
+            'generus_id' => $generus->id,
+            'region_id' => null,
+            'village_id' => null,
+            'group_id' => null,
+            'notes' => 'Pindah sambung ke luar daerah.',
+        ]);
     }
 
     public function test_admin_can_import_generus_from_exported_xlsx(): void

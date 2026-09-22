@@ -67,7 +67,7 @@
                         <tr class="border-b border-slate-100 last:border-0">
                             <td class="py-3 pr-4">{{ $item->registration_number }}</td>
                             <td class="py-3 pr-4">{{ $item->full_name }}</td>
-                            <td class="py-3 pr-4"><span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $item->status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600' }}">{{ $item->status === 'active' ? 'Aktif' : 'Nonaktif' }}</span></td>
+                            <td class="py-3 pr-4"><span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $item->status === 'active' ? 'bg-emerald-100 text-emerald-700' : ($item->status === 'pindah_sambung' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600') }}">{{ match ($item->status) { 'active' => 'Aktif', 'pindah_sambung' => 'Pindah Sambung', 'married' => 'Sudah Menikah', default => $item->status } }}</span></td>
                             <td class="py-3 pr-4">
                                 @foreach($item->assignments as $assignment)
                                     <div class="text-xs leading-6 text-slate-600">

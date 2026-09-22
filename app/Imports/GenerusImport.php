@@ -35,6 +35,7 @@ class GenerusImport implements OnEachRow, WithChunkReading, WithHeadingRow
             'birth_order' => ['nullable', 'integer', 'min:1', 'max:32767'],
             'sibling_count' => ['nullable', 'integer', 'min:0', 'max:32767'],
             'status' => ['nullable', 'string', 'max:50'],
+            'transfer_destination' => ['nullable', 'string', 'max:50'],
             'region_code' => ['nullable', 'string', 'max:50'],
             'village_code' => ['nullable', 'string', 'max:50'],
             'group_code' => ['nullable', 'string', 'max:50'],
@@ -124,6 +125,7 @@ class GenerusImport implements OnEachRow, WithChunkReading, WithHeadingRow
                 'learning_class',
                 'educational_level',
                 'status',
+                'transfer_destination',
                 'notes',
             ])->all(),
         );

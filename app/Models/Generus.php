@@ -30,6 +30,7 @@ class Generus extends Model
         'educational_level',
         'photo',
         'status',
+        'transfer_destination',
         'notes',
     ];
 
