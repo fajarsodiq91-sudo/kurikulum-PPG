@@ -59,6 +59,9 @@
                 @if (auth()->user()->hasPermission('view-reports'))
                     <a href="{{ route('reports.index') }}" class="rounded-xl border border-slate-200 p-4 transition hover:border-amber-300 hover:bg-amber-50"><span class="text-sm font-semibold text-slate-900">Lihat Laporan</span><span class="mt-1 block text-xs text-slate-500">Buka ringkasan pelaporan</span></a>
                 @endif
+                @if (auth()->user()->hasPermission('view-master-data'))
+                    <a href="{{ route('master-data.index') }}" class="rounded-xl border border-slate-200 p-4 transition hover:border-amber-300 hover:bg-amber-50"><span class="text-sm font-semibold text-slate-900">Master Data</span><span class="mt-1 block text-xs text-slate-500">Kelola daerah, desa, kelompok, dan konfigurasi dinamis</span></a>
+                @endif
             </div>
         </section>
 

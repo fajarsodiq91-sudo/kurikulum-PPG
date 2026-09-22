@@ -15,6 +15,7 @@ use App\Http\Controllers\GenerusController;
 use App\Http\Controllers\GuardianController;
 use App\Http\Controllers\LearningMaterialController;
 use App\Http\Controllers\LearningSessionController;
+use App\Http\Controllers\MasterData\MasterDataController;
 use App\Http\Controllers\MasterData\RegionController;
 use App\Http\Controllers\MilestoneController;
 use App\Http\Controllers\MunaqosahController;
@@ -51,10 +52,22 @@ Route::middleware(['auth', 'permission:view-reports'])->group(function () {
 });
 
 Route::middleware(['auth', 'permission:view-master-data'])->group(function () {
+    Route::get('/master-data', [MasterDataController::class, 'index'])
+        ->name('master-data.index');
+    Route::post('/master-data/regions', [MasterDataController::class, 'storeRegion'])
+        ->name('master-data.regions.store');
+    Route::post('/master-data/villages', [MasterDataController::class, 'storeVillage'])
+        ->name('master-data.villages.store');
+    Route::post('/master-data/groups', [MasterDataController::class, 'storeGroup'])
+        ->name('master-data.groups.store');
+    Route::post('/master-data/levels', [MasterDataController::class, 'storeLevel'])
+        ->name('master-data.levels.store');
+    Route::post('/master-data/academic-years', [MasterDataController::class, 'storeAcademicYear'])
+        ->name('master-data.academic-years.store');
+    Route::post('/master-data/semesters', [MasterDataController::class, 'storeSemester'])
+        ->name('master-data.semesters.store');
     Route::get('/master-data/regions', [RegionController::class, 'index'])
         ->name('master-data.regions.index');
-    Route::post('/master-data/regions', [RegionController::class, 'store'])
-        ->name('master-data.regions.store');
 });
 
 Route::middleware(['auth', 'permission:manage-generus'])->group(function () {

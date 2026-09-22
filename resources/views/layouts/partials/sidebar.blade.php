@@ -25,6 +25,7 @@
                 ['label' => 'Penempatan', 'route' => 'assignments.index', 'permission' => 'manage-assignments'],
             ]],
             ['label' => 'Master Data', 'permission' => 'view-master-data', 'items' => [
+                ['label' => 'Semua Master Data', 'route' => 'master-data.index'],
                 ['label' => 'Daerah', 'route' => 'master-data.regions.index'],
             ]],
             ['label' => 'Kurikulum', 'permission' => 'manage-curriculum', 'items' => [
