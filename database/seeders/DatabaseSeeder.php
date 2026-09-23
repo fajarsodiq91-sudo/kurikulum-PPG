@@ -31,6 +31,7 @@ class DatabaseSeeder extends Seeder
             ['name' => 'View Dashboard', 'slug' => 'view-dashboard', 'module' => 'dashboard'],
             ['name' => 'View Reports', 'slug' => 'view-reports', 'module' => 'reports'],
             ['name' => 'View Master Data', 'slug' => 'view-master-data', 'module' => 'master-data'],
+            ['name' => 'Manage Users', 'slug' => 'manage-users', 'module' => 'users'],
             ['name' => 'Manage Generus', 'slug' => 'manage-generus', 'module' => 'generus'],
             ['name' => 'Manage Teachers', 'slug' => 'manage-teachers', 'module' => 'teachers'],
             ['name' => 'Manage Guardians', 'slug' => 'manage-guardians', 'module' => 'guardians'],

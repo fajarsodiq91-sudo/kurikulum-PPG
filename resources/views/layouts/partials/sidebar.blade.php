@@ -10,6 +10,10 @@
     @php
         $navigation = [
             ['label' => 'Dashboard', 'permission' => 'view-dashboard', 'route' => 'dashboard', 'icon' => '◈'],
+            ['label' => 'Manajemen Pengguna', 'permission' => 'manage-users', 'items' => [
+                ['label' => 'Data Pengguna', 'route' => 'users.index'],
+                ['label' => 'Data Peran', 'route' => 'roles.index'],
+            ]],
             ['label' => 'Generus', 'permission' => 'manage-generus', 'items' => [
                 ['label' => 'Data Generus', 'route' => 'generus.index'],
                 ['label' => 'Tambah Generus', 'route' => 'generus.create'],

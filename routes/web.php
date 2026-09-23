@@ -23,9 +23,11 @@ use App\Http\Controllers\OrganizationUnitController;
 use App\Http\Controllers\ProgressTrackController;
 use App\Http\Controllers\ReportCardController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SessionAttendanceController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\TrainingController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -44,6 +46,36 @@ Route::post('/logout', [LoginController::class, 'logout'])->middleware('auth')->
 Route::middleware(['auth', 'permission:view-dashboard'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
+});
+
+Route::middleware(['auth', 'permission:manage-users'])->group(function () {
+    Route::get('/users', [UserController::class, 'index'])
+        ->name('users.index');
+    Route::post('/users', [UserController::class, 'store'])
+        ->name('users.store');
+    Route::get('/users/{user}/edit', [UserController::class, 'edit'])
+        ->whereNumber('user')
+        ->name('users.edit');
+    Route::put('/users/{user}', [UserController::class, 'update'])
+        ->whereNumber('user')
+        ->name('users.update');
+    Route::delete('/users/{user}', [UserController::class, 'destroy'])
+        ->whereNumber('user')
+        ->name('users.destroy');
+
+    Route::get('/roles', [RoleController::class, 'index'])
+        ->name('roles.index');
+    Route::post('/roles', [RoleController::class, 'store'])
+        ->name('roles.store');
+    Route::get('/roles/{role}/edit', [RoleController::class, 'edit'])
+        ->whereNumber('role')
+        ->name('roles.edit');
+    Route::put('/roles/{role}', [RoleController::class, 'update'])
+        ->whereNumber('role')
+        ->name('roles.update');
+    Route::delete('/roles/{role}', [RoleController::class, 'destroy'])
+        ->whereNumber('role')
+        ->name('roles.destroy');
 });
 
 Route::middleware(['auth', 'permission:view-reports'])->group(function () {
