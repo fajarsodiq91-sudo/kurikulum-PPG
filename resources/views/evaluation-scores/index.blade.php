@@ -17,47 +17,15 @@
             </div>
         @endif
 
+        @include('layouts.partials.validation-errors')
+
         <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">
             <div class="lg:col-span-1 rounded-xl bg-white p-6 shadow-sm border border-slate-200">
                 <h2 class="text-xl font-semibold mb-4">Tambah Skor</h2>
                 <form method="POST" action="{{ route('evaluation-scores.store') }}">
                     @csrf
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="evaluation_id">Evaluasi</label>
-                        <select id="evaluation_id" name="evaluation_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                            <option value="">-- Pilih --</option>
-                            @foreach($evaluations as $evaluation)
-                                <option value="{{ $evaluation->id }}">{{ $evaluation->title }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="generus_id">Generus</label>
-                        <select id="generus_id" name="generus_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                            <option value="">-- Pilih --</option>
-                            @foreach($generus as $entry)
-                                <option value="{{ $entry->id }}">{{ $entry->full_name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="score">Skor</label>
-                        <input id="score" name="score" type="number" min="0" max="100" step="0.1" required class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="grade">Grade</label>
-                        <select id="grade" name="grade" class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                            <option value="A">A</option>
-                            <option value="B">B</option>
-                            <option value="C">C</option>
-                            <option value="D">D</option>
-                            <option value="E">E</option>
-                        </select>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="notes">Catatan</label>
-                        <textarea id="notes" name="notes" rows="3" class="w-full rounded-lg border border-slate-300 px-3 py-2"></textarea>
-                    </div>
+                    @include('evaluation-scores.partials.fields', ['score' => null])
+
                     <button type="submit" class="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">Simpan</button>
                 </form>
             </div>
@@ -72,6 +40,7 @@
                                 <th class="py-3 pr-4">Generus</th>
                                 <th class="py-3 pr-4">Skor</th>
                                 <th class="py-3 pr-4">Grade</th>
+                                <th class="py-3"><span class="sr-only">Aksi</span></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -81,10 +50,11 @@
                                     <td class="py-3 pr-4">{{ $score->generus?->full_name ?? '-' }}</td>
                                     <td class="py-3 pr-4">{{ $score->score }}</td>
                                     <td class="py-3 pr-4">{{ $score->grade }}</td>
+                                    <td class="py-3 text-right"><a href="{{ route('evaluation-scores.edit', $score) }}" class="text-xs font-semibold text-amber-600 hover:text-amber-700">Edit</a></td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="py-6 text-center text-slate-500">Belum ada skor evaluasi.</td>
+                                    <td colspan="5" class="py-6 text-center text-slate-500">Belum ada skor evaluasi.</td>
                                 </tr>
                             @endforelse
                         </tbody>

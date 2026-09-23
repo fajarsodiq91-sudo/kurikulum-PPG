@@ -184,4 +184,50 @@ class MunaqosahAndReportCardTest extends TestCase
             'status' => 'active',
         ]);
     }
+
+    public function test_report_card_can_be_updated_and_deleted(): void
+    {
+        $user = $this->createAdminWithPermission('manage-report-cards');
+        $academicYear = AcademicYear::create([
+            'name' => '2025/2026',
+            'code' => '2025-2026',
+            'start_year' => 2025,
+            'end_year' => 2026,
+            'is_active' => true,
+        ]);
+        $semester = Semester::create([
+            'academic_year_id' => $academicYear->id,
+            'name' => 'Semester Ganjil',
+            'code' => 'G',
+            'sort_order' => 1,
+            'is_active' => true,
+        ]);
+        $generus = $this->createGenerus();
+        $reportCard = ReportCard::create([
+            'generus_id' => $generus->id,
+            'academic_year_id' => $academicYear->id,
+            'semester_id' => $semester->id,
+            'predicate' => 'B',
+        ]);
+
+        $this->actingAs($user)->get("/report-cards/{$reportCard->id}/edit")->assertOk();
+
+        $this->actingAs($user)
+            ->put("/report-cards/{$reportCard->id}", [
+                'generus_id' => $generus->id,
+                'academic_year_id' => $academicYear->id,
+                'semester_id' => $semester->id,
+                'predicate' => 'A',
+            ])
+            ->assertRedirect('/report-cards')
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('report_cards', ['id' => $reportCard->id, 'predicate' => 'A']);
+
+        $this->actingAs($user)
+            ->delete("/report-cards/{$reportCard->id}")
+            ->assertRedirect('/report-cards');
+
+        $this->assertModelMissing($reportCard);
+    }
 }

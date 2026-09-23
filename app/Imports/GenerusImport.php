@@ -91,6 +91,12 @@ class GenerusImport implements OnEachRow, WithChunkReading, WithHeadingRow
         ]);
         $hasAssignment = $assignmentFields->contains(fn (string $field): bool => filled($validated[$field] ?? null));
 
+        if (Generus::onlyTrashed()->where('registration_number', $validated['registration_number'])->exists()) {
+            $this->addErrors($row->getIndex(), ['Generus dengan nomor registrasi ini sudah dihapus.']);
+
+            return;
+        }
+
         if ($this->isScopedUser()) {
             $existingGenerus = Generus::query()->where('registration_number', $validated['registration_number'])->first();
 

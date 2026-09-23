@@ -265,4 +265,96 @@ class EvaluationAndAssessmentTest extends TestCase
             'status' => 'active',
         ]);
     }
+
+    public function test_score_can_be_updated_and_deleted(): void
+    {
+        $user = $this->createAdminWithPermission('manage-evaluations');
+        [$score, $evaluation, $generus] = $this->createScore();
+
+        $this->actingAs($user)
+            ->get("/evaluation-scores/{$score->id}/edit")
+            ->assertOk()
+            ->assertSee('<option value="'.$generus->id.'" selected>', false);
+
+        $this->actingAs($user)
+            ->put("/evaluation-scores/{$score->id}", [
+                'evaluation_id' => $evaluation->id,
+                'generus_id' => $generus->id,
+                'score' => 95,
+                'grade' => 'A',
+            ])
+            ->assertRedirect('/evaluation-scores')
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('evaluation_scores', ['id' => $score->id, 'grade' => 'A']);
+
+        $this->actingAs($user)
+            ->delete("/evaluation-scores/{$score->id}")
+            ->assertRedirect('/evaluation-scores');
+
+        $this->assertModelMissing($score);
+    }
+
+    public function test_score_update_cannot_duplicate_another_score(): void
+    {
+        $user = $this->createAdminWithPermission('manage-evaluations');
+        [$score, $evaluation] = $this->createScore();
+        $otherGenerus = Generus::create(['registration_number' => 'PPG-DUP-002', 'full_name' => 'Generus Lain', 'status' => 'active']);
+        $otherScore = EvaluationScore::create([
+            'evaluation_id' => $evaluation->id,
+            'generus_id' => $otherGenerus->id,
+            'score' => 70,
+            'grade' => 'C',
+        ]);
+
+        $this->actingAs($user)
+            ->put("/evaluation-scores/{$otherScore->id}", [
+                'evaluation_id' => $evaluation->id,
+                'generus_id' => $score->generus_id,
+                'score' => 70,
+                'grade' => 'C',
+            ])
+            ->assertSessionHasErrors(['generus_id' => 'Generus ini sudah memiliki nilai untuk evaluasi tersebut.']);
+    }
+
+    public function test_score_page_shows_duplicate_error_to_user(): void
+    {
+        $user = $this->createAdminWithPermission('manage-evaluations');
+        [$score, $evaluation, $generus] = $this->createScore();
+
+        $this->actingAs($user)
+            ->from('/evaluation-scores')
+            ->followingRedirects()
+            ->post('/evaluation-scores', [
+                'evaluation_id' => $evaluation->id,
+                'generus_id' => $generus->id,
+                'score' => 90,
+                'grade' => 'A',
+            ])
+            ->assertSee('Generus ini sudah memiliki nilai untuk evaluasi tersebut.');
+    }
+
+    /**
+     * @return array{0: EvaluationScore, 1: Evaluation, 2: Generus}
+     */
+    private function createScore(): array
+    {
+        [$teacher, $material, $academicYear, $semester] = $this->createTeachingContext();
+        $generus = $this->createGenerus();
+        $evaluation = Evaluation::create([
+            'teacher_id' => $teacher->id,
+            'material_id' => $material->id,
+            'semester_id' => $semester->id,
+            'academic_year_id' => $academicYear->id,
+            'title' => 'Ujian Etika',
+        ]);
+        $score = EvaluationScore::create([
+            'evaluation_id' => $evaluation->id,
+            'generus_id' => $generus->id,
+            'score' => 80,
+            'grade' => 'B',
+        ]);
+
+        return [$score, $evaluation, $generus];
+    }
 }

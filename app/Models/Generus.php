@@ -6,9 +6,12 @@ use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Generus extends Model
 {
+    use SoftDeletes;
+
     public const MANAGE_PERMISSION = 'manage-generus';
 
     protected $table = 'generus';

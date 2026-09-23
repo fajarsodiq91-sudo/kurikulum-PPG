@@ -267,4 +267,40 @@ class LearningSessionAndAttendanceTest extends TestCase
             'status' => 'active',
         ]);
     }
+
+    public function test_attendance_can_be_updated_and_deleted(): void
+    {
+        $user = $this->createAdminWithPermission('manage-learning-attendance');
+        [$teacher, $material] = $this->createTeachingContext();
+        $generus = $this->createGenerus();
+        $session = LearningSession::create([
+            'teacher_id' => $teacher->id,
+            'material_id' => $material->id,
+            'session_date' => '2026-09-20',
+        ]);
+        $attendance = SessionAttendance::create([
+            'learning_session_id' => $session->id,
+            'generus_id' => $generus->id,
+            'status' => 'absent',
+        ]);
+
+        $this->actingAs($user)->get("/session-attendances/{$attendance->id}/edit")->assertOk();
+
+        $this->actingAs($user)
+            ->put("/session-attendances/{$attendance->id}", [
+                'learning_session_id' => $session->id,
+                'generus_id' => $generus->id,
+                'status' => 'excused',
+            ])
+            ->assertRedirect('/session-attendances')
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('session_attendances', ['id' => $attendance->id, 'status' => 'excused']);
+
+        $this->actingAs($user)
+            ->delete("/session-attendances/{$attendance->id}")
+            ->assertRedirect('/session-attendances');
+
+        $this->assertModelMissing($attendance);
+    }
 }

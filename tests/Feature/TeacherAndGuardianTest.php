@@ -2,8 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Models\FollowUp;
+use App\Models\Generus;
+use App\Models\Guardian;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Models\Teacher;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -77,5 +81,121 @@ class TeacherAndGuardianTest extends TestCase
             'full_name' => 'Budi Santoso',
             'relationship' => 'ayah',
         ]);
+    }
+
+    public function test_teacher_edit_form_is_prefilled(): void
+    {
+        $teacher = Teacher::create(['name' => 'Guru Lama', 'email' => 'guru@ppg.test', 'status' => 'active']);
+
+        $this->actingAs($this->createAdmin())
+            ->get("/teachers/{$teacher->id}/edit")
+            ->assertOk()
+            ->assertSee('value="Guru Lama"', false);
+    }
+
+    public function test_teacher_can_be_updated_keeping_own_email(): void
+    {
+        $teacher = Teacher::create(['name' => 'Guru Lama', 'email' => 'guru@ppg.test', 'status' => 'active']);
+
+        $this->actingAs($this->createAdmin())
+            ->put("/teachers/{$teacher->id}", [
+                'name' => 'Guru Baru',
+                'email' => 'guru@ppg.test',
+                'status' => 'inactive',
+            ])
+            ->assertRedirect('/teachers')
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('teachers', ['id' => $teacher->id, 'name' => 'Guru Baru', 'status' => 'inactive']);
+    }
+
+    public function test_teacher_update_rejects_email_of_another_teacher(): void
+    {
+        Teacher::create(['name' => 'Guru Lain', 'email' => 'lain@ppg.test', 'status' => 'active']);
+        $teacher = Teacher::create(['name' => 'Guru', 'email' => 'guru@ppg.test', 'status' => 'active']);
+
+        $this->actingAs($this->createAdmin())
+            ->put("/teachers/{$teacher->id}", ['name' => 'Guru', 'email' => 'lain@ppg.test', 'status' => 'active'])
+            ->assertSessionHasErrors('email');
+
+        $this->assertSame('guru@ppg.test', $teacher->fresh()->email);
+    }
+
+    public function test_teacher_without_history_can_be_deleted(): void
+    {
+        $teacher = Teacher::create(['name' => 'Guru Baru', 'status' => 'active']);
+
+        $this->actingAs($this->createAdmin())
+            ->delete("/teachers/{$teacher->id}")
+            ->assertRedirect('/teachers');
+
+        $this->assertModelMissing($teacher);
+    }
+
+    public function test_teacher_with_activity_history_cannot_be_deleted(): void
+    {
+        $teacher = Teacher::create(['name' => 'Guru Senior', 'status' => 'active']);
+        $generus = Generus::create(['registration_number' => 'PPG-FU-001', 'full_name' => 'Generus', 'status' => 'active']);
+        FollowUp::create([
+            'generus_id' => $generus->id,
+            'teacher_id' => $teacher->id,
+            'title' => 'Pembinaan',
+            'follow_up_date' => '2026-09-20',
+        ]);
+
+        $this->actingAs($this->createAdmin())
+            ->from("/teachers/{$teacher->id}/edit")
+            ->delete("/teachers/{$teacher->id}")
+            ->assertRedirect("/teachers/{$teacher->id}/edit")
+            ->assertSessionHasErrors(['teacher' => 'Guru ini masih tercatat di sesi KBM, evaluasi, tindak lanjut, atau penugasan sehingga tidak dapat dihapus. Ubah statusnya menjadi Nonaktif.']);
+
+        $this->assertModelExists($teacher);
+    }
+
+    public function test_guardian_can_be_updated_and_deleted(): void
+    {
+        $user = $this->createAdmin();
+        $guardian = Guardian::create(['full_name' => 'Wali Lama', 'relationship' => 'ayah', 'status' => 'active']);
+
+        $this->actingAs($user)
+            ->put("/guardians/{$guardian->id}", ['full_name' => 'Wali Baru', 'relationship' => 'wali', 'status' => 'active'])
+            ->assertRedirect('/guardians');
+
+        $this->assertDatabaseHas('guardians', ['id' => $guardian->id, 'full_name' => 'Wali Baru', 'relationship' => 'wali']);
+
+        $this->actingAs($user)
+            ->delete("/guardians/{$guardian->id}")
+            ->assertRedirect('/guardians');
+
+        $this->assertModelMissing($guardian);
+    }
+
+    private function createAdmin(): User
+    {
+        $role = Role::create([
+            'name' => 'Super Admin',
+            'slug' => 'super-admin',
+            'is_active' => true,
+        ]);
+
+        foreach (['manage-teachers', 'manage-guardians'] as $slug) {
+            $role->permissions()->attach(Permission::create([
+                'name' => $slug,
+                'slug' => $slug,
+                'module' => $slug,
+                'is_active' => true,
+            ])->id);
+        }
+
+        $user = User::create([
+            'name' => 'Admin PPG',
+            'email' => 'admin@ppg.test',
+            'password' => Hash::make('password123'),
+            'status' => 'active',
+        ]);
+
+        $user->assignRole($role->id, 'global', null);
+
+        return $user;
     }
 }

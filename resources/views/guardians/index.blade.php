@@ -15,6 +15,8 @@
         <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">{{ session('success') }}</div>
     @endif
 
+    @include('layouts.partials.validation-errors')
+
     <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 class="text-lg font-bold text-slate-950">Tambah Wali</h2>
@@ -22,40 +24,7 @@
 
             <form class="mt-6" method="POST" action="{{ route('guardians.store') }}">
                     @csrf
-                    <div class="space-y-4">
-                        <div>
-                            <label class="mb-2 block text-sm font-medium text-slate-700" for="full_name">Nama Lengkap <span class="text-rose-500">*</span></label>
-                            <input id="full_name" name="full_name" type="text" required value="{{ old('full_name') }}" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
-                        </div>
-                        <div>
-                            <label class="mb-2 block text-sm font-medium text-slate-700" for="relationship">Hubungan <span class="text-rose-500">*</span></label>
-                            <select id="relationship" name="relationship" required class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
-                            <option value="">-- Pilih --</option>
-                            <option value="ayah">Ayah</option>
-                            <option value="ibu">Ibu</option>
-                            <option value="wali">Wali</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="mb-2 block text-sm font-medium text-slate-700" for="phone">Telepon</label>
-                            <input id="phone" name="phone" type="text" value="{{ old('phone') }}" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
-                        </div>
-                        <div>
-                            <label class="mb-2 block text-sm font-medium text-slate-700" for="address">Alamat</label>
-                            <textarea id="address" name="address" rows="3" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">{{ old('address') }}</textarea>
-                        </div>
-                        <div>
-                            <label class="mb-2 block text-sm font-medium text-slate-700" for="status">Status</label>
-                            <select id="status" name="status" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
-                            <option value="active">Aktif</option>
-                            <option value="inactive">Nonaktif</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="mb-2 block text-sm font-medium text-slate-700" for="notes">Catatan</label>
-                            <textarea id="notes" name="notes" rows="3" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">{{ old('notes') }}</textarea>
-                        </div>
-                    </div>
+                    @include('guardians.partials.fields', ['guardian' => null])
 
                     <button type="submit" class="mt-6 w-full rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">
                         Simpan Wali
@@ -74,6 +43,7 @@
                             <th class="py-3 pr-4 font-semibold">Nama</th>
                             <th class="py-3 pr-4 font-semibold">Hubungan</th>
                             <th class="py-3 pr-4 font-semibold">Status</th>
+                            <th class="py-3"><span class="sr-only">Aksi</span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -82,9 +52,10 @@
                                 <td class="py-3 pr-4">{{ $guardian->full_name }}</td>
                                 <td class="py-3 pr-4">{{ $guardian->relationship }}</td>
                                 <td class="py-3 pr-4"><span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $guardian->status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600' }}">{{ $guardian->status === 'active' ? 'Aktif' : 'Nonaktif' }}</span></td>
+                                <td class="py-3 text-right"><a href="{{ route('guardians.edit', $guardian) }}" class="text-xs font-semibold text-amber-600 hover:text-amber-700">Edit</a></td>
                             </tr>
                         @empty
-                            <tr><td colspan="3" class="py-10 text-center"><p class="font-semibold text-slate-700">Belum ada data orang tua / wali</p><p class="mt-1 text-sm text-slate-500">Tambahkan wali pertama untuk mulai mengelola relasi keluarga.</p></td></tr>
+                            <tr><td colspan="4" class="py-10 text-center"><p class="font-semibold text-slate-700">Belum ada data orang tua / wali</p><p class="mt-1 text-sm text-slate-500">Tambahkan wali pertama untuk mulai mengelola relasi keluarga.</p></td></tr>
                         @endforelse
                     </tbody>
                 </table>

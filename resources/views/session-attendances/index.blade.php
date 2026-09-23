@@ -17,42 +17,15 @@
             </div>
         @endif
 
+        @include('layouts.partials.validation-errors')
+
         <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">
             <div class="lg:col-span-1 rounded-xl bg-white p-6 shadow-sm border border-slate-200">
                 <h2 class="text-xl font-semibold mb-4">Tambah Presensi</h2>
                 <form method="POST" action="{{ route('session-attendances.store') }}">
                     @csrf
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="learning_session_id">Sesi</label>
-                        <select id="learning_session_id" name="learning_session_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                            <option value="">-- Pilih --</option>
-                            @foreach($sessions as $session)
-                                <option value="{{ $session->id }}">{{ $session->session_date }} - {{ $session->teacher?->name ?? 'Guru' }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="generus_id">Generus</label>
-                        <select id="generus_id" name="generus_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                            <option value="">-- Pilih --</option>
-                            @foreach($generus as $entry)
-                                <option value="{{ $entry->id }}">{{ $entry->full_name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="status">Status</label>
-                        <select id="status" name="status" class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                            <option value="present">Hadir</option>
-                            <option value="late">Terlambat</option>
-                            <option value="absent">Absen</option>
-                            <option value="excused">Izin</option>
-                        </select>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="notes">Catatan</label>
-                        <textarea id="notes" name="notes" rows="3" class="w-full rounded-lg border border-slate-300 px-3 py-2"></textarea>
-                    </div>
+                    @include('session-attendances.partials.fields', ['attendance' => null])
+
                     <button type="submit" class="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">Simpan</button>
                 </form>
             </div>
@@ -66,6 +39,7 @@
                                 <th class="py-3 pr-4">Sesi</th>
                                 <th class="py-3 pr-4">Generus</th>
                                 <th class="py-3 pr-4">Status</th>
+                                <th class="py-3"><span class="sr-only">Aksi</span></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -74,10 +48,11 @@
                                     <td class="py-3 pr-4">{{ $attendance->learningSession?->session_date ?? '-' }}</td>
                                     <td class="py-3 pr-4">{{ $attendance->generus?->full_name ?? '-' }}</td>
                                     <td class="py-3 pr-4">{{ $attendance->status }}</td>
+                                    <td class="py-3 text-right"><a href="{{ route('session-attendances.edit', $attendance) }}" class="text-xs font-semibold text-amber-600 hover:text-amber-700">Edit</a></td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="3" class="py-6 text-center text-slate-500">Belum ada presensi.</td>
+                                    <td colspan="4" class="py-6 text-center text-slate-500">Belum ada presensi.</td>
                                 </tr>
                             @endforelse
                         </tbody>

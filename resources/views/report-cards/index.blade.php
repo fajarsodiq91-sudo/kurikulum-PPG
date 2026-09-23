@@ -17,54 +17,15 @@
             </div>
         @endif
 
+        @include('layouts.partials.validation-errors')
+
         <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">
             <div class="lg:col-span-1 rounded-xl bg-white p-6 shadow-sm border border-slate-200">
                 <h2 class="text-xl font-semibold mb-4">Tambah Rapor</h2>
                 <form method="POST" action="{{ route('report-cards.store') }}">
                     @csrf
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="generus_id">Generus</label>
-                        <select id="generus_id" name="generus_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                            <option value="">-- Pilih --</option>
-                            @foreach($generus as $item)
-                                <option value="{{ $item->id }}">{{ $item->full_name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="academic_year_id">Tahun</label>
-                        <select id="academic_year_id" name="academic_year_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                            <option value="">-- Pilih --</option>
-                            @foreach($academicYears as $year)
-                                <option value="{{ $year->id }}">{{ $year->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="semester_id">Semester</label>
-                        <select id="semester_id" name="semester_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                            <option value="">-- Pilih --</option>
-                            @foreach($semesters as $semester)
-                                <option value="{{ $semester->id }}">{{ $semester->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="final_score">Nilai Akhir</label>
-                        <input id="final_score" name="final_score" type="number" step="0.01" class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="predicate">Predikat</label>
-                        <input id="predicate" name="predicate" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="recommendation">Rekomendasi</label>
-                        <textarea id="recommendation" name="recommendation" rows="3" class="w-full rounded-lg border border-slate-300 px-3 py-2"></textarea>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="remarks">Catatan</label>
-                        <textarea id="remarks" name="remarks" rows="3" class="w-full rounded-lg border border-slate-300 px-3 py-2"></textarea>
-                    </div>
+                    @include('report-cards.partials.fields', ['reportCard' => null])
+
                     <button type="submit" class="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">Simpan</button>
                 </form>
             </div>
@@ -78,6 +39,7 @@
                                 <th class="py-3 pr-4">Generus</th>
                                 <th class="py-3 pr-4">Nilai</th>
                                 <th class="py-3 pr-4">Predikat</th>
+                                <th class="py-3"><span class="sr-only">Aksi</span></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -86,10 +48,11 @@
                                     <td class="py-3 pr-4">{{ $card->generus?->full_name ?? '-' }}</td>
                                     <td class="py-3 pr-4">{{ $card->final_score ?? '-' }}</td>
                                     <td class="py-3 pr-4">{{ $card->predicate ?? '-' }}</td>
+                                    <td class="py-3 text-right"><a href="{{ route('report-cards.edit', $card) }}" class="text-xs font-semibold text-amber-600 hover:text-amber-700">Edit</a></td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="3" class="py-6 text-center text-slate-500">Belum ada rapor.</td>
+                                    <td colspan="4" class="py-6 text-center text-slate-500">Belum ada rapor.</td>
                                 </tr>
                             @endforelse
                         </tbody>

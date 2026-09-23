@@ -81,6 +81,18 @@ Route::middleware(['auth', 'permission:manage-generus'])->group(function () {
         ->name('generus.import');
     Route::get('/generus/export', [GenerusController::class, 'export'])
         ->name('generus.export');
+    Route::get('/generus/{generus}', [GenerusController::class, 'show'])
+        ->whereNumber('generus')
+        ->name('generus.show');
+    Route::get('/generus/{generus}/edit', [GenerusController::class, 'edit'])
+        ->whereNumber('generus')
+        ->name('generus.edit');
+    Route::put('/generus/{generus}', [GenerusController::class, 'update'])
+        ->whereNumber('generus')
+        ->name('generus.update');
+    Route::delete('/generus/{generus}', [GenerusController::class, 'destroy'])
+        ->whereNumber('generus')
+        ->name('generus.destroy');
 });
 
 Route::middleware(['auth', 'permission:manage-teachers'])->group(function () {
@@ -88,6 +100,15 @@ Route::middleware(['auth', 'permission:manage-teachers'])->group(function () {
         ->name('teachers.index');
     Route::post('/teachers', [TeacherController::class, 'store'])
         ->name('teachers.store');
+    Route::get('/teachers/{teacher}/edit', [TeacherController::class, 'edit'])
+        ->whereNumber('teacher')
+        ->name('teachers.edit');
+    Route::put('/teachers/{teacher}', [TeacherController::class, 'update'])
+        ->whereNumber('teacher')
+        ->name('teachers.update');
+    Route::delete('/teachers/{teacher}', [TeacherController::class, 'destroy'])
+        ->whereNumber('teacher')
+        ->name('teachers.destroy');
 });
 
 Route::middleware(['auth', 'permission:manage-guardians'])->group(function () {
@@ -95,6 +116,15 @@ Route::middleware(['auth', 'permission:manage-guardians'])->group(function () {
         ->name('guardians.index');
     Route::post('/guardians', [GuardianController::class, 'store'])
         ->name('guardians.store');
+    Route::get('/guardians/{guardian}/edit', [GuardianController::class, 'edit'])
+        ->whereNumber('guardian')
+        ->name('guardians.edit');
+    Route::put('/guardians/{guardian}', [GuardianController::class, 'update'])
+        ->whereNumber('guardian')
+        ->name('guardians.update');
+    Route::delete('/guardians/{guardian}', [GuardianController::class, 'destroy'])
+        ->whereNumber('guardian')
+        ->name('guardians.destroy');
 });
 
 Route::middleware(['auth', 'permission:manage-curriculum'])->group(function () {
@@ -123,6 +153,15 @@ Route::middleware(['auth', 'permission:manage-learning-attendance'])->group(func
         ->name('session-attendances.index');
     Route::post('/session-attendances', [SessionAttendanceController::class, 'store'])
         ->name('session-attendances.store');
+    Route::get('/session-attendances/{sessionAttendance}/edit', [SessionAttendanceController::class, 'edit'])
+        ->whereNumber('sessionAttendance')
+        ->name('session-attendances.edit');
+    Route::put('/session-attendances/{sessionAttendance}', [SessionAttendanceController::class, 'update'])
+        ->whereNumber('sessionAttendance')
+        ->name('session-attendances.update');
+    Route::delete('/session-attendances/{sessionAttendance}', [SessionAttendanceController::class, 'destroy'])
+        ->whereNumber('sessionAttendance')
+        ->name('session-attendances.destroy');
 });
 
 Route::middleware(['auth', 'permission:manage-evaluations'])->group(function () {
@@ -135,6 +174,15 @@ Route::middleware(['auth', 'permission:manage-evaluations'])->group(function () 
         ->name('evaluation-scores.index');
     Route::post('/evaluation-scores', [EvaluationScoreController::class, 'store'])
         ->name('evaluation-scores.store');
+    Route::get('/evaluation-scores/{evaluationScore}/edit', [EvaluationScoreController::class, 'edit'])
+        ->whereNumber('evaluationScore')
+        ->name('evaluation-scores.edit');
+    Route::put('/evaluation-scores/{evaluationScore}', [EvaluationScoreController::class, 'update'])
+        ->whereNumber('evaluationScore')
+        ->name('evaluation-scores.update');
+    Route::delete('/evaluation-scores/{evaluationScore}', [EvaluationScoreController::class, 'destroy'])
+        ->whereNumber('evaluationScore')
+        ->name('evaluation-scores.destroy');
 });
 
 Route::middleware(['auth', 'permission:manage-training'])->group(function () {
@@ -163,6 +211,15 @@ Route::middleware(['auth', 'permission:manage-report-cards'])->group(function ()
         ->name('report-cards.index');
     Route::post('/report-cards', [ReportCardController::class, 'store'])
         ->name('report-cards.store');
+    Route::get('/report-cards/{reportCard}/edit', [ReportCardController::class, 'edit'])
+        ->whereNumber('reportCard')
+        ->name('report-cards.edit');
+    Route::put('/report-cards/{reportCard}', [ReportCardController::class, 'update'])
+        ->whereNumber('reportCard')
+        ->name('report-cards.update');
+    Route::delete('/report-cards/{reportCard}', [ReportCardController::class, 'destroy'])
+        ->whereNumber('reportCard')
+        ->name('report-cards.destroy');
 });
 
 Route::middleware(['auth', 'permission:manage-follow-ups'])->group(function () {

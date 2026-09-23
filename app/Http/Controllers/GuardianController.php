@@ -18,7 +18,36 @@ class GuardianController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
+        Guardian::create($this->validateGuardian($request));
+
+        return redirect()->route('guardians.index')->with('success', 'Data orang tua/wali berhasil ditambahkan.');
+    }
+
+    public function edit(Guardian $guardian): View
+    {
+        return view('guardians.edit', ['guardian' => $guardian]);
+    }
+
+    public function update(Request $request, Guardian $guardian): RedirectResponse
+    {
+        $guardian->update($this->validateGuardian($request));
+
+        return redirect()->route('guardians.index')->with('success', 'Data orang tua/wali berhasil diperbarui.');
+    }
+
+    public function destroy(Guardian $guardian): RedirectResponse
+    {
+        $guardian->delete();
+
+        return redirect()->route('guardians.index')->with('success', 'Data orang tua/wali berhasil dihapus.');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function validateGuardian(Request $request): array
+    {
+        return $request->validate([
             'full_name' => ['required', 'string', 'max:255'],
             'relationship' => ['required', 'string', 'max:100'],
             'phone' => ['nullable', 'string', 'max:50'],
@@ -26,9 +55,5 @@ class GuardianController extends Controller
             'status' => ['required', 'string', 'max:50'],
             'notes' => ['nullable', 'string'],
         ]);
-
-        Guardian::create($validated);
-
-        return redirect()->route('guardians.index')->with('success', 'Data orang tua/wali berhasil ditambahkan.');
     }
 }

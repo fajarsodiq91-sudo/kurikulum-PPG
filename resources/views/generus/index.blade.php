@@ -60,13 +60,14 @@
                         <th class="py-3 pr-4 font-semibold">Nama</th>
                         <th class="py-3 pr-4 font-semibold">Status</th>
                         <th class="py-3 pr-4 font-semibold">Penempatan</th>
+                        <th class="py-3 font-semibold"><span class="sr-only">Aksi</span></th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($generus as $item)
                         <tr class="border-b border-slate-100 last:border-0">
                             <td class="py-3 pr-4">{{ $item->registration_number }}</td>
-                            <td class="py-3 pr-4">{{ $item->full_name }}</td>
+                            <td class="py-3 pr-4"><a href="{{ route('generus.show', $item) }}" class="font-medium text-slate-900 hover:text-amber-600">{{ $item->full_name }}</a></td>
                             <td class="py-3 pr-4"><span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $item->status === 'active' ? 'bg-emerald-100 text-emerald-700' : ($item->status === 'pindah_sambung' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600') }}">{{ match ($item->status) { 'active' => 'Aktif', 'pindah_sambung' => 'Pindah Sambung', 'married' => 'Sudah Menikah', default => $item->status } }}</span></td>
                             <td class="py-3 pr-4">
                                 @foreach($item->assignments as $assignment)
@@ -78,10 +79,14 @@
                                     <span class="text-xs text-slate-400">Belum ditempatkan</span>
                                 @endif
                             </td>
+                            <td class="py-3 text-right whitespace-nowrap">
+                                <a href="{{ route('generus.show', $item) }}" class="text-xs font-semibold text-slate-600 hover:text-slate-900">Detail</a>
+                                <a href="{{ route('generus.edit', $item) }}" class="ml-3 text-xs font-semibold text-amber-600 hover:text-amber-700">Edit</a>
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="py-10 text-center"><p class="font-semibold text-slate-700">Belum ada data generus</p><p class="mt-1 text-sm text-slate-500">Tambahkan generus pertama untuk mulai mengelola pembinaan.</p></td>
+                            <td colspan="5" class="py-10 text-center"><p class="font-semibold text-slate-700">Belum ada data generus</p><p class="mt-1 text-sm text-slate-500">Tambahkan generus pertama untuk mulai mengelola pembinaan.</p></td>
                         </tr>
                     @endforelse
                 </tbody>

@@ -502,6 +502,170 @@ class GenerusTest extends TestCase
         $this->assertDatabaseHas('generus', ['full_name' => 'Generus Scope']);
     }
 
+    public function test_detail_page_shows_biodata_and_placement_history(): void
+    {
+        [$user, , , $group] = $this->createGenerusImportContext();
+        $generus = $this->createPlacedGenerus($group, 'PPG-SHOW-001', 'Generus Detail');
+        $generus->update(['father_name' => 'Ayah Detail']);
+
+        $this->actingAs($user)
+            ->get("/generus/{$generus->id}")
+            ->assertOk()
+            ->assertSee('Generus Detail')
+            ->assertSee('Ayah Detail')
+            ->assertSee('Kelompok Import');
+    }
+
+    public function test_edit_form_is_prefilled_with_current_data(): void
+    {
+        [$user, , , $group] = $this->createGenerusImportContext();
+        $generus = $this->createPlacedGenerus($group, 'PPG-EDIT-005', 'Generus Prefill');
+
+        $this->actingAs($user)
+            ->get("/generus/{$generus->id}/edit")
+            ->assertOk()
+            ->assertSee('value="Generus Prefill"', false)
+            ->assertSee('value="PPG-EDIT-005"', false)
+            ->assertSee('<option value="'.$group->id.'" selected>', false);
+    }
+
+    public function test_scoped_user_gets_404_for_generus_outside_scope(): void
+    {
+        [, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        $otherGroup = $this->createGroupIn($village);
+        $outsider = $this->createPlacedGenerus($otherGroup, 'PPG-SCOPE-002', 'Generus Kelompok Lain');
+        $user = $this->createScopedUser('group', $group->id);
+
+        $this->actingAs($user)->get("/generus/{$outsider->id}")->assertNotFound();
+        $this->actingAs($user)->get("/generus/{$outsider->id}/edit")->assertNotFound();
+        $this->actingAs($user)
+            ->put("/generus/{$outsider->id}", $this->generusPayload($region, $village, $group, $level, $year))
+            ->assertNotFound();
+        $this->actingAs($user)->delete("/generus/{$outsider->id}")->assertNotFound();
+
+        $this->assertNotSoftDeleted($outsider);
+        $this->assertSame('Generus Kelompok Lain', $outsider->fresh()->full_name);
+    }
+
+    public function test_update_without_placement_change_keeps_current_placement(): void
+    {
+        [$user, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        $generus = $this->createPlacedGenerus($group, 'PPG-EDIT-001', 'Nama Lama');
+        $generus->assignments()->update(['level_id' => $level->id, 'academic_year_id' => $year->id]);
+
+        $this->actingAs($user)
+            ->put("/generus/{$generus->id}", [
+                ...$this->generusPayload($region, $village, $group, $level, $year),
+                'full_name' => 'Nama Baru',
+                'registration_number' => 'DIUBAH',
+                'nis' => 'DIUBAH',
+            ])
+            ->assertRedirect("/generus/{$generus->id}")
+            ->assertSessionHasNoErrors();
+
+        $generus->refresh();
+        $this->assertSame('Nama Baru', $generus->full_name);
+        $this->assertSame('PPG-EDIT-001', $generus->registration_number);
+        $this->assertNotSame('DIUBAH', $generus->nis);
+        $this->assertSame(1, $generus->assignments()->count());
+    }
+
+    public function test_update_with_new_group_ends_old_placement_and_records_new_one(): void
+    {
+        [$user, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        $newGroup = $this->createGroupIn($village);
+        $generus = $this->createPlacedGenerus($group, 'PPG-EDIT-002', 'Generus Mutasi');
+        $oldAssignment = $generus->assignments()->firstOrFail();
+
+        $this->actingAs($user)
+            ->put("/generus/{$generus->id}", $this->generusPayload($region, $village, $newGroup, $level, $year))
+            ->assertRedirect("/generus/{$generus->id}");
+
+        $this->assertDatabaseHas('generus_assignments', [
+            'id' => $oldAssignment->id,
+            'status' => 'ended',
+            'ended_at' => now()->toDateString(),
+        ]);
+        $this->assertDatabaseHas('generus_assignments', [
+            'generus_id' => $generus->id,
+            'group_id' => $newGroup->id,
+            'status' => 'active',
+        ]);
+    }
+
+    public function test_group_scoped_user_cannot_move_generus_to_another_group(): void
+    {
+        [, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        $otherGroup = $this->createGroupIn($village);
+        $generus = $this->createPlacedGenerus($group, 'PPG-EDIT-003', 'Generus Kelompok Sendiri');
+
+        $this->actingAs($this->createScopedUser('group', $group->id))
+            ->put("/generus/{$generus->id}", $this->generusPayload($region, $village, $otherGroup, $level, $year))
+            ->assertSessionHasErrors(['group_id' => 'Kelompok yang dipilih berada di luar wilayah akses Anda.']);
+
+        $this->assertSame(1, $generus->assignments()->count());
+    }
+
+    public function test_status_other_than_transfer_clears_transfer_destination(): void
+    {
+        [$user, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        $generus = $this->createPlacedGenerus($group, 'PPG-EDIT-004', 'Generus Kembali Aktif');
+        $generus->update(['status' => 'pindah_sambung', 'transfer_destination' => 'external']);
+
+        $this->actingAs($user)
+            ->put("/generus/{$generus->id}", [
+                ...$this->generusPayload($region, $village, $group, $level, $year),
+                'transfer_destination' => 'external',
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertNull($generus->fresh()->transfer_destination);
+    }
+
+    public function test_delete_soft_deletes_generus_and_hides_it_from_the_list(): void
+    {
+        [$user, , , $group] = $this->createGenerusImportContext();
+        $generus = $this->createPlacedGenerus($group, 'PPG-DEL-001', 'Generus Dihapus');
+
+        $this->actingAs($user)
+            ->delete("/generus/{$generus->id}")
+            ->assertRedirect('/generus');
+
+        $this->assertSoftDeleted($generus);
+        $this->actingAs($user)->get('/generus')->assertDontSee('PPG-DEL-001');
+    }
+
+    public function test_new_registration_number_skips_numbers_of_deleted_generus(): void
+    {
+        [$user, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        $deleted = $this->createPlacedGenerus($group, now()->format('ym').'0001', 'Generus Dihapus');
+        $deleted->delete();
+
+        $this->actingAs($user)
+            ->post('/generus', $this->generusPayload($region, $village, $group, $level, $year))
+            ->assertRedirect('/generus');
+
+        $this->assertDatabaseHas('generus', [
+            'full_name' => 'Generus Scope',
+            'registration_number' => now()->format('ym').'0002',
+        ]);
+    }
+
+    public function test_import_rejects_registration_number_of_deleted_generus(): void
+    {
+        [$user, , , $group] = $this->createGenerusImportContext();
+        $this->createPlacedGenerus($group, 'PPG-DEL-002', 'Generus Dihapus')->delete();
+
+        $this->actingAs($user)
+            ->from('/generus')
+            ->post('/generus/import', [
+                'file' => $this->xlsxWithRows([
+                    ['registration_number' => 'PPG-DEL-002', 'full_name' => 'Generus Dihidupkan', 'status' => 'active'],
+                ]),
+            ])
+            ->assertSessionHasErrors(['row_2' => 'Baris 2: Generus dengan nomor registrasi ini sudah dihapus.']);
+    }
+
     private function createScopedUser(string $scopeType, int $scopeId): User
     {
         $role = Role::create([
