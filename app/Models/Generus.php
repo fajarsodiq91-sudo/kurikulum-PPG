@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Generus extends Model
 {
+    public const MANAGE_PERMISSION = 'manage-generus';
+
     protected $table = 'generus';
 
     protected $fillable = [
@@ -41,6 +45,34 @@ class Generus extends Model
             'birth_order' => 'integer',
             'sibling_count' => 'integer',
         ];
+    }
+
+    /**
+     * Limit to generus whose active placement falls inside the user's role scopes.
+     */
+    #[Scope]
+    protected function visibleTo(Builder $query, User $user): void
+    {
+        if ($user->hasGlobalAccess(self::MANAGE_PERMISSION)) {
+            return;
+        }
+
+        $placementIds = $user->scopedPlacementIds(self::MANAGE_PERMISSION);
+
+        if ($placementIds === []) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        $query->whereHas('assignments', function (Builder $assignments) use ($placementIds): void {
+            $assignments->where('status', 'active')
+                ->where(function (Builder $placement) use ($placementIds): void {
+                    foreach ($placementIds as $column => $ids) {
+                        $placement->orWhereIn($column, $ids);
+                    }
+                });
+        });
     }
 
     public function assignments(): HasMany

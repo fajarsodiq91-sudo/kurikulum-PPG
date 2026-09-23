@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Models\Generus;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -10,9 +11,15 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 
 class GenerusExport implements FromQuery, WithHeadings, WithMapping
 {
+    /**
+     * @param  User|null  $user  Limits rows to this user's scope; null exports everything.
+     */
+    public function __construct(private ?User $user = null) {}
+
     public function query(): Builder
     {
         return Generus::query()
+            ->when($this->user, fn (Builder $query, User $user) => $query->visibleTo($user))
             ->with([
                 'assignments' => fn ($query) => $query
                     ->where('status', 'active')

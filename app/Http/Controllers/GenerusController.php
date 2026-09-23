@@ -10,21 +10,24 @@ use App\Models\GenerusAssignment;
 use App\Models\Group;
 use App\Models\Level;
 use App\Models\Region;
+use App\Models\User;
 use App\Models\Village;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class GenerusController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
         return view('generus.index', [
-            'generus' => Generus::with('assignments')->latest()->get(),
+            'generus' => Generus::visibleTo($request->user())->with('assignments')->latest()->get(),
         ]);
     }
 
@@ -86,6 +89,8 @@ class GenerusController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
+        $this->ensurePlacementIsWithinUserScope($request->user(), $validated);
+
         DB::transaction(function () use ($validated): void {
             $registrationNumber = $this->generateRegistrationNumber();
             $recordNumber = $this->generateRecordNumber();
@@ -132,14 +137,27 @@ class GenerusController extends Controller
         return redirect()->route('generus.index')->with('success', 'Generus berhasil ditambahkan.');
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
+        $user = $request->user();
+        $isGlobal = $user->hasGlobalAccess(Generus::MANAGE_PERMISSION);
+
+        $groups = Group::where('is_active', true)
+            ->when(! $isGlobal, fn (Builder $query) => $this->limitGroupsToScope($query, $user))
+            ->get();
+        $villages = Village::where('is_active', true)
+            ->when(! $isGlobal, fn (Builder $query) => $query->whereIn('id', $groups->pluck('village_id')))
+            ->get();
+        $regions = Region::where('is_active', true)
+            ->when(! $isGlobal, fn (Builder $query) => $query->whereIn('id', $villages->pluck('region_id')))
+            ->get();
+
         return view('generus.create', [
             'generatedRegistrationNumber' => $this->generateRegistrationNumber(),
             'generatedRecordNumber' => $this->generateRecordNumber(),
-            'regions' => Region::where('is_active', true)->get(),
-            'villages' => Village::where('is_active', true)->get(),
-            'groups' => Group::where('is_active', true)->get(),
+            'regions' => $regions,
+            'villages' => $villages,
+            'groups' => $groups,
             'levels' => Level::where('is_active', true)->orderBy('sort_order')->get(),
             'academicYears' => AcademicYear::where('is_active', true)->get(),
         ]);
@@ -151,14 +169,81 @@ class GenerusController extends Controller
             'file' => ['required', 'file', 'mimes:xlsx', 'max:10240'],
         ]);
 
-        Excel::import(new GenerusImport, $validated['file']);
+        DB::transaction(function () use ($request, $validated): void {
+            $import = new GenerusImport($request->user());
+
+            Excel::import($import, $validated['file']);
+
+            if ($import->errors() !== []) {
+                throw ValidationException::withMessages($import->errors());
+            }
+        });
 
         return redirect()->route('generus.index')->with('success', 'Data generus berhasil diimpor dari XLSX.');
     }
 
-    public function export(): BinaryFileResponse
+    public function export(Request $request): BinaryFileResponse
     {
-        return Excel::download(new GenerusExport, 'generus.xlsx');
+        return Excel::download(new GenerusExport($request->user()), 'generus.xlsx');
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     *
+     * @throws ValidationException
+     */
+    private function ensurePlacementIsWithinUserScope(User $user, array $validated): void
+    {
+        if ($user->hasGlobalAccess(Generus::MANAGE_PERMISSION)) {
+            return;
+        }
+
+        if (($validated['transfer_destination'] ?? null) === 'external') {
+            throw ValidationException::withMessages([
+                'transfer_destination' => 'Hanya admin dengan akses global yang dapat mencatat pindah sambung ke luar daerah.',
+            ]);
+        }
+
+        $isCovered = $user->coversPlacement(
+            Generus::MANAGE_PERMISSION,
+            (int) $validated['region_id'],
+            (int) $validated['village_id'],
+            (int) $validated['group_id'],
+        );
+
+        if (! $isCovered) {
+            throw ValidationException::withMessages([
+                'group_id' => 'Kelompok yang dipilih berada di luar wilayah akses Anda.',
+            ]);
+        }
+    }
+
+    /**
+     * @param  Builder<Group>  $query
+     */
+    private function limitGroupsToScope(Builder $query, User $user): void
+    {
+        $placementIds = $user->scopedPlacementIds(Generus::MANAGE_PERMISSION);
+
+        if ($placementIds === []) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        $query->where(function (Builder $scoped) use ($placementIds): void {
+            if (isset($placementIds['group_id'])) {
+                $scoped->orWhereIn('id', $placementIds['group_id']);
+            }
+
+            if (isset($placementIds['village_id'])) {
+                $scoped->orWhereIn('village_id', $placementIds['village_id']);
+            }
+
+            if (isset($placementIds['region_id'])) {
+                $scoped->orWhereHas('village', fn (Builder $village) => $village->whereIn('region_id', $placementIds['region_id']));
+            }
+        });
     }
 
     private function generateRegistrationNumber(): string

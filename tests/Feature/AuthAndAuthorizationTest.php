@@ -64,6 +64,30 @@ class AuthAndAuthorizationTest extends TestCase
         $this->get('/dashboard')->assertOk();
     }
 
+    public function test_login_is_throttled_after_five_failed_attempts(): void
+    {
+        User::create([
+            'name' => 'Admin PPG',
+            'email' => 'admin@ppg.test',
+            'password' => Hash::make('password123'),
+            'status' => 'active',
+        ]);
+
+        for ($attempt = 1; $attempt <= 5; $attempt++) {
+            $this->post('/login', [
+                'email' => 'admin@ppg.test',
+                'password' => 'salah',
+            ])->assertSessionHasErrors('email');
+        }
+
+        $this->post('/login', [
+            'email' => 'admin@ppg.test',
+            'password' => 'password123',
+        ])->assertTooManyRequests();
+
+        $this->assertGuest();
+    }
+
     public function test_user_without_permission_cannot_access_dashboard(): void
     {
         $role = Role::create([
