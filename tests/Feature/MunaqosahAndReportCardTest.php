@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\AcademicYear;
 use App\Models\Generus;
 use App\Models\Permission;
+use App\Models\ReportCard;
 use App\Models\Role;
 use App\Models\Semester;
 use App\Models\User;
@@ -108,6 +109,79 @@ class MunaqosahAndReportCardTest extends TestCase
             'generus_id' => $generus->id,
             'predicate' => 'A',
             'remarks' => 'Sangat baik',
+        ]);
+    }
+
+    public function test_second_report_card_for_same_generus_and_semester_is_rejected(): void
+    {
+        $user = $this->createAdminWithPermission('manage-report-cards');
+        $academicYear = AcademicYear::create([
+            'name' => '2025/2026',
+            'code' => '2025-2026',
+            'start_year' => 2025,
+            'end_year' => 2026,
+            'is_active' => true,
+        ]);
+        $semester = Semester::create([
+            'academic_year_id' => $academicYear->id,
+            'name' => 'Semester Ganjil',
+            'code' => 'G',
+            'sort_order' => 1,
+            'is_active' => true,
+        ]);
+        $generus = $this->createGenerus();
+        ReportCard::create([
+            'generus_id' => $generus->id,
+            'academic_year_id' => $academicYear->id,
+            'semester_id' => $semester->id,
+        ]);
+
+        $this->actingAs($user)
+            ->from('/report-cards')
+            ->post('/report-cards', [
+                'generus_id' => $generus->id,
+                'academic_year_id' => $academicYear->id,
+                'semester_id' => $semester->id,
+            ])
+            ->assertRedirect('/report-cards')
+            ->assertSessionHasErrors(['generus_id' => 'Generus ini sudah memiliki rapor untuk tahun ajaran dan semester tersebut.']);
+
+        $this->assertDatabaseCount('report_cards', 1);
+    }
+
+    private function createAdminWithPermission(string $permissionSlug): User
+    {
+        $role = Role::create([
+            'name' => 'Super Admin',
+            'slug' => 'super-admin',
+            'is_active' => true,
+        ]);
+
+        $role->permissions()->attach(Permission::create([
+            'name' => $permissionSlug,
+            'slug' => $permissionSlug,
+            'module' => $permissionSlug,
+            'is_active' => true,
+        ])->id);
+
+        $user = User::create([
+            'name' => 'Admin PPG',
+            'email' => 'admin@ppg.test',
+            'password' => Hash::make('password123'),
+            'status' => 'active',
+        ]);
+
+        $user->assignRole($role->id, 'global', null);
+
+        return $user;
+    }
+
+    private function createGenerus(): Generus
+    {
+        return Generus::create([
+            'registration_number' => 'PPG-DUP-001',
+            'full_name' => 'Rina Maulida',
+            'status' => 'active',
         ]);
     }
 }

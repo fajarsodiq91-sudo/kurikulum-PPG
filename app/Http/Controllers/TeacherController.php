@@ -12,7 +12,7 @@ class TeacherController extends Controller
     public function index(): View
     {
         return view('teachers.index', [
-            'teachers' => Teacher::latest()->get(),
+            'teachers' => Teacher::latest()->paginate(25),
         ]);
     }
 

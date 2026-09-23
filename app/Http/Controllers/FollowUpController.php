@@ -14,7 +14,7 @@ class FollowUpController extends Controller
     public function index(): View
     {
         return view('follow-ups.index', [
-            'followUps' => FollowUp::with(['generus', 'teacher'])->latest()->get(),
+            'followUps' => FollowUp::with(['generus', 'teacher'])->latest()->paginate(25),
             'generus' => Generus::all(),
             'teachers' => Teacher::where('status', 'active')->get(),
         ]);

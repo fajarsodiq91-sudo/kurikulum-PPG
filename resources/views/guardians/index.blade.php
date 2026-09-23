@@ -65,7 +65,7 @@
 
         <section class="min-w-0 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 class="text-lg font-bold text-slate-950">Daftar Orang Tua / Wali</h2>
-            <p class="mt-1 text-sm text-slate-500">{{ $guardians->count() }} wali terdaftar.</p>
+            <p class="mt-1 text-sm text-slate-500">{{ $guardians->total() }} wali terdaftar.</p>
 
             <div class="mt-5 overflow-x-auto">
                 <table class="min-w-full text-left text-sm">
@@ -89,6 +89,7 @@
                     </tbody>
                 </table>
             </div>
+            <div class="mt-4">{{ $guardians->links() }}</div>
         </section>
     </div>
 @endsection

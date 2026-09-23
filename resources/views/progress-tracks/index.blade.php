@@ -103,6 +103,7 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="mt-4">{{ $progressTracks->links() }}</div>
             </div>
         </div>
     </div>

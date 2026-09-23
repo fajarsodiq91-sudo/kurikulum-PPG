@@ -106,6 +106,7 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="mt-4">{{ $assignments->links() }}</div>
             </div>
         </div>
     </div>

@@ -64,7 +64,7 @@
             <div class="flex items-center justify-between gap-4">
                 <div>
                     <h2 class="text-lg font-bold text-slate-950">Daftar Unit</h2>
-                    <p class="mt-1 text-sm text-slate-500">{{ $organizationUnits->count() }} unit terdaftar.</p>
+                    <p class="mt-1 text-sm text-slate-500">{{ $organizationUnits->total() }} unit terdaftar.</p>
                 </div>
             </div>
                 <div class="overflow-x-auto">
@@ -98,6 +98,7 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="mt-4">{{ $organizationUnits->links() }}</div>
         </section>
     </div>
 @endsection

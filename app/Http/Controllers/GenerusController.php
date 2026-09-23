@@ -13,6 +13,7 @@ use App\Models\Region;
 use App\Models\User;
 use App\Models\Village;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -21,13 +22,14 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Throwable;
 
 class GenerusController extends Controller
 {
     public function index(Request $request): View
     {
         return view('generus.index', [
-            'generus' => Generus::visibleTo($request->user())->with('assignments')->latest()->get(),
+            'generus' => Generus::visibleTo($request->user())->with('assignments')->latest()->paginate(25),
         ]);
     }
 
@@ -91,7 +93,7 @@ class GenerusController extends Controller
 
         $this->ensurePlacementIsWithinUserScope($request->user(), $validated);
 
-        DB::transaction(function () use ($validated): void {
+        retry(3, fn () => DB::transaction(function () use ($validated): void {
             $registrationNumber = $this->generateRegistrationNumber();
             $recordNumber = $this->generateRecordNumber();
 
@@ -132,7 +134,7 @@ class GenerusController extends Controller
                     ? 'Pindah sambung ke luar daerah.'
                     : ($validated['notes'] ?? null),
             ]);
-        });
+        }), when: fn (Throwable $exception): bool => $exception instanceof UniqueConstraintViolationException);
 
         return redirect()->route('generus.index')->with('success', 'Generus berhasil ditambahkan.');
     }

@@ -13,7 +13,7 @@ class RegionController extends Controller
     public function index(): View
     {
         return view('master-data.regions.index', [
-            'regions' => Region::latest()->get(),
+            'regions' => Region::latest()->paginate(25),
         ]);
     }
 

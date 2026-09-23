@@ -15,7 +15,7 @@ class MilestoneController extends Controller
     public function index(): View
     {
         return view('milestones.index', [
-            'milestones' => Milestone::with(['generus', 'academicYear', 'semester'])->latest()->get(),
+            'milestones' => Milestone::with(['generus', 'academicYear', 'semester'])->latest()->paginate(25),
             'generus' => Generus::all(),
             'academicYears' => AcademicYear::where('is_active', true)->get(),
             'semesters' => Semester::where('is_active', true)->get(),

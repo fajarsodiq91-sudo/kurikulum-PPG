@@ -13,7 +13,7 @@ class ActivityScheduleController extends Controller
     public function index(): View
     {
         return view('activity-schedules.index', [
-            'activitySchedules' => ActivitySchedule::with('organizationUnit')->latest()->get(),
+            'activitySchedules' => ActivitySchedule::with('organizationUnit')->latest()->paginate(25),
             'organizationUnits' => OrganizationUnit::where('status', 'active')->get(),
         ]);
     }

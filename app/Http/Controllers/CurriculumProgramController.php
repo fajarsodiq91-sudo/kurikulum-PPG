@@ -12,7 +12,7 @@ class CurriculumProgramController extends Controller
     public function index(): View
     {
         return view('curriculum-programs.index', [
-            'programs' => CurriculumProgram::latest()->get(),
+            'programs' => CurriculumProgram::latest()->paginate(25),
         ]);
     }
 

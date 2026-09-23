@@ -15,7 +15,7 @@ class MunaqosahController extends Controller
     public function index(): View
     {
         return view('munaqosahs.index', [
-            'munaqosahs' => Munaqosah::with(['generus', 'academicYear', 'semester'])->latest()->get(),
+            'munaqosahs' => Munaqosah::with(['generus', 'academicYear', 'semester'])->latest()->paginate(25),
             'generus' => Generus::all(),
             'academicYears' => AcademicYear::where('is_active', true)->get(),
             'semesters' => Semester::where('is_active', true)->get(),

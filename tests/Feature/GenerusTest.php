@@ -13,6 +13,8 @@ use App\Models\Region;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Village;
+use Exception;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
@@ -455,6 +457,49 @@ class GenerusTest extends TestCase
             ->assertSessionHasErrors(['row_2' => 'Baris 2: Penempatan berada di luar wilayah akses Anda.']);
 
         $this->assertDatabaseMissing('generus', ['registration_number' => 'PPG-SCOPE-003']);
+    }
+
+    public function test_generus_list_is_paginated_by_25(): void
+    {
+        [$user, , , $group] = $this->createGenerusImportContext();
+
+        for ($number = 1; $number <= 26; $number++) {
+            $generus = $this->createPlacedGenerus($group, sprintf('PPG-PAGE-%03d', $number), sprintf('Generus Halaman %03d', $number));
+            $generus->forceFill(['created_at' => now()->subMinutes(30 - $number)])->save();
+        }
+
+        $this->actingAs($user)
+            ->get('/generus')
+            ->assertOk()
+            ->assertSee('Generus Halaman 026')
+            ->assertDontSee('Generus Halaman 001');
+
+        $this->actingAs($user)
+            ->get('/generus?page=2')
+            ->assertOk()
+            ->assertSee('Generus Halaman 001')
+            ->assertDontSee('Generus Halaman 026');
+    }
+
+    public function test_store_retries_when_registration_number_collides(): void
+    {
+        [$user, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        $attempts = 0;
+
+        Generus::creating(function () use (&$attempts): void {
+            $attempts++;
+
+            if ($attempts === 1) {
+                throw new UniqueConstraintViolationException('sqlite', 'insert into "generus"', [], new Exception('UNIQUE constraint failed: generus.registration_number'));
+            }
+        });
+
+        $this->actingAs($user)
+            ->post('/generus', $this->generusPayload($region, $village, $group, $level, $year))
+            ->assertRedirect('/generus');
+
+        $this->assertSame(2, $attempts);
+        $this->assertDatabaseHas('generus', ['full_name' => 'Generus Scope']);
     }
 
     private function createScopedUser(string $scopeType, int $scopeId): User

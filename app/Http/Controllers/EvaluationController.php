@@ -16,7 +16,7 @@ class EvaluationController extends Controller
     public function index(): View
     {
         return view('evaluations.index', [
-            'evaluations' => Evaluation::with(['teacher', 'material', 'semester', 'academicYear'])->latest()->get(),
+            'evaluations' => Evaluation::with(['teacher', 'material', 'semester', 'academicYear'])->latest()->paginate(25),
             'teachers' => Teacher::where('status', 'active')->get(),
             'materials' => LearningMaterial::where('is_active', true)->get(),
             'semesters' => Semester::where('is_active', true)->get(),

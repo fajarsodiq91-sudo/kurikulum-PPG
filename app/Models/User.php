@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -56,9 +57,11 @@ class User extends Authenticatable
     ];
 
     /**
-     * @var array<string, Collection<int, array{type: string, id: int|null}>>
+     * Active roles with their active permissions, loaded once per user instance (i.e. per request).
+     *
+     * @var EloquentCollection<int, Role>|null
      */
-    private array $permissionScopeCache = [];
+    private ?EloquentCollection $activeRolesWithPermissions = null;
 
     public function hasPermission(string $permissionSlug): bool
     {
@@ -66,7 +69,7 @@ class User extends Authenticatable
             return false;
         }
 
-        return $this->rolesGrantingPermission($permissionSlug)->exists();
+        return $this->rolesGrantingPermission($permissionSlug)->isNotEmpty();
     }
 
     /**
@@ -80,8 +83,7 @@ class User extends Authenticatable
             return collect();
         }
 
-        return $this->permissionScopeCache[$permissionSlug] ??= $this->rolesGrantingPermission($permissionSlug)
-            ->get()
+        return $this->rolesGrantingPermission($permissionSlug)
             ->map(fn (Role $role): array => [
                 'type' => $role->pivot->scope_type,
                 'id' => $role->pivot->scope_id,
@@ -120,17 +122,22 @@ class User extends Authenticatable
             ->contains(fn (array $ids, string $column): bool => $placement[$column] !== null && in_array($placement[$column], $ids, true));
     }
 
-    private function rolesGrantingPermission(string $permissionSlug): BelongsToMany
+    /**
+     * @return EloquentCollection<int, Role>
+     */
+    private function rolesGrantingPermission(string $permissionSlug): EloquentCollection
     {
-        return $this->roles()
+        $this->activeRolesWithPermissions ??= $this->roles()
             ->whereNull('roles.deleted_at')
             ->where('roles.is_active', true)
             ->where('user_roles.is_active', true)
-            ->whereHas('permissions', function ($query) use ($permissionSlug) {
-                $query->where('permissions.slug', $permissionSlug)
-                    ->whereNull('permissions.deleted_at')
-                    ->where('permissions.is_active', true);
-            });
+            ->with(['permissions' => fn (BelongsToMany $query) => $query
+                ->whereNull('permissions.deleted_at')
+                ->where('permissions.is_active', true)])
+            ->get();
+
+        return $this->activeRolesWithPermissions
+            ->filter(fn (Role $role): bool => $role->permissions->contains('slug', $permissionSlug));
     }
 
     protected function casts(): array

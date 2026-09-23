@@ -15,7 +15,7 @@ class ProgressTrackController extends Controller
     public function index(): View
     {
         return view('progress-tracks.index', [
-            'progressTracks' => ProgressTrack::with(['generus', 'academicYear', 'semester'])->latest()->get(),
+            'progressTracks' => ProgressTrack::with(['generus', 'academicYear', 'semester'])->latest()->paginate(25),
             'generus' => Generus::all(),
             'academicYears' => AcademicYear::where('is_active', true)->get(),
             'semesters' => Semester::where('is_active', true)->get(),

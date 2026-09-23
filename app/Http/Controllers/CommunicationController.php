@@ -13,7 +13,7 @@ class CommunicationController extends Controller
     public function index(): View
     {
         return view('communications.index', [
-            'communications' => Communication::with('training')->latest()->get(),
+            'communications' => Communication::with('training')->latest()->paginate(25),
             'trainings' => Training::latest()->get(),
         ]);
     }

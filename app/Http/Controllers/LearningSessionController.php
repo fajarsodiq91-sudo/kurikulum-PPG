@@ -14,7 +14,7 @@ class LearningSessionController extends Controller
     public function index(): View
     {
         return view('learning-sessions.index', [
-            'sessions' => LearningSession::with(['teacher', 'material'])->latest()->get(),
+            'sessions' => LearningSession::with(['teacher', 'material'])->latest()->paginate(25),
             'teachers' => Teacher::where('status', 'active')->get(),
             'materials' => LearningMaterial::where('is_active', true)->get(),
         ]);

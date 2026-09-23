@@ -14,7 +14,7 @@ class AssignmentController extends Controller
     public function index(): View
     {
         return view('assignments.index', [
-            'assignments' => Assignment::with(['organizationUnit', 'teacher'])->latest()->get(),
+            'assignments' => Assignment::with(['organizationUnit', 'teacher'])->latest()->paginate(25),
             'organizationUnits' => OrganizationUnit::where('status', 'active')->get(),
             'teachers' => Teacher::where('status', 'active')->get(),
         ]);

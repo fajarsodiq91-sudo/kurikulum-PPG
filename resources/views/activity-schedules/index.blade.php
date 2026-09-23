@@ -102,6 +102,7 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="mt-4">{{ $activitySchedules->links() }}</div>
             </div>
         </div>
     </div>

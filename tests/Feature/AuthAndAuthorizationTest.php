@@ -7,7 +7,9 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Teacher;
 use App\Models\User;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
@@ -86,6 +88,43 @@ class AuthAndAuthorizationTest extends TestCase
         ])->assertTooManyRequests();
 
         $this->assertGuest();
+    }
+
+    public function test_dashboard_does_not_query_roles_per_sidebar_item(): void
+    {
+        $role = Role::create([
+            'name' => 'Super Admin',
+            'slug' => 'super-admin',
+            'is_active' => true,
+        ]);
+
+        $role->permissions()->attach(Permission::create([
+            'name' => 'View Dashboard',
+            'slug' => 'view-dashboard',
+            'module' => 'dashboard',
+            'is_active' => true,
+        ])->id);
+
+        $user = User::create([
+            'name' => 'Super Admin',
+            'email' => 'admin@ppg.test',
+            'password' => Hash::make('password123'),
+            'status' => 'active',
+        ]);
+
+        $user->assignRole($role->id, 'global', null);
+
+        $roleQueryCount = 0;
+        DB::listen(function (QueryExecuted $query) use (&$roleQueryCount): void {
+            if (str_contains($query->sql, 'user_roles')) {
+                $roleQueryCount++;
+            }
+        });
+
+        $this->actingAs(User::findOrFail($user->id))->get('/dashboard')->assertOk();
+
+        // One query for the permission checks and one for the role name in the topbar.
+        $this->assertSame(2, $roleQueryCount);
     }
 
     public function test_user_without_permission_cannot_access_dashboard(): void
@@ -221,14 +260,14 @@ class AuthAndAuthorizationTest extends TestCase
 
         $user->assignRole($role->id, 'global', null);
 
-        $this->assertTrue($user->hasPermission('view-dashboard-soft-delete'));
+        $this->assertTrue($user->fresh()->hasPermission('view-dashboard-soft-delete'));
 
         $role->delete();
-        $this->assertFalse($user->hasPermission('view-dashboard-soft-delete'));
+        $this->assertFalse($user->fresh()->hasPermission('view-dashboard-soft-delete'));
 
         $role->restore();
         $permission->delete();
-        $this->assertFalse($user->hasPermission('view-dashboard-soft-delete'));
+        $this->assertFalse($user->fresh()->hasPermission('view-dashboard-soft-delete'));
     }
 
     public function test_inactive_user_does_not_receive_permission(): void

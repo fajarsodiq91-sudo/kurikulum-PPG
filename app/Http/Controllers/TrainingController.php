@@ -13,7 +13,7 @@ class TrainingController extends Controller
     public function index(): View
     {
         return view('trainings.index', [
-            'trainings' => Training::with('academicYear')->latest()->get(),
+            'trainings' => Training::with('academicYear')->latest()->paginate(25),
             'academicYears' => AcademicYear::where('is_active', true)->get(),
         ]);
     }

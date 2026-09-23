@@ -85,6 +85,7 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="mt-4">{{ $communications->links() }}</div>
             </div>
         </div>
     </div>

@@ -82,6 +82,7 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="mt-4">{{ $programs->links() }}</div>
             </div>
         </div>
     </div>

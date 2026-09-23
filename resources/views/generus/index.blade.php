@@ -49,7 +49,7 @@
         <div class="flex items-center justify-between gap-4">
             <div>
                 <h2 class="text-lg font-bold text-slate-950">Daftar Generus</h2>
-                <p class="mt-1 text-sm text-slate-500">{{ $generus->count() }} data terdaftar.</p>
+                <p class="mt-1 text-sm text-slate-500">{{ $generus->total() }} data terdaftar.</p>
             </div>
         </div>
         <div class="mt-5 overflow-x-auto">
@@ -87,5 +87,6 @@
                 </tbody>
             </table>
         </div>
+        <div class="mt-4">{{ $generus->links() }}</div>
     </section>
 @endsection

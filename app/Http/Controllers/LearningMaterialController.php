@@ -16,7 +16,7 @@ class LearningMaterialController extends Controller
     public function index(): View
     {
         return view('learning-materials.index', [
-            'materials' => LearningMaterial::with(['curriculumProgram', 'level', 'semester', 'academicYear'])->latest()->get(),
+            'materials' => LearningMaterial::with(['curriculumProgram', 'level', 'semester', 'academicYear'])->latest()->paginate(25),
             'programs' => CurriculumProgram::where('is_active', true)->get(),
             'levels' => Level::where('is_active', true)->orderBy('sort_order')->get(),
             'semesters' => Semester::where('is_active', true)->get(),

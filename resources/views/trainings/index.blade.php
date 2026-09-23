@@ -93,6 +93,7 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="mt-4">{{ $trainings->links() }}</div>
             </div>
         </div>
     </div>

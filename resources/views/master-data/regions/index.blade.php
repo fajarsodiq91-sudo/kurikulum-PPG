@@ -53,7 +53,7 @@
             <div class="flex items-center justify-between gap-4">
                 <div>
                     <h2 class="text-lg font-bold text-slate-950">Daftar Daerah</h2>
-                    <p class="mt-1 text-sm text-slate-500">{{ $regions->count() }} daerah terdaftar.</p>
+                    <p class="mt-1 text-sm text-slate-500">{{ $regions->total() }} daerah terdaftar.</p>
                 </div>
             </div>
 
@@ -90,6 +90,7 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="mt-4">{{ $regions->links() }}</div>
         </section>
     </div>
 @endsection

@@ -13,7 +13,7 @@ class ActivityExecutionController extends Controller
     public function index(): View
     {
         return view('activity-executions.index', [
-            'activityExecutions' => ActivityExecution::with('activitySchedule')->latest()->get(),
+            'activityExecutions' => ActivityExecution::with('activitySchedule')->latest()->paginate(25),
             'activitySchedules' => ActivitySchedule::latest()->get(),
         ]);
     }

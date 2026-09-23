@@ -106,6 +106,7 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="mt-4">{{ $followUps->links() }}</div>
             </div>
         </div>
     </div>

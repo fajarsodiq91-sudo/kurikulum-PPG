@@ -110,6 +110,7 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="mt-4">{{ $munaqosahs->links() }}</div>
             </div>
         </div>
     </div>

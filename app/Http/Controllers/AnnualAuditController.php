@@ -15,7 +15,7 @@ class AnnualAuditController extends Controller
     public function index(): View
     {
         return view('annual-audits.index', [
-            'annualAudits' => AnnualAudit::with(['generus', 'academicYear', 'semester'])->latest()->get(),
+            'annualAudits' => AnnualAudit::with(['generus', 'academicYear', 'semester'])->latest()->paginate(25),
             'generus' => Generus::all(),
             'academicYears' => AcademicYear::where('is_active', true)->get(),
             'semesters' => Semester::where('is_active', true)->get(),

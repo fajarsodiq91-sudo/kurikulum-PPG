@@ -12,7 +12,7 @@ class OrganizationUnitController extends Controller
     public function index(): View
     {
         return view('organization-units.index', [
-            'organizationUnits' => OrganizationUnit::latest()->get(),
+            'organizationUnits' => OrganizationUnit::latest()->paginate(25),
         ]);
     }
 
