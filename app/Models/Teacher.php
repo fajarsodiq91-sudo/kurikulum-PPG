@@ -4,14 +4,19 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class Teacher extends Model
 {
+    public const PHOTO_DIRECTORY = 'teacher-photos';
+
     protected $fillable = [
+        'registration_number',
         'name',
         'gender',
         'phone',
         'email',
+        'photo',
         'status',
         'notes',
     ];
@@ -45,5 +50,17 @@ class Teacher extends Model
             || $this->evaluations()->exists()
             || $this->followUps()->exists()
             || $this->assignments()->exists();
+    }
+
+    /**
+     * Photos live on the private disk, so pages embed them inline instead of linking to a public URL.
+     */
+    public function photoDataUri(): ?string
+    {
+        if (blank($this->photo) || ! Storage::exists($this->photo)) {
+            return null;
+        }
+
+        return 'data:'.Storage::mimeType($this->photo).';base64,'.base64_encode(Storage::get($this->photo));
     }
 }

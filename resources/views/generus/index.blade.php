@@ -82,6 +82,7 @@
                             <td class="py-3 text-right whitespace-nowrap">
                                 <a href="{{ route('generus.show', $item) }}" class="text-xs font-semibold text-slate-600 hover:text-slate-900">Detail</a>
                                 <a href="{{ route('generus.edit', $item) }}" class="ml-3 text-xs font-semibold text-amber-600 hover:text-amber-700">Edit</a>
+                                <a href="{{ route('generus.id-card', $item) }}" class="ml-3 text-xs font-semibold text-slate-600 hover:text-slate-900">ID Card</a>
                             </td>
                         </tr>
                     @empty

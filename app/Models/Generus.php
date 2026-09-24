@@ -7,12 +7,15 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class Generus extends Model
 {
     use SoftDeletes;
 
     public const MANAGE_PERMISSION = 'manage-generus';
+
+    public const PHOTO_DIRECTORY = 'generus-photos';
 
     protected $table = 'generus';
 
@@ -81,5 +84,17 @@ class Generus extends Model
     public function assignments(): HasMany
     {
         return $this->hasMany(GenerusAssignment::class);
+    }
+
+    /**
+     * Photos live on the private disk, so pages embed them inline instead of linking to a public URL.
+     */
+    public function photoDataUri(): ?string
+    {
+        if (blank($this->photo) || ! Storage::exists($this->photo)) {
+            return null;
+        }
+
+        return 'data:'.Storage::mimeType($this->photo).';base64,'.base64_encode(Storage::get($this->photo));
     }
 }

@@ -12,11 +12,14 @@ use App\Models\Level;
 use App\Models\Region;
 use App\Models\User;
 use App\Models\Village;
+use chillerlan\QRCode\QRCode;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -77,7 +80,9 @@ class GenerusController extends Controller
 
         $this->ensurePlacementIsWithinUserScope($request->user(), $validated);
 
-        retry(3, fn () => DB::transaction(function () use ($validated): void {
+        $photoPath = $this->storePhoto($validated['photo'] ?? null);
+
+        retry(3, fn () => DB::transaction(function () use ($validated, $photoPath): void {
             $registrationNumber = $this->generateRegistrationNumber();
             $recordNumber = $this->generateRecordNumber();
 
@@ -100,6 +105,7 @@ class GenerusController extends Controller
                 'school_grade' => $validated['school_grade'] ?? null,
                 'learning_class' => $validated['learning_class'] ?? null,
                 'educational_level' => $validated['educational_level'] ?? null,
+                'photo' => $photoPath,
                 'status' => $validated['status'],
                 'transfer_destination' => $validated['transfer_destination'] ?? null,
                 'notes' => $validated['notes'] ?? null,
@@ -148,6 +154,20 @@ class GenerusController extends Controller
         return view('generus.show', ['generus' => $generus]);
     }
 
+    public function idCard(Request $request, Generus $generus): View
+    {
+        $this->ensureGenerusIsVisible($request->user(), $generus);
+
+        return view('id-cards.show', [
+            'cardTitle' => 'Kartu Identitas Generus',
+            'name' => $generus->full_name,
+            'registrationNumber' => $generus->registration_number,
+            'photoDataUri' => $generus->photoDataUri(),
+            'qrCode' => (new QRCode)->render($generus->registration_number),
+            'backUrl' => route('generus.show', $generus),
+        ]);
+    }
+
     public function edit(Request $request, Generus $generus): View
     {
         $this->ensureGenerusIsVisible($request->user(), $generus);
@@ -167,14 +187,22 @@ class GenerusController extends Controller
         $validated = $this->validateGenerus($request);
         $this->ensurePlacementIsWithinUserScope($user, $validated);
 
-        DB::transaction(function () use ($generus, $validated): void {
+        $oldPhotoPath = $generus->photo;
+        $newPhotoPath = $this->storePhoto($validated['photo'] ?? null);
+
+        DB::transaction(function () use ($generus, $validated, $newPhotoPath): void {
             $generus->update([
                 ...collect(self::EDITABLE_FIELDS)->mapWithKeys(fn (string $field): array => [$field => $validated[$field] ?? null])->all(),
                 'transfer_destination' => $validated['transfer_destination'] ?? null,
+                ...($newPhotoPath !== null ? ['photo' => $newPhotoPath] : []),
             ]);
 
             $this->syncPlacement($generus, $validated);
         });
+
+        if ($newPhotoPath !== null && $oldPhotoPath !== null) {
+            Storage::delete($oldPhotoPath);
+        }
 
         return redirect()->route('generus.show', $generus)->with('success', 'Data generus berhasil diperbarui.');
     }
@@ -297,6 +325,7 @@ class GenerusController extends Controller
             'school_grade' => ['nullable', 'string', 'max:50'],
             'learning_class' => ['nullable', 'string', 'max:100'],
             'educational_level' => ['nullable', 'string', 'max:100'],
+            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'status' => ['required', Rule::in(['active', 'pindah_sambung', 'married'])],
             'transfer_destination' => [
                 Rule::requiredIf(fn (): bool => $request->input('status') === 'pindah_sambung'),
@@ -335,6 +364,11 @@ class GenerusController extends Controller
             'assignment_status' => ['required', 'string', 'max:50'],
             'notes' => ['nullable', 'string'],
         ]);
+    }
+
+    private function storePhoto(?UploadedFile $photo): ?string
+    {
+        return $photo?->store(Generus::PHOTO_DIRECTORY);
     }
 
     /**

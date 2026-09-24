@@ -18,6 +18,7 @@ use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Excel as ExcelWriter;
@@ -664,6 +665,90 @@ class GenerusTest extends TestCase
                 ]),
             ])
             ->assertSessionHasErrors(['row_2' => 'Baris 2: Generus dengan nomor registrasi ini sudah dihapus.']);
+    }
+
+    public function test_uploaded_photo_is_stored_privately_and_shown_on_the_id_card(): void
+    {
+        Storage::fake();
+        [$user, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        $generus = $this->createPlacedGenerus($group, '26090001', 'Generus Berfoto');
+
+        $this->actingAs($user)
+            ->put("/generus/{$generus->id}", [
+                ...$this->generusPayload($region, $village, $group, $level, $year),
+                'full_name' => 'Generus Berfoto',
+                'photo' => $this->fakePhoto(),
+            ])
+            ->assertSessionHasNoErrors();
+
+        $photoPath = $generus->fresh()->photo;
+        Storage::assertExists($photoPath);
+        $this->assertStringStartsWith(Generus::PHOTO_DIRECTORY.'/', $photoPath);
+
+        $this->actingAs($user)
+            ->get("/generus/{$generus->id}/id-card")
+            ->assertOk()
+            ->assertSee('Kartu Identitas Generus')
+            ->assertSee('Generus Berfoto')
+            ->assertSee('26090001')
+            ->assertSee('src="data:image/svg+xml;base64,', false)
+            ->assertSee('src="data:image/png;base64,'.base64_encode(Storage::get($photoPath)).'"', false)
+            ->assertSee('images/logo-ppg-karawang-timur.png');
+    }
+
+    public function test_replacing_photo_deletes_the_old_file_and_keeping_it_leaves_it_untouched(): void
+    {
+        Storage::fake();
+        [$user, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        $generus = $this->createPlacedGenerus($group, 'PPG-FOTO-002', 'Generus Ganti Foto');
+        $oldPhotoPath = Storage::putFileAs(Generus::PHOTO_DIRECTORY, $this->fakePhoto(), 'lama.png');
+        $generus->update(['photo' => $oldPhotoPath]);
+        $payload = $this->generusPayload($region, $village, $group, $level, $year);
+
+        $this->actingAs($user)->put("/generus/{$generus->id}", $payload)->assertSessionHasNoErrors();
+
+        $this->assertSame($oldPhotoPath, $generus->fresh()->photo);
+
+        $this->actingAs($user)
+            ->put("/generus/{$generus->id}", [...$payload, 'photo' => $this->fakePhoto()])
+            ->assertSessionHasNoErrors();
+
+        Storage::assertMissing($oldPhotoPath);
+        Storage::assertExists($generus->fresh()->photo);
+    }
+
+    public function test_photo_must_be_an_image(): void
+    {
+        Storage::fake();
+        [$user, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        $generus = $this->createPlacedGenerus($group, 'PPG-FOTO-003', 'Generus Salah Foto');
+
+        $this->actingAs($user)
+            ->put("/generus/{$generus->id}", [
+                ...$this->generusPayload($region, $village, $group, $level, $year),
+                'photo' => UploadedFile::fake()->createWithContent('foto.pdf', '%PDF-1.4'),
+            ])
+            ->assertSessionHasErrors('photo');
+
+        $this->assertNull($generus->fresh()->photo);
+    }
+
+    public function test_scoped_user_gets_404_for_id_card_of_generus_outside_scope(): void
+    {
+        [, , $village, $group] = $this->createGenerusImportContext();
+        $outsider = $this->createPlacedGenerus($this->createGroupIn($village), 'PPG-SCOPE-003', 'Generus Luar');
+
+        $this->actingAs($this->createScopedUser('group', $group->id))
+            ->get("/generus/{$outsider->id}/id-card")
+            ->assertNotFound();
+    }
+
+    private function fakePhoto(): UploadedFile
+    {
+        return UploadedFile::fake()->createWithContent(
+            'foto.png',
+            base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='),
+        );
     }
 
     private function createScopedUser(string $scopeType, int $scopeId): User

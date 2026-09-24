@@ -10,7 +10,9 @@ use App\Models\Role;
 use App\Models\Teacher;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class TeacherAndGuardianTest extends TestCase
@@ -168,6 +170,39 @@ class TeacherAndGuardianTest extends TestCase
             ->assertRedirect('/guardians');
 
         $this->assertModelMissing($guardian);
+    }
+
+    public function test_new_teacher_gets_next_monthly_registration_number_and_stored_photo(): void
+    {
+        Storage::fake();
+        $this->travelTo(now()->setDate(2026, 9, 24));
+        Teacher::create(['registration_number' => '26090007', 'name' => 'Guru Pertama', 'status' => 'active']);
+
+        $this->actingAs($this->createAdmin())
+            ->post('/teachers', [
+                'name' => 'Guru Berfoto',
+                'status' => 'active',
+                'photo' => UploadedFile::fake()->createWithContent('foto.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==')),
+            ])
+            ->assertRedirect('/teachers')
+            ->assertSessionHasNoErrors();
+
+        $teacher = Teacher::where('name', 'Guru Berfoto')->firstOrFail();
+        $this->assertSame('26090008', $teacher->registration_number);
+        Storage::assertExists($teacher->photo);
+    }
+
+    public function test_teacher_id_card_shows_title_name_and_registration_qr_code(): void
+    {
+        $teacher = Teacher::create(['registration_number' => '26090003', 'name' => 'Ustadz Kartu', 'status' => 'active']);
+
+        $this->actingAs($this->createAdmin())
+            ->get("/teachers/{$teacher->id}/id-card")
+            ->assertOk()
+            ->assertSee('Kartu Identitas Guru')
+            ->assertSee('Ustadz Kartu')
+            ->assertSee('26090003')
+            ->assertSee('src="data:image/svg+xml;base64,', false);
     }
 
     private function createAdmin(): User

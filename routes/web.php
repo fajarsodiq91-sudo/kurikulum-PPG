@@ -116,6 +116,9 @@ Route::middleware(['auth', 'permission:manage-generus'])->group(function () {
     Route::get('/generus/{generus}', [GenerusController::class, 'show'])
         ->whereNumber('generus')
         ->name('generus.show');
+    Route::get('/generus/{generus}/id-card', [GenerusController::class, 'idCard'])
+        ->whereNumber('generus')
+        ->name('generus.id-card');
     Route::get('/generus/{generus}/edit', [GenerusController::class, 'edit'])
         ->whereNumber('generus')
         ->name('generus.edit');
@@ -135,6 +138,9 @@ Route::middleware(['auth', 'permission:manage-teachers'])->group(function () {
     Route::get('/teachers/{teacher}/edit', [TeacherController::class, 'edit'])
         ->whereNumber('teacher')
         ->name('teachers.edit');
+    Route::get('/teachers/{teacher}/id-card', [TeacherController::class, 'idCard'])
+        ->whereNumber('teacher')
+        ->name('teachers.id-card');
     Route::put('/teachers/{teacher}', [TeacherController::class, 'update'])
         ->whereNumber('teacher')
         ->name('teachers.update');
