@@ -1,5 +1,5 @@
 <div class="flex h-14 shrink-0 items-center gap-2.5 border-b border-slate-800 px-4">
-    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-400 text-sm font-black text-slate-950">PPG</div>
+    <img src="{{ asset('images/logo-ppg-karawang-timur.png') }}" alt="Logo PPG Karawang Timur" class="h-9 w-9 shrink-0 object-contain">
     <div>
         <p class="text-xs font-bold leading-tight tracking-wide text-white">PPG Management</p>
         <p class="text-[11px] leading-tight text-slate-500">Karawang Timur</p>

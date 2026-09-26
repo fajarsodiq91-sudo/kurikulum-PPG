@@ -4,11 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login | PPG</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/logo-ppg-karawang-timur.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-slate-100">
     <div class="min-h-screen flex items-center justify-center px-4">
         <div class="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
+            <div class="mb-6 flex items-center gap-3">
+                <img src="{{ asset('images/logo-ppg-karawang-timur.png') }}" alt="Logo PPG Karawang Timur" class="h-12 w-12 object-contain">
+                <div>
+                    <p class="text-sm font-bold text-slate-800">PPG Karawang Timur</p>
+                    <p class="text-xs text-slate-500">Management & Learning Monitoring System</p>
+                </div>
+            </div>
+
             <h1 class="text-2xl font-bold text-slate-800 mb-6">Masuk ke Sistem</h1>
 
             @if ($errors->any())
