@@ -19,3 +19,27 @@ toggle?.addEventListener('click', () => {
 });
 
 backdrop?.addEventListener('click', closeSidebar);
+
+const profileToggle = document.querySelector('[data-profile-toggle]');
+const profileMenu = document.querySelector('[data-profile-menu]');
+
+const closeProfileMenu = () => {
+	profileMenu?.classList.add('hidden');
+	profileToggle?.setAttribute('aria-expanded', 'false');
+};
+
+const openProfileMenu = () => {
+	profileMenu?.classList.remove('hidden');
+	profileToggle?.setAttribute('aria-expanded', 'true');
+};
+
+profileToggle?.addEventListener('click', (event) => {
+	event.stopPropagation();
+	profileMenu?.classList.contains('hidden') ? openProfileMenu() : closeProfileMenu();
+});
+
+document.addEventListener('click', (event) => {
+	if (profileMenu && !profileMenu.classList.contains('hidden') && !profileMenu.contains(event.target)) {
+		closeProfileMenu();
+	}
+});
