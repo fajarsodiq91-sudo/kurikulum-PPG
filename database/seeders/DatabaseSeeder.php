@@ -66,6 +66,15 @@ class DatabaseSeeder extends Seeder
 
         $role->permissions()->syncWithoutDetaching($permissions->pluck('id'));
 
+        $guestRole = Role::firstOrCreate(
+            ['slug' => 'guest'],
+            ['name' => 'Tamu', 'description' => 'Akses baca-saja tanpa login', 'is_active' => true],
+        );
+
+        $guestRole->permissions()->syncWithoutDetaching([
+            $permissions->firstWhere('slug', 'view-dashboard')->id,
+        ]);
+
         $admin = User::updateOrCreate(
             ['email' => 'admin@ppg.test'],
             [

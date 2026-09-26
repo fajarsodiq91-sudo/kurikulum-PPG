@@ -30,11 +30,7 @@ use App\Http\Controllers\TrainingController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return auth()->check()
-        ? redirect()->route('dashboard')
-        : redirect()->route('login');
-});
+Route::get('/', fn () => redirect()->route('dashboard'));
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -43,7 +39,8 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [LoginController::class, 'logout'])->middleware('auth')->name('logout');
 
-Route::middleware(['auth', 'permission:view-dashboard'])->group(function () {
+// Publicly reachable, read-only for anonymous visitors covered by the guest role permissions.
+Route::middleware(['permission:view-dashboard'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
 });

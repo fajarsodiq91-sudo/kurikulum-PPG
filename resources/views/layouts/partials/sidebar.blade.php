@@ -69,8 +69,8 @@
     @foreach ($navigation as $section)
         @php
             $sectionPermission = $section['permission'] ?? null;
-            $sectionAllowed = ! $sectionPermission || auth()->user()->hasPermission($sectionPermission);
-            $visibleItems = collect($section['items'] ?? [])->filter(fn ($item) => ! isset($item['permission']) || auth()->user()->hasPermission($item['permission']));
+            $sectionAllowed = ! $sectionPermission || \App\Support\Access::can($sectionPermission);
+            $visibleItems = collect($section['items'] ?? [])->filter(fn ($item) => ! isset($item['permission']) || \App\Support\Access::can($item['permission']));
             $isActive = isset($section['route'])
                 ? request()->routeIs($section['route'])
                 : $visibleItems->contains(fn ($item) => request()->routeIs($item['route']));
@@ -99,8 +99,12 @@
 </nav>
 
 <div class="border-t border-slate-800 p-4">
-    <form method="POST" action="{{ route('logout') }}">
-        @csrf
-        <button type="submit" class="w-full rounded-lg px-3 py-2 text-left text-sm text-slate-400 transition hover:bg-slate-900 hover:text-white">Keluar dari sistem</button>
-    </form>
+    @auth
+        <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button type="submit" class="w-full rounded-lg px-3 py-2 text-left text-sm text-slate-400 transition hover:bg-slate-900 hover:text-white">Keluar dari sistem</button>
+        </form>
+    @else
+        <a href="{{ route('login') }}" class="block w-full rounded-lg bg-amber-400 px-3 py-2 text-center text-sm font-semibold text-slate-950 transition hover:bg-amber-300">Masuk untuk akses penuh</a>
+    @endauth
 </div>

@@ -17,16 +17,56 @@ class AuthAndAuthorizationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_guest_is_redirected_to_login_from_application_root(): void
+    public function test_application_root_always_redirects_to_dashboard(): void
     {
-        $this->get('/')->assertRedirect('/login');
+        $this->get('/')->assertRedirect('/dashboard');
     }
 
-    public function test_guest_is_redirected_to_login_when_accessing_dashboard(): void
+    public function test_guest_is_redirected_to_login_when_no_guest_role_grants_dashboard_access(): void
     {
         $response = $this->get('/dashboard');
 
         $response->assertRedirect('/login');
+    }
+
+    public function test_guest_can_view_dashboard_read_only_when_guest_role_grants_permission(): void
+    {
+        $guestRole = Role::create([
+            'name' => 'Tamu',
+            'slug' => 'guest',
+            'is_active' => true,
+        ]);
+
+        $guestRole->permissions()->attach(Permission::create([
+            'name' => 'View Dashboard',
+            'slug' => 'view-dashboard',
+            'module' => 'dashboard',
+            'is_active' => true,
+        ])->id);
+
+        $this->get('/dashboard')
+            ->assertOk()
+            ->assertSee('Tamu')
+            ->assertDontSee('Data Generus');
+    }
+
+    public function test_guest_is_redirected_to_login_when_accessing_pages_requiring_edit_permissions(): void
+    {
+        $guestRole = Role::create([
+            'name' => 'Tamu',
+            'slug' => 'guest',
+            'is_active' => true,
+        ]);
+
+        $guestRole->permissions()->attach(Permission::create([
+            'name' => 'View Dashboard',
+            'slug' => 'view-dashboard',
+            'module' => 'dashboard',
+            'is_active' => true,
+        ])->id);
+
+        $this->get('/generus')->assertRedirect('/login');
+        $this->get('/users')->assertRedirect('/login');
     }
 
     public function test_super_admin_can_login_and_access_dashboard(): void

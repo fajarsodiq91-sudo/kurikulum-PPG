@@ -5,13 +5,20 @@
 @section('breadcrumb', 'Dashboard Utama')
 
 @section('content')
+    @guest
+        <div class="mb-6 flex flex-col justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:flex-row sm:items-center">
+            <p class="text-sm text-amber-800">Anda melihat dashboard sebagai <strong>Tamu</strong> dengan akses baca-saja. Masuk untuk mengelola data sesuai peran Anda.</p>
+            <a href="{{ route('login') }}" class="inline-flex shrink-0 items-center justify-center rounded-lg bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800">Masuk</a>
+        </div>
+    @endguest
+
     <div class="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
             <p class="text-sm font-semibold text-amber-600">Ringkasan sistem</p>
-            <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Selamat datang, {{ auth()->user()->name }}</h2>
+            <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Selamat datang, {{ auth()->user()->name ?? 'Tamu' }}</h2>
             <p class="mt-2 max-w-2xl text-sm text-slate-500">Pantau data pembinaan dan aktivitas PPG Karawang Timur dari satu tempat.</p>
         </div>
-        @if (auth()->user()->hasPermission('view-reports'))
+        @if (\App\Support\Access::can('view-reports'))
             <a href="{{ route('reports.index') }}" class="inline-flex items-center justify-center rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">Buka laporan</a>
         @endif
     </div>
@@ -46,20 +53,20 @@
                 </div>
             </div>
             <div class="mt-5 grid gap-3 sm:grid-cols-2">
-                @if (auth()->user()->hasPermission('manage-generus'))
+                @if (\App\Support\Access::can('manage-generus'))
                     <a href="{{ route('generus.index') }}" class="rounded-xl border border-slate-200 p-4 transition hover:border-amber-300 hover:bg-amber-50"><span class="text-sm font-semibold text-slate-900">Data Generus</span><span class="mt-1 block text-xs text-slate-500">Lihat, import, dan export database generus</span></a>
                     <a href="{{ route('generus.create') }}" class="rounded-xl border border-slate-200 p-4 transition hover:border-amber-300 hover:bg-amber-50"><span class="text-sm font-semibold text-slate-900">Tambah Generus</span><span class="mt-1 block text-xs text-slate-500">Daftarkan generus baru</span></a>
                 @endif
-                @if (auth()->user()->hasPermission('manage-learning-sessions'))
+                @if (\App\Support\Access::can('manage-learning-sessions'))
                     <a href="{{ route('learning-sessions.index') }}" class="rounded-xl border border-slate-200 p-4 transition hover:border-amber-300 hover:bg-amber-50"><span class="text-sm font-semibold text-slate-900">Kelola Sesi KBM</span><span class="mt-1 block text-xs text-slate-500">Lihat dan buat sesi pembelajaran</span></a>
                 @endif
-                @if (auth()->user()->hasPermission('manage-evaluations'))
+                @if (\App\Support\Access::can('manage-evaluations'))
                     <a href="{{ route('evaluations.index') }}" class="rounded-xl border border-slate-200 p-4 transition hover:border-amber-300 hover:bg-amber-50"><span class="text-sm font-semibold text-slate-900">Input Evaluasi</span><span class="mt-1 block text-xs text-slate-500">Catat evaluasi pembinaan</span></a>
                 @endif
-                @if (auth()->user()->hasPermission('view-reports'))
+                @if (\App\Support\Access::can('view-reports'))
                     <a href="{{ route('reports.index') }}" class="rounded-xl border border-slate-200 p-4 transition hover:border-amber-300 hover:bg-amber-50"><span class="text-sm font-semibold text-slate-900">Lihat Laporan</span><span class="mt-1 block text-xs text-slate-500">Buka ringkasan pelaporan</span></a>
                 @endif
-                @if (auth()->user()->hasPermission('view-master-data'))
+                @if (\App\Support\Access::can('view-master-data'))
                     <a href="{{ route('master-data.index') }}" class="rounded-xl border border-slate-200 p-4 transition hover:border-amber-300 hover:bg-amber-50"><span class="text-sm font-semibold text-slate-900">Master Data</span><span class="mt-1 block text-xs text-slate-500">Kelola daerah, desa, kelompok, dan konfigurasi dinamis</span></a>
                 @endif
             </div>

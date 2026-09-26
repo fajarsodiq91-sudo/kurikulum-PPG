@@ -9,11 +9,11 @@
 
     <div class="flex items-center gap-3">
         <div class="hidden text-right sm:block">
-            <p class="text-sm font-semibold text-slate-800">{{ auth()->user()->name }}</p>
-            <p class="text-xs text-slate-500">{{ auth()->user()->roles->first()?->name ?? 'Pengguna' }}</p>
+            <p class="text-sm font-semibold text-slate-800">{{ auth()->user()->name ?? 'Tamu' }}</p>
+            <p class="text-xs text-slate-500">{{ \App\Support\Access::currentRoleLabel() }}</p>
         </div>
         <div class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-sm font-bold text-white" aria-hidden="true">
-            {{ str($currentUser = auth()->user()->name)->substr(0, 1)->upper() }}
+            {{ str(auth()->user()->name ?? 'Tamu')->substr(0, 1)->upper() }}
         </div>
     </div>
 </header>
