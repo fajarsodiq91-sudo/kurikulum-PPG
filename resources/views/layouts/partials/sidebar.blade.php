@@ -78,13 +78,13 @@
 
         @if ($sectionAllowed && (isset($section['route']) || $visibleItems->isNotEmpty()))
             @if (isset($section['route']))
-                <a href="{{ route($section['route']) }}" class="flex items-center gap-2.5 rounded-md border-l-2 px-2.5 py-2 text-[13px] font-medium transition {{ $isActive ? 'border-amber-400 bg-amber-400 text-slate-950' : 'border-transparent text-slate-400 hover:bg-slate-900 hover:text-white' }}">
+                <a href="{{ route($section['route']) }}" class="flex items-center gap-2.5 rounded-md border-l-2 px-2.5 py-2 text-[13px] font-medium transition {{ $isActive ? 'border-amber-400 bg-amber-400 text-slate-950 hover:bg-amber-300' : 'border-transparent text-slate-400 hover:bg-slate-900 hover:text-white' }}">
                     <span class="w-4 text-center text-sm">{{ $section['icon'] ?? '•' }}</span>
                     <span>{{ $section['label'] }}</span>
                 </a>
             @else
                 <details class="group" @if ($isActive) open @endif>
-                    <summary class="flex cursor-pointer list-none items-center justify-between rounded-md border-l-2 px-2.5 py-2 text-[13px] font-medium transition [&::-webkit-details-marker]:hidden {{ $isActive ? 'border-amber-400 text-white' : 'border-transparent text-slate-400 hover:bg-slate-900 hover:text-white' }}">
+                    <summary class="flex cursor-pointer list-none items-center justify-between rounded-md border-l-2 px-2.5 py-2 text-[13px] font-medium transition [&::-webkit-details-marker]:hidden {{ $isActive ? 'border-amber-400 text-white hover:bg-slate-900' : 'border-transparent text-slate-400 hover:bg-slate-900 hover:text-white' }}">
                         <span class="flex items-center gap-2.5">
                             <span class="w-4 text-center text-sm">{{ $section['icon'] ?? '•' }}</span>
                             <span>{{ $section['label'] }}</span>
@@ -93,7 +93,7 @@
                     </summary>
                     <div class="space-y-0.5 py-0.5 pl-6">
                         @foreach ($visibleItems as $item)
-                            <a href="{{ route($item['route']) }}" class="block rounded-md border-l-2 px-2.5 py-1.5 text-[13px] transition {{ request()->routeIs($item['route']) ? 'border-amber-400 bg-slate-800 font-semibold text-white' : 'border-transparent text-slate-400 hover:bg-slate-900 hover:text-white' }}">
+                            <a href="{{ route($item['route']) }}" class="block rounded-md border-l-2 px-2.5 py-1.5 text-[13px] transition {{ request()->routeIs($item['route']) ? 'border-amber-400 bg-slate-800 font-semibold text-white hover:bg-slate-700' : 'border-transparent text-slate-400 hover:bg-slate-900 hover:text-white' }}">
                                 {{ $item['label'] }}
                             </a>
                         @endforeach
