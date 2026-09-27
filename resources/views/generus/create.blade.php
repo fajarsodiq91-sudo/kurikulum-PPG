@@ -33,7 +33,7 @@
             <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-300 p-4 text-sm transition has-[:checked]:border-amber-400 has-[:checked]:bg-amber-50">
                 <input type="radio" name="origin_mode" id="origin_mode_external" value="external" class="mt-1" {{ old('origin_mode', 'external') === 'external' ? 'checked' : '' }}>
                 <span>
-                    <span class="block font-semibold text-slate-900">Luar Daerah</span>
+                    <span class="block font-semibold text-slate-900">Luar Daerah / Data Baru</span>
                     <span class="block text-slate-500">Generus baru yang belum pernah tercatat di sistem ini.</span>
                 </span>
             </label>
@@ -125,21 +125,26 @@
                 externalForm.classList.toggle('hidden', isInternal);
             }
 
-            function filterGroupsByVillage() {
-                const villageId = originVillage.value;
+            function attachVillageGroupFilter(villageSelect, groupSelect) {
+                function filter() {
+                    const villageId = villageSelect.value;
 
-                Array.from(originGroup.options).forEach((option) => {
-                    if (option.value === '') {
-                        return;
-                    }
+                    Array.from(groupSelect.options).forEach((option) => {
+                        if (option.value === '') {
+                            return;
+                        }
 
-                    const matches = villageId === '' || option.dataset.villageId === villageId;
-                    option.hidden = !matches;
+                        const matches = villageId === '' || option.dataset.villageId === villageId;
+                        option.hidden = !matches;
 
-                    if (!matches && option.selected) {
-                        originGroup.value = '';
-                    }
-                });
+                        if (!matches && option.selected) {
+                            groupSelect.value = '';
+                        }
+                    });
+                }
+
+                villageSelect.addEventListener('change', filter);
+                filter();
             }
 
             function resetCandidates(message) {
@@ -218,7 +223,6 @@
 
             externalRadio.addEventListener('change', updateOriginMode);
             internalRadio.addEventListener('change', updateOriginMode);
-            originVillage.addEventListener('change', filterGroupsByVillage);
             originGroup.addEventListener('change', () => loadCandidates(originGroup.value));
             candidateSelect.addEventListener('change', () => {
                 const candidate = candidates.find((item) => String(item.id) === candidateSelect.value);
@@ -231,6 +235,8 @@
                 }
             });
 
+            attachVillageGroupFilter(originVillage, originGroup);
+            attachVillageGroupFilter(document.getElementById('transfer_village_id'), document.getElementById('transfer_group_id'));
             updateOriginMode();
         })();
     </script>

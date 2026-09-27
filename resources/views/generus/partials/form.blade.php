@@ -146,9 +146,9 @@
             <div>
                 <label class="mb-2 block text-sm font-medium text-slate-700" for="group_id">Kelompok <span class="text-rose-500">*</span></label>
                 <select id="group_id" name="group_id" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
-                    <option value="">-- Pilih --</option>
+                    <option value="">-- Pilih desa terlebih dahulu --</option>
                     @foreach($groups as $group)
-                        <option value="{{ $group->id }}" @selected(old('group_id', $currentAssignment?->group_id) == $group->id)>{{ $group->name }}</option>
+                        <option value="{{ $group->id }}" data-village-id="{{ $group->village_id }}" @selected(old('group_id', $currentAssignment?->group_id) == $group->id)>{{ $group->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -217,5 +217,39 @@
         statusField.addEventListener('change', updateTransferFields);
         transferDestination.addEventListener('change', updateTransferFields);
         updateTransferFields();
+    }
+
+    const villageField = document.getElementById('village_id');
+    const groupField = document.getElementById('group_id');
+
+    if (villageField && groupField) {
+        const groupOptions = Array.from(groupField.options).map((option) => ({
+            element: option,
+            villageId: option.dataset.villageId ?? null,
+        }));
+
+        function filterGroupsByVillage() {
+            const villageId = villageField.value;
+            const previousValue = groupField.value;
+
+            groupOptions.forEach(({ element, villageId: optionVillageId }) => {
+                if (optionVillageId === null) {
+                    return;
+                }
+
+                element.hidden = villageId !== '' && optionVillageId !== villageId;
+            });
+
+            if (villageId !== '' && previousValue !== '') {
+                const stillVisible = groupOptions.find(({ element, villageId: optionVillageId }) => element.value === previousValue && optionVillageId === villageId);
+
+                if (!stillVisible) {
+                    groupField.value = '';
+                }
+            }
+        }
+
+        villageField.addEventListener('change', filterGroupsByVillage);
+        filterGroupsByVillage();
     }
 </script>
