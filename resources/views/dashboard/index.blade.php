@@ -8,7 +8,7 @@
     @guest
         <div class="mb-6 flex flex-col justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:flex-row sm:items-center">
             <p class="text-sm text-amber-800">Anda melihat dashboard sebagai <strong>Tamu</strong> dengan akses baca-saja. Masuk untuk mengelola data sesuai peran Anda.</p>
-            <a href="{{ route('login') }}" class="inline-flex shrink-0 items-center justify-center rounded-lg bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800">Masuk</a>
+            <a href="{{ route('login') }}" class="inline-flex shrink-0 items-center justify-center rounded-lg bg-brand-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-800">Masuk</a>
         </div>
     @endguest
 
@@ -19,24 +19,24 @@
             <p class="mt-2 max-w-2xl text-sm text-slate-500">Pantau data pembinaan dan aktivitas PPG Karawang Timur dari satu tempat.</p>
         </div>
         @if (\App\Support\Access::can('view-reports'))
-            <a href="{{ route('reports.index') }}" class="inline-flex items-center justify-center rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">Buka laporan</a>
+            <a href="{{ route('reports.index') }}" class="inline-flex items-center justify-center rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800">Buka laporan</a>
         @endif
     </div>
 
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         @foreach ([
-            ['label' => 'Generus Aktif', 'value' => $generusCount, 'tone' => 'amber'],
-            ['label' => 'Guru Aktif', 'value' => $teacherCount, 'tone' => 'sky'],
-            ['label' => 'Desa / Wilayah', 'value' => $regionCount, 'tone' => 'emerald'],
-            ['label' => 'Kelompok', 'value' => $groupCount, 'tone' => 'rose'],
-            ['label' => 'Sesi KBM', 'value' => $learningSessionCount, 'tone' => 'violet'],
-            ['label' => 'Munaqosah', 'value' => $munaqosahCount, 'tone' => 'orange'],
-            ['label' => 'Pelatihan Aktif', 'value' => $trainingCount, 'tone' => 'cyan'],
+            ['label' => 'Generus Aktif', 'value' => $generusCount, 'dot' => 'bg-amber-400'],
+            ['label' => 'Guru Aktif', 'value' => $teacherCount, 'dot' => 'bg-brand-500'],
+            ['label' => 'Desa / Wilayah', 'value' => $regionCount, 'dot' => 'bg-emerald-500'],
+            ['label' => 'Kelompok', 'value' => $groupCount, 'dot' => 'bg-brand-300'],
+            ['label' => 'Sesi KBM', 'value' => $learningSessionCount, 'dot' => 'bg-amber-600'],
+            ['label' => 'Munaqosah', 'value' => $munaqosahCount, 'dot' => 'bg-emerald-600'],
+            ['label' => 'Pelatihan Aktif', 'value' => $trainingCount, 'dot' => 'bg-brand-700'],
         ] as $card)
             <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div class="flex items-start justify-between gap-4">
                     <p class="text-sm font-medium text-slate-500">{{ $card['label'] }}</p>
-                    <span class="h-2.5 w-2.5 rounded-full bg-{{ $card['tone'] }}-400"></span>
+                    <span class="h-2.5 w-2.5 rounded-full {{ $card['dot'] }}"></span>
                 </div>
                 <p class="mt-4 text-3xl font-bold tracking-tight text-slate-950">{{ $card['value'] }}</p>
                 <p class="mt-1 text-xs text-slate-400">Data aktual database</p>

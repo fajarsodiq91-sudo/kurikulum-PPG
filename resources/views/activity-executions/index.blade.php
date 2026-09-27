@@ -55,7 +55,7 @@
                         <label class="mb-2 block text-sm font-medium" for="notes">Catatan</label>
                         <textarea id="notes" name="notes" rows="2" class="w-full rounded-lg border border-slate-300 px-3 py-2"></textarea>
                     </div>
-                    <button type="submit" class="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">Simpan</button>
+                    <button type="submit" class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Simpan</button>
                 </form>
             </div>
 

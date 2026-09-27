@@ -26,7 +26,7 @@
                 @csrf
                 @include('users.partials.fields', ['user' => null])
 
-                <button type="submit" class="mt-6 w-full rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">
+                <button type="submit" class="mt-6 w-full rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800">
                     Simpan Pengguna
                 </button>
             </form>

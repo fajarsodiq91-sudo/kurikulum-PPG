@@ -76,7 +76,7 @@
                         <label class="block text-sm font-medium mb-2" for="responsibility">Tanggung Jawab</label>
                         <textarea id="responsibility" name="responsibility" rows="3" class="w-full rounded-lg border border-slate-300 px-3 py-2"></textarea>
                     </div>
-                    <button type="submit" class="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">Simpan</button>
+                    <button type="submit" class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Simpan</button>
                 </form>
             </div>
 

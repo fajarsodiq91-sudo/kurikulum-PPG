@@ -55,7 +55,7 @@
                             <option value="failed">Gagal</option>
                         </select>
                     </div>
-                    <button type="submit" class="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">Simpan</button>
+                    <button type="submit" class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Simpan</button>
                 </form>
             </div>
 

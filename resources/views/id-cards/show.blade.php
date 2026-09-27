@@ -17,7 +17,7 @@
 <body class="min-h-screen bg-slate-100 text-slate-900 antialiased print:bg-white">
     <div class="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3 px-4 pt-6 print:hidden">
         <a href="{{ $backUrl }}" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Kembali</a>
-        <button type="button" onclick="window.print()" class="inline-flex items-center justify-center rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">Cetak Kartu</button>
+        <button type="button" onclick="window.print()" class="inline-flex items-center justify-center rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800">Cetak Kartu</button>
     </div>
 
     <main class="flex flex-wrap items-start justify-center gap-8 px-4 py-8 print:gap-[6mm] print:p-0">

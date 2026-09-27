@@ -6,4 +6,17 @@
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /* Brand blue sampled from the PPG Karawang Timur logo's outer ring (#0373a3 = brand-600). */
+    --color-brand-50: #f2f8fa;
+    --color-brand-100: #d9eaf1;
+    --color-brand-200: #aed2e2;
+    --color-brand-300: #81b9d1;
+    --color-brand-400: #4a9abd;
+    --color-brand-500: #1c81ac;
+    --color-brand-600: #0373a3;
+    --color-brand-700: #035c83;
+    --color-brand-800: #034766;
+    --color-brand-900: #023249;
+    --color-brand-950: #021f2f;
 }

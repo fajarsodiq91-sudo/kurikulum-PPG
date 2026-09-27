@@ -13,7 +13,7 @@
                 <p class="text-sm font-semibold text-slate-800">{{ auth()->user()->name ?? 'Tamu' }}</p>
                 <p class="text-xs text-slate-500">{{ \App\Support\Access::currentRoleLabel() }}</p>
             </div>
-            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-sm font-bold text-white" aria-hidden="true">
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-brand-900 text-sm font-bold text-white" aria-hidden="true">
                 {{ str(auth()->user()->name ?? 'Tamu')->substr(0, 1)->upper() }}
             </div>
         </button>

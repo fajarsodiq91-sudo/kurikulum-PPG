@@ -21,7 +21,7 @@
             @method('PUT')
             @include('evaluation-scores.partials.fields')
 
-            <button type="submit" class="mt-6 w-full rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">Simpan Perubahan</button>
+            <button type="submit" class="mt-6 w-full rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800">Simpan Perubahan</button>
         </form>
 
         <form method="POST" action="{{ route('evaluation-scores.destroy', $score) }}" class="mt-4 border-t border-slate-100 pt-4" onsubmit="return confirm(@js('Hapus '.'skor '.($score->generus?->full_name ?? '').' pada '.($score->evaluation?->title ?? '').'? Tindakan ini tidak dapat dibatalkan.'))">

@@ -12,7 +12,7 @@
         </div>
         <div class="flex flex-wrap gap-3">
             <a href="{{ route('teachers.index') }}" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Kembali ke data</a>
-            <a href="{{ route('teachers.id-card', $teacher) }}" class="inline-flex items-center justify-center rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">ID Card</a>
+            <a href="{{ route('teachers.id-card', $teacher) }}" class="inline-flex items-center justify-center rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800">ID Card</a>
         </div>
     </div>
 
@@ -24,7 +24,7 @@
             @method('PUT')
             @include('teachers.partials.fields')
 
-            <button type="submit" class="mt-6 w-full rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">Simpan Perubahan</button>
+            <button type="submit" class="mt-6 w-full rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800">Simpan Perubahan</button>
         </form>
 
         <form method="POST" action="{{ route('teachers.destroy', $teacher) }}" class="mt-4 border-t border-slate-100 pt-4" onsubmit="return confirm(@js('Hapus '.$teacher->name.'? Tindakan ini tidak dapat dibatalkan.'))">

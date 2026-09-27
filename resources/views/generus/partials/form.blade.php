@@ -185,7 +185,7 @@
 
         <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <a href="{{ $generus ? route('generus.show', $generus) : route('generus.index') }}" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Batal</a>
-            <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">{{ $generus ? 'Simpan Perubahan' : 'Simpan Generus' }}</button>
+            <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800">{{ $generus ? 'Simpan Perubahan' : 'Simpan Generus' }}</button>
         </div>
 </form>
 
