@@ -84,6 +84,13 @@ class MasterDataTest extends TestCase
             'is_active' => true,
         ])->assertRedirect('/master-data');
 
+        $this->actingAs($user)->post('/master-data/class-grades', [
+            'name' => 'Kelas 4',
+            'code' => 'SD-4',
+            'sort_order' => 4,
+            'is_active' => true,
+        ])->assertRedirect('/master-data');
+
         $this->actingAs($user)->post('/master-data/academic-years', [
             'name' => '2025/2026',
             'code' => '2025-2026',
@@ -104,6 +111,7 @@ class MasterDataTest extends TestCase
 
         $this->assertDatabaseHas('groups', ['name' => 'Kelompok 1', 'village_id' => $village->id]);
         $this->assertDatabaseHas('levels', ['code' => 'KELAS-1']);
+        $this->assertDatabaseHas('class_grades', ['code' => 'SD-4']);
         $this->assertDatabaseHas('semesters', ['code' => 'S1', 'academic_year_id' => $year->id]);
     }
 

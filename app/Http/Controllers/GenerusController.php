@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exports\GenerusExport;
 use App\Imports\GenerusImport;
-use App\Models\AcademicYear;
+use App\Models\ClassGrade;
 use App\Models\Generus;
 use App\Models\GenerusAssignment;
 use App\Models\Group;
@@ -49,9 +49,8 @@ class GenerusController extends Controller
         'birth_date',
         'birth_order',
         'sibling_count',
-        'school_grade',
-        'learning_class',
-        'educational_level',
+        'school_grade_id',
+        'learning_class_id',
         'status',
         'notes',
     ];
@@ -59,14 +58,14 @@ class GenerusController extends Controller
     /**
      * @var list<string>
      */
-    private const PLACEMENT_FIELDS = ['region_id', 'village_id', 'group_id', 'level_id', 'academic_year_id'];
+    private const PLACEMENT_FIELDS = ['region_id', 'village_id', 'group_id', 'level_id'];
 
     public function index(Request $request): View
     {
         return view('generus.index', [
             'generus' => Generus::visibleTo($request->user())
                 ->with([
-                    'assignments' => fn ($query) => $query->where('status', '!=', 'ended'),
+                    'assignments' => fn ($query) => $query->whereNull('ended_at'),
                     'assignments.region',
                     'assignments.village',
                     'assignments.group',
@@ -104,9 +103,8 @@ class GenerusController extends Controller
                 'birth_date' => $validated['birth_date'] ?? null,
                 'birth_order' => $validated['birth_order'] ?? null,
                 'sibling_count' => $validated['sibling_count'] ?? null,
-                'school_grade' => $validated['school_grade'] ?? null,
-                'learning_class' => $validated['learning_class'] ?? null,
-                'educational_level' => $validated['educational_level'] ?? null,
+                'school_grade_id' => $validated['school_grade_id'] ?? null,
+                'learning_class_id' => $validated['learning_class_id'] ?? null,
                 'photo' => $photoPath,
                 'status' => $validated['status'],
                 'transfer_destination' => $validated['transfer_destination'] ?? null,
@@ -119,8 +117,6 @@ class GenerusController extends Controller
                 'village_id' => $validated['village_id'] ?? null,
                 'group_id' => $validated['group_id'] ?? null,
                 'level_id' => $validated['level_id'] ?? null,
-                'academic_year_id' => $validated['academic_year_id'] ?? null,
-                'status' => $validated['assignment_status'],
                 'assigned_at' => now()->toDateString(),
                 'notes' => ($validated['transfer_destination'] ?? null) === 'external'
                     ? 'Pindah sambung ke luar daerah.'
@@ -137,6 +133,7 @@ class GenerusController extends Controller
             'generatedRegistrationNumber' => $this->generateRegistrationNumber(),
             'generatedRecordNumber' => $this->generateRecordNumber(),
             ...$this->placementOptions($request->user()),
+            'defaultRegionId' => Region::where('name', 'Karawang Timur')->value('id'),
             'originVillages' => Village::where('is_active', true)->orderBy('name')->get(),
             'originGroups' => Group::where('is_active', true)->orderBy('name')->get(),
         ]);
@@ -172,9 +169,8 @@ class GenerusController extends Controller
                 'birth_date' => $generus->birth_date?->format('Y-m-d'),
                 'birth_order' => $generus->birth_order,
                 'sibling_count' => $generus->sibling_count,
-                'school_grade' => $generus->school_grade,
-                'learning_class' => $generus->learning_class,
-                'educational_level' => $generus->educational_level,
+                'school_grade_id' => $generus->school_grade_id,
+                'learning_class_id' => $generus->learning_class_id,
                 'notes' => $generus->notes,
             ])->values(),
         ]);
@@ -223,12 +219,13 @@ class GenerusController extends Controller
         $this->ensureGenerusIsVisible($request->user(), $generus);
 
         $generus->load([
+            'schoolGrade',
+            'learningClass',
             'assignments' => fn ($query) => $query->latest('assigned_at')->latest('id'),
             'assignments.region',
             'assignments.village',
             'assignments.group',
             'assignments.level',
-            'assignments.academicYear',
         ]);
 
         return view('generus.show', ['generus' => $generus]);
@@ -406,9 +403,8 @@ class GenerusController extends Controller
             'birth_date' => ['nullable', 'date'],
             'birth_order' => ['nullable', 'integer', 'min:1', 'max:32767'],
             'sibling_count' => ['nullable', 'integer', 'min:0', 'max:32767'],
-            'school_grade' => ['nullable', 'string', 'max:50'],
-            'learning_class' => ['nullable', 'string', 'max:100'],
-            'educational_level' => ['nullable', 'string', 'max:100'],
+            'school_grade_id' => ['nullable', Rule::exists('class_grades', 'id')->where('is_active', true)],
+            'learning_class_id' => ['nullable', Rule::exists('class_grades', 'id')->where('is_active', true)],
             'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'status' => ['required', Rule::in(['active', 'pindah_sambung', 'married'])],
             'transfer_destination' => [
@@ -440,12 +436,6 @@ class GenerusController extends Controller
                 'nullable',
                 Rule::exists('levels', 'id')->where('is_active', true),
             ],
-            'academic_year_id' => [
-                Rule::requiredIf(fn (): bool => $request->input('status') !== 'pindah_sambung'),
-                'nullable',
-                Rule::exists('academic_years', 'id')->where('is_active', true),
-            ],
-            'assignment_status' => ['required', 'string', 'max:50'],
             'notes' => ['nullable', 'string'],
         ]);
     }
@@ -470,7 +460,6 @@ class GenerusController extends Controller
 
         if (! $isExternal && ($validated['group_id'] ?? null) === null) {
             $currentAssignment?->update([
-                'status' => 'ended',
                 'ended_at' => now()->toDateString(),
             ]);
 
@@ -487,19 +476,15 @@ class GenerusController extends Controller
             ->every(fn (?int $id, string $field): bool => ($currentAssignment->{$field} === null ? null : (int) $currentAssignment->{$field}) === $id);
 
         if ($isSamePlacement) {
-            $currentAssignment->update(['status' => $validated['assignment_status']]);
-
             return;
         }
 
         $currentAssignment?->update([
-            'status' => 'ended',
             'ended_at' => now()->toDateString(),
         ]);
 
         $generus->assignments()->create([
             ...$placement,
-            'status' => $validated['assignment_status'],
             'assigned_at' => now()->toDateString(),
             'notes' => $isExternal ? 'Pindah sambung ke luar daerah.' : null,
         ]);
@@ -508,7 +493,7 @@ class GenerusController extends Controller
     private function currentAssignment(Generus $generus): ?GenerusAssignment
     {
         return $generus->assignments()
-            ->where('status', '!=', 'ended')
+            ->whereNull('ended_at')
             ->latest('assigned_at')
             ->latest('id')
             ->first();
@@ -530,7 +515,7 @@ class GenerusController extends Controller
             ->filter(function (Generus $generus) use ($groupId): bool {
                 $latest = $generus->assignments->first();
 
-                return $latest !== null && $latest->status === 'ended' && (int) $latest->group_id === $groupId;
+                return $latest !== null && $latest->ended_at !== null && (int) $latest->group_id === $groupId;
             })
             ->values();
     }
@@ -554,9 +539,8 @@ class GenerusController extends Controller
             'birth_date' => ['nullable', 'date'],
             'birth_order' => ['nullable', 'integer', 'min:1', 'max:32767'],
             'sibling_count' => ['nullable', 'integer', 'min:0', 'max:32767'],
-            'school_grade' => ['nullable', 'string', 'max:50'],
-            'learning_class' => ['nullable', 'string', 'max:100'],
-            'educational_level' => ['nullable', 'string', 'max:100'],
+            'school_grade_id' => ['nullable', Rule::exists('class_grades', 'id')->where('is_active', true)],
+            'learning_class_id' => ['nullable', Rule::exists('class_grades', 'id')->where('is_active', true)],
             'region_id' => ['required', Rule::exists('regions', 'id')->where('is_active', true)],
             'village_id' => [
                 'required',
@@ -571,8 +555,6 @@ class GenerusController extends Controller
                     ->where('is_active', true),
             ],
             'level_id' => ['required', Rule::exists('levels', 'id')->where('is_active', true)],
-            'academic_year_id' => ['required', Rule::exists('academic_years', 'id')->where('is_active', true)],
-            'assignment_status' => ['required', 'string', 'max:50'],
             'notes' => ['nullable', 'string'],
         ]);
     }
@@ -601,7 +583,7 @@ class GenerusController extends Controller
             'villages' => $villages,
             'groups' => $groups,
             'levels' => Level::where('is_active', true)->orderBy('sort_order')->get(),
-            'academicYears' => AcademicYear::where('is_active', true)->get(),
+            'classGrades' => ClassGrade::where('is_active', true)->orderBy('sort_order')->get(),
         ];
     }
 

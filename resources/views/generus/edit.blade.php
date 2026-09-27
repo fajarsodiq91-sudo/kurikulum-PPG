@@ -9,7 +9,7 @@
         <div>
             <p class="text-sm font-semibold text-amber-600">Generus</p>
             <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Edit {{ $generus->full_name }}</h2>
-            <p class="mt-2 text-sm text-slate-500">Mengubah Daerah, Desa, Kelompok, Jenjang, atau Tahun akan menutup penempatan lama dan mencatat penempatan baru.</p>
+            <p class="mt-2 text-sm text-slate-500">Mengubah Daerah, Desa, Kelompok, atau Jenjang akan menutup penempatan lama dan mencatat penempatan baru.</p>
         </div>
         <a href="{{ route('generus.show', $generus) }}" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Kembali ke detail</a>
     </div>

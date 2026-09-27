@@ -7,7 +7,6 @@
 @section('content')
     @php
         $statusLabel = match ($generus->status) { 'active' => 'Aktif', 'pindah_sambung' => 'Pindah Sambung', 'married' => 'Sudah Menikah', default => $generus->status };
-        $assignmentStatusLabels = ['active' => 'Aktif', 'inactive' => 'Nonaktif', 'ended' => 'Selesai'];
     @endphp
 
     <div class="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
@@ -57,9 +56,8 @@
                 'Pekerjaan Ibu' => $generus->mother_occupation,
                 'Nomor WhatsApp' => $generus->phone_number,
                 'Madrasah' => $generus->school_name,
-                'Kelas Sekolah' => $generus->school_grade,
-                'Kelas KBM' => $generus->learning_class,
-                'Jenjang Generus' => $generus->educational_level,
+                'Kelas Sekolah' => $generus->schoolGrade?->name,
+                'Kelas KBM' => $generus->learningClass?->name,
             ] as $label => $value)
                 <div>
                     <dt class="text-xs font-semibold uppercase tracking-wide text-slate-400">{{ $label }}</dt>
@@ -83,8 +81,6 @@
                     <tr>
                         <th class="py-3 pr-4 font-semibold">Daerah / Desa / Kelompok</th>
                         <th class="py-3 pr-4 font-semibold">Jenjang</th>
-                        <th class="py-3 pr-4 font-semibold">Tahun</th>
-                        <th class="py-3 pr-4 font-semibold">Status</th>
                         <th class="py-3 pr-4 font-semibold">Mulai</th>
                         <th class="py-3 pr-4 font-semibold">Selesai</th>
                         <th class="py-3 pr-4 font-semibold">Catatan</th>
@@ -95,15 +91,13 @@
                         <tr class="border-b border-slate-100 last:border-0">
                             <td class="py-3 pr-4">{{ $assignment->region?->name ?? '-' }} / {{ $assignment->village?->name ?? '-' }} / {{ $assignment->group?->name ?? '-' }}</td>
                             <td class="py-3 pr-4">{{ $assignment->level?->name ?? '-' }}</td>
-                            <td class="py-3 pr-4">{{ $assignment->academicYear?->name ?? '-' }}</td>
-                            <td class="py-3 pr-4">{{ $assignmentStatusLabels[$assignment->status] ?? $assignment->status }}</td>
                             <td class="py-3 pr-4">{{ $assignment->assigned_at ? \Illuminate\Support\Carbon::parse($assignment->assigned_at)->format('d/m/Y') : '-' }}</td>
                             <td class="py-3 pr-4">{{ $assignment->ended_at ? \Illuminate\Support\Carbon::parse($assignment->ended_at)->format('d/m/Y') : '-' }}</td>
                             <td class="py-3 pr-4 text-slate-600">{{ $assignment->notes ?? '-' }}</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="py-8 text-center text-sm text-slate-500">Belum ada riwayat penempatan.</td>
+                            <td colspan="5" class="py-8 text-center text-sm text-slate-500">Belum ada riwayat penempatan.</td>
                         </tr>
                     @endforelse
                 </tbody>

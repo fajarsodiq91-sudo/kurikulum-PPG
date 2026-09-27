@@ -3,7 +3,7 @@
     under another kelompok. Selecting them (see create.blade.php) fills these fields from
     their existing record; everything stays editable except their identity (registration
     number and NIS), which the server keeps untouched.
-    Expects: $action, $regions, $villages, $groups, $levels, $academicYears.
+    Expects: $action, $regions, $villages, $groups, $levels, $classGrades.
 --}}
 <form id="transfer-form" method="POST" action="{{ $action }}" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
     @csrf
@@ -58,15 +58,33 @@
             ['mother_occupation', 'Pekerjaan Ibu'],
             ['phone_number', 'Nomor WhatsApp'],
             ['birth_place', 'Tempat Lahir'],
-            ['school_grade', 'Kelas Sekolah'],
-            ['learning_class', 'Kelas KBM'],
-            ['educational_level', 'Jenjang Generus'],
         ] as [$field, $label])
             <div>
                 <label class="mb-2 block text-sm font-medium text-slate-700" for="transfer_{{ $field }}">{{ $label }}</label>
                 <input id="transfer_{{ $field }}" name="{{ $field }}" type="text" value="{{ old($field) }}" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
             </div>
         @endforeach
+
+        <div>
+            <label class="mb-2 block text-sm font-medium text-slate-700" for="transfer_school_grade_id">Kelas Sekolah</label>
+            <select id="transfer_school_grade_id" name="school_grade_id" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
+                <option value="">-- Pilih --</option>
+                @foreach($classGrades as $classGrade)
+                    <option value="{{ $classGrade->id }}" @selected(old('school_grade_id') == $classGrade->id)>{{ $classGrade->name }}</option>
+                @endforeach
+            </select>
+        </div>
+
+        <div>
+            <label class="mb-2 block text-sm font-medium text-slate-700" for="transfer_learning_class_id">Kelas KBM</label>
+            <select id="transfer_learning_class_id" name="learning_class_id" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
+                <option value="">-- Pilih --</option>
+                @foreach($classGrades as $classGrade)
+                    <option value="{{ $classGrade->id }}" @selected(old('learning_class_id') == $classGrade->id)>{{ $classGrade->name }}</option>
+                @endforeach
+            </select>
+        </div>
+
         <div>
             <label class="mb-2 block text-sm font-medium text-slate-700" for="transfer_birth_order">Anak Ke</label>
             <input id="transfer_birth_order" name="birth_order" type="number" min="1" value="{{ old('birth_order') }}" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
@@ -122,23 +140,6 @@
             </select>
         </div>
 
-        <div>
-            <label class="mb-2 block text-sm font-medium text-slate-700" for="transfer_academic_year_id">Tahun <span class="text-rose-500">*</span></label>
-            <select id="transfer_academic_year_id" name="academic_year_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
-                <option value="">-- Pilih --</option>
-                @foreach($academicYears as $year)
-                    <option value="{{ $year->id }}" @selected(old('academic_year_id') == $year->id)>{{ $year->name }}</option>
-                @endforeach
-            </select>
-        </div>
-
-        <div>
-            <label class="mb-2 block text-sm font-medium text-slate-700" for="transfer_assignment_status">Status Penempatan</label>
-            <select id="transfer_assignment_status" name="assignment_status" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
-                <option value="active" @selected(old('assignment_status', 'active') === 'active')>Aktif</option>
-                <option value="inactive" @selected(old('assignment_status') === 'inactive')>Nonaktif</option>
-            </select>
-        </div>
     </div>
 
     <div class="mt-5">

@@ -91,6 +91,8 @@ Route::middleware(['auth', 'permission:view-master-data'])->group(function () {
         ->name('master-data.groups.store');
     Route::post('/master-data/levels', [MasterDataController::class, 'storeLevel'])
         ->name('master-data.levels.store');
+    Route::post('/master-data/class-grades', [MasterDataController::class, 'storeClassGrade'])
+        ->name('master-data.class-grades.store');
     Route::post('/master-data/academic-years', [MasterDataController::class, 'storeAcademicYear'])
         ->name('master-data.academic-years.store');
     Route::post('/master-data/semesters', [MasterDataController::class, 'storeSemester'])

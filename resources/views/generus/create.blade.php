@@ -98,7 +98,7 @@
             'villages' => $villages,
             'groups' => $groups,
             'levels' => $levels,
-            'academicYears' => $academicYears,
+            'classGrades' => $classGrades,
         ])
     </div>
 
@@ -158,7 +158,7 @@
             function clearTransferFields() {
                 document.getElementById('transfer_registration_number').value = '-- pilih generus terlebih dahulu --';
                 document.getElementById('transfer_nis').value = '-- pilih generus terlebih dahulu --';
-                ['full_name', 'gender', 'birth_date', 'school_name', 'father_name', 'mother_name', 'father_occupation', 'mother_occupation', 'phone_number', 'birth_place', 'school_grade', 'learning_class', 'educational_level', 'birth_order', 'sibling_count'].forEach((field) => {
+                ['full_name', 'gender', 'birth_date', 'school_name', 'father_name', 'mother_name', 'father_occupation', 'mother_occupation', 'phone_number', 'birth_place', 'school_grade_id', 'learning_class_id', 'birth_order', 'sibling_count'].forEach((field) => {
                     const input = document.getElementById('transfer_' + field);
                     if (input) {
                         input.value = '';
@@ -205,7 +205,7 @@
                 document.getElementById('transfer_registration_number').value = candidate.registration_number;
                 document.getElementById('transfer_nis').value = candidate.nis || '-';
 
-                const fields = ['full_name', 'gender', 'birth_date', 'school_name', 'father_name', 'mother_name', 'father_occupation', 'mother_occupation', 'phone_number', 'birth_place', 'school_grade', 'learning_class', 'educational_level', 'birth_order', 'sibling_count'];
+                const fields = ['full_name', 'gender', 'birth_date', 'school_name', 'father_name', 'mother_name', 'father_occupation', 'mother_occupation', 'phone_number', 'birth_place', 'school_grade_id', 'learning_class_id', 'birth_order', 'sibling_count'];
                 fields.forEach((field) => {
                     const input = document.getElementById('transfer_' + field);
                     if (input) {

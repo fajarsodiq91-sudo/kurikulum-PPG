@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
@@ -35,9 +36,8 @@ class Generus extends Model
         'birth_date',
         'birth_order',
         'sibling_count',
-        'school_grade',
-        'learning_class',
-        'educational_level',
+        'school_grade_id',
+        'learning_class_id',
         'photo',
         'status',
         'transfer_destination',
@@ -74,7 +74,7 @@ class Generus extends Model
         }
 
         $query->whereHas('assignments', function (Builder $assignments) use ($placementIds): void {
-            $assignments->where('status', 'active')
+            $assignments->whereNull('ended_at')
                 ->where(function (Builder $placement) use ($placementIds): void {
                     foreach ($placementIds as $column => $ids) {
                         $placement->orWhereIn($column, $ids);
@@ -86,6 +86,16 @@ class Generus extends Model
     public function assignments(): HasMany
     {
         return $this->hasMany(GenerusAssignment::class);
+    }
+
+    public function schoolGrade(): BelongsTo
+    {
+        return $this->belongsTo(ClassGrade::class, 'school_grade_id');
+    }
+
+    public function learningClass(): BelongsTo
+    {
+        return $this->belongsTo(ClassGrade::class, 'learning_class_id');
     }
 
     /**

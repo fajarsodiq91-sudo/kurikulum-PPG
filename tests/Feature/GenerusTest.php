@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Exports\GenerusExport;
-use App\Models\AcademicYear;
+use App\Models\ClassGrade;
 use App\Models\Generus;
 use App\Models\GenerusAssignment;
 use App\Models\Group;
@@ -82,11 +82,10 @@ class GenerusTest extends TestCase
             'is_active' => true,
         ]);
 
-        $year = AcademicYear::create([
-            'name' => '2025/2026',
-            'code' => '2025-2026',
-            'start_year' => 2025,
-            'end_year' => 2026,
+        $schoolGrade = ClassGrade::create([
+            'name' => 'Kelas 4',
+            'code' => 'SD-4',
+            'sort_order' => 4,
             'is_active' => true,
         ]);
 
@@ -105,16 +104,13 @@ class GenerusTest extends TestCase
                 'birth_date' => '2014-05-12',
                 'birth_order' => 2,
                 'sibling_count' => 3,
-                'school_grade' => '4',
-                'learning_class' => 'Kelas 4',
-                'educational_level' => 'SD',
+                'school_grade_id' => $schoolGrade->id,
+                'learning_class_id' => $schoolGrade->id,
                 'status' => 'active',
                 'region_id' => $region->id,
                 'village_id' => $village->id,
                 'group_id' => $group->id,
                 'level_id' => $level->id,
-                'academic_year_id' => $year->id,
-                'assignment_status' => 'active',
                 'notes' => 'Data awal generus',
             ])
             ->assertRedirect('/generus');
@@ -128,15 +124,18 @@ class GenerusTest extends TestCase
         $this->assertSame('Karawang', $created->birth_place);
         $this->assertSame(2, $created->birth_order);
         $this->assertSame(3, $created->sibling_count);
+        $this->assertSame($schoolGrade->id, $created->school_grade_id);
+        $this->assertSame($schoolGrade->id, $created->learning_class_id);
 
         $this->assertDatabaseHas('generus_assignments', [
-            'status' => 'active',
+            'generus_id' => $created->id,
+            'ended_at' => null,
         ]);
     }
 
     public function test_admin_can_export_generus_as_xlsx(): void
     {
-        [$user, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        [$user, $region, $village, $group, $level] = $this->createGenerusImportContext();
 
         $generus = Generus::create([
             'registration_number' => 'PPG-EXPORT-001',
@@ -151,8 +150,6 @@ class GenerusTest extends TestCase
             'village_id' => $village->id,
             'group_id' => $group->id,
             'level_id' => $level->id,
-            'academic_year_id' => $year->id,
-            'status' => 'active',
         ]);
 
         $this->actingAs($user)
@@ -162,7 +159,7 @@ class GenerusTest extends TestCase
 
     public function test_internal_transfer_uses_the_newest_registered_placement(): void
     {
-        [$user, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        [$user, $region, $village, $group, $level] = $this->createGenerusImportContext();
 
         $this->actingAs($user)
             ->post('/generus', [
@@ -173,8 +170,6 @@ class GenerusTest extends TestCase
                 'village_id' => $village->id,
                 'group_id' => $group->id,
                 'level_id' => $level->id,
-                'academic_year_id' => $year->id,
-                'assignment_status' => 'active',
             ])
             ->assertRedirect('/generus');
 
@@ -187,7 +182,7 @@ class GenerusTest extends TestCase
             'region_id' => $region->id,
             'village_id' => $village->id,
             'group_id' => $group->id,
-            'status' => 'active',
+            'ended_at' => null,
         ]);
     }
 
@@ -200,7 +195,6 @@ class GenerusTest extends TestCase
                 'full_name' => 'Generus Pindah Eksternal',
                 'status' => 'pindah_sambung',
                 'transfer_destination' => 'external',
-                'assignment_status' => 'active',
             ])
             ->assertRedirect('/generus');
 
@@ -218,7 +212,7 @@ class GenerusTest extends TestCase
 
     public function test_admin_can_import_generus_from_exported_xlsx(): void
     {
-        [$user, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        [$user, $region, $village, $group, $level] = $this->createGenerusImportContext();
 
         $generus = Generus::create([
             'registration_number' => 'PPG-IMPORT-001',
@@ -233,8 +227,6 @@ class GenerusTest extends TestCase
             'village_id' => $village->id,
             'group_id' => $group->id,
             'level_id' => $level->id,
-            'academic_year_id' => $year->id,
-            'status' => 'active',
         ]);
 
         $xlsx = Excel::raw(new GenerusExport, ExcelWriter::XLSX);
@@ -256,7 +248,9 @@ class GenerusTest extends TestCase
 
     public function test_import_restores_every_exported_generus_field(): void
     {
-        [$user, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        [$user, $region, $village, $group, $level] = $this->createGenerusImportContext();
+
+        $schoolGrade = ClassGrade::create(['name' => 'Kelas 5', 'code' => 'SD-5', 'sort_order' => 5, 'is_active' => true]);
 
         $generus = Generus::create([
             'registration_number' => 'PPG-IMPORT-002',
@@ -268,7 +262,7 @@ class GenerusTest extends TestCase
             'mother_name' => 'Siti',
             'phone_number' => '081234567890',
             'birth_place' => 'Karawang',
-            'school_grade' => '5',
+            'school_grade_id' => $schoolGrade->id,
             'status' => 'active',
         ]);
 
@@ -278,8 +272,6 @@ class GenerusTest extends TestCase
             'village_id' => $village->id,
             'group_id' => $group->id,
             'level_id' => $level->id,
-            'academic_year_id' => $year->id,
-            'status' => 'active',
             'notes' => 'Catatan penempatan',
         ]);
 
@@ -292,7 +284,7 @@ class GenerusTest extends TestCase
             'mother_name' => null,
             'phone_number' => null,
             'birth_place' => null,
-            'school_grade' => null,
+            'school_grade_id' => null,
         ]);
         $generus->assignments()->update(['notes' => null]);
 
@@ -311,7 +303,7 @@ class GenerusTest extends TestCase
             'mother_name' => 'Siti',
             'phone_number' => '081234567890',
             'birth_place' => 'Karawang',
-            'school_grade' => '5',
+            'school_grade_id' => $schoolGrade->id,
         ]);
         $this->assertDatabaseHas('generus_assignments', [
             'generus_id' => $generus->id,
@@ -396,11 +388,11 @@ class GenerusTest extends TestCase
 
     public function test_village_scoped_user_can_create_generus_in_any_group_of_the_village(): void
     {
-        [, $region, $village, , $level, $year] = $this->createGenerusImportContext();
+        [, $region, $village, , $level] = $this->createGenerusImportContext();
         $otherGroup = $this->createGroupIn($village);
 
         $this->actingAs($this->createScopedUser('village', $village->id))
-            ->post('/generus', $this->generusPayload($region, $village, $otherGroup, $level, $year))
+            ->post('/generus', $this->generusPayload($region, $village, $otherGroup, $level))
             ->assertRedirect('/generus')
             ->assertSessionHasNoErrors();
 
@@ -409,12 +401,12 @@ class GenerusTest extends TestCase
 
     public function test_group_scoped_user_cannot_create_generus_in_another_group(): void
     {
-        [, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        [, $region, $village, $group, $level] = $this->createGenerusImportContext();
         $otherGroup = $this->createGroupIn($village);
 
         $this->actingAs($this->createScopedUser('group', $group->id))
             ->from('/generus/create')
-            ->post('/generus', $this->generusPayload($region, $village, $otherGroup, $level, $year))
+            ->post('/generus', $this->generusPayload($region, $village, $otherGroup, $level))
             ->assertRedirect('/generus/create')
             ->assertSessionHasErrors(['group_id' => 'Kelompok yang dipilih berada di luar wilayah akses Anda.']);
 
@@ -441,7 +433,7 @@ class GenerusTest extends TestCase
 
     public function test_scoped_import_rejects_placement_outside_scope(): void
     {
-        [, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        [, $region, $village, $group, $level] = $this->createGenerusImportContext();
         $otherGroup = $this->createGroupIn($village);
 
         $this->actingAs($this->createScopedUser('group', $group->id))
@@ -455,8 +447,6 @@ class GenerusTest extends TestCase
                     'village_code' => $village->code,
                     'group_code' => $otherGroup->code,
                     'level_code' => $level->code,
-                    'academic_year_code' => $year->code,
-                    'assignment_status' => 'active',
                 ]]),
             ])
             ->assertSessionHasErrors(['row_2' => 'Baris 2: Penempatan berada di luar wilayah akses Anda.']);
@@ -488,7 +478,7 @@ class GenerusTest extends TestCase
 
     public function test_store_retries_when_registration_number_collides(): void
     {
-        [$user, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        [$user, $region, $village, $group, $level] = $this->createGenerusImportContext();
         $attempts = 0;
 
         Generus::creating(function () use (&$attempts): void {
@@ -500,7 +490,7 @@ class GenerusTest extends TestCase
         });
 
         $this->actingAs($user)
-            ->post('/generus', $this->generusPayload($region, $village, $group, $level, $year))
+            ->post('/generus', $this->generusPayload($region, $village, $group, $level))
             ->assertRedirect('/generus');
 
         $this->assertSame(2, $attempts);
@@ -536,7 +526,7 @@ class GenerusTest extends TestCase
 
     public function test_scoped_user_gets_404_for_generus_outside_scope(): void
     {
-        [, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        [, $region, $village, $group, $level] = $this->createGenerusImportContext();
         $otherGroup = $this->createGroupIn($village);
         $outsider = $this->createPlacedGenerus($otherGroup, 'PPG-SCOPE-002', 'Generus Kelompok Lain');
         $user = $this->createScopedUser('group', $group->id);
@@ -544,7 +534,7 @@ class GenerusTest extends TestCase
         $this->actingAs($user)->get("/generus/{$outsider->id}")->assertNotFound();
         $this->actingAs($user)->get("/generus/{$outsider->id}/edit")->assertNotFound();
         $this->actingAs($user)
-            ->put("/generus/{$outsider->id}", $this->generusPayload($region, $village, $group, $level, $year))
+            ->put("/generus/{$outsider->id}", $this->generusPayload($region, $village, $group, $level))
             ->assertNotFound();
         $this->actingAs($user)->delete("/generus/{$outsider->id}")->assertNotFound();
 
@@ -554,13 +544,13 @@ class GenerusTest extends TestCase
 
     public function test_update_without_placement_change_keeps_current_placement(): void
     {
-        [$user, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        [$user, $region, $village, $group, $level] = $this->createGenerusImportContext();
         $generus = $this->createPlacedGenerus($group, 'PPG-EDIT-001', 'Nama Lama');
-        $generus->assignments()->update(['level_id' => $level->id, 'academic_year_id' => $year->id]);
+        $generus->assignments()->update(['level_id' => $level->id]);
 
         $this->actingAs($user)
             ->put("/generus/{$generus->id}", [
-                ...$this->generusPayload($region, $village, $group, $level, $year),
+                ...$this->generusPayload($region, $village, $group, $level),
                 'full_name' => 'Nama Baru',
                 'registration_number' => 'DIUBAH',
                 'nis' => 'DIUBAH',
@@ -577,35 +567,34 @@ class GenerusTest extends TestCase
 
     public function test_update_with_new_group_ends_old_placement_and_records_new_one(): void
     {
-        [$user, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        [$user, $region, $village, $group, $level] = $this->createGenerusImportContext();
         $newGroup = $this->createGroupIn($village);
         $generus = $this->createPlacedGenerus($group, 'PPG-EDIT-002', 'Generus Mutasi');
         $oldAssignment = $generus->assignments()->firstOrFail();
 
         $this->actingAs($user)
-            ->put("/generus/{$generus->id}", $this->generusPayload($region, $village, $newGroup, $level, $year))
+            ->put("/generus/{$generus->id}", $this->generusPayload($region, $village, $newGroup, $level))
             ->assertRedirect("/generus/{$generus->id}");
 
         $this->assertDatabaseHas('generus_assignments', [
             'id' => $oldAssignment->id,
-            'status' => 'ended',
             'ended_at' => now()->toDateString(),
         ]);
         $this->assertDatabaseHas('generus_assignments', [
             'generus_id' => $generus->id,
             'group_id' => $newGroup->id,
-            'status' => 'active',
+            'ended_at' => null,
         ]);
     }
 
     public function test_group_scoped_user_cannot_move_generus_to_another_group(): void
     {
-        [, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        [, $region, $village, $group, $level] = $this->createGenerusImportContext();
         $otherGroup = $this->createGroupIn($village);
         $generus = $this->createPlacedGenerus($group, 'PPG-EDIT-003', 'Generus Kelompok Sendiri');
 
         $this->actingAs($this->createScopedUser('group', $group->id))
-            ->put("/generus/{$generus->id}", $this->generusPayload($region, $village, $otherGroup, $level, $year))
+            ->put("/generus/{$generus->id}", $this->generusPayload($region, $village, $otherGroup, $level))
             ->assertSessionHasErrors(['group_id' => 'Kelompok yang dipilih berada di luar wilayah akses Anda.']);
 
         $this->assertSame(1, $generus->assignments()->count());
@@ -613,13 +602,13 @@ class GenerusTest extends TestCase
 
     public function test_status_other_than_transfer_clears_transfer_destination(): void
     {
-        [$user, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        [$user, $region, $village, $group, $level] = $this->createGenerusImportContext();
         $generus = $this->createPlacedGenerus($group, 'PPG-EDIT-004', 'Generus Kembali Aktif');
         $generus->update(['status' => 'pindah_sambung', 'transfer_destination' => 'external']);
 
         $this->actingAs($user)
             ->put("/generus/{$generus->id}", [
-                ...$this->generusPayload($region, $village, $group, $level, $year),
+                ...$this->generusPayload($region, $village, $group, $level),
                 'transfer_destination' => 'external',
             ])
             ->assertSessionHasNoErrors();
@@ -629,7 +618,7 @@ class GenerusTest extends TestCase
 
     public function test_marking_pindah_sambung_internal_without_destination_leaves_generus_pending(): void
     {
-        [$user, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        [$user, $region, $village, $group, $level] = $this->createGenerusImportContext();
         $generus = $this->createPlacedGenerus($group, 'PPG-PS-001', 'Generus Menunggu Pindah');
         $oldAssignment = $generus->assignments()->firstOrFail();
 
@@ -638,7 +627,6 @@ class GenerusTest extends TestCase
                 'full_name' => 'Generus Menunggu Pindah',
                 'status' => 'pindah_sambung',
                 'transfer_destination' => 'internal',
-                'assignment_status' => 'active',
             ])
             ->assertRedirect("/generus/{$generus->id}")
             ->assertSessionHasNoErrors();
@@ -648,7 +636,7 @@ class GenerusTest extends TestCase
         $this->assertSame('internal', $generus->transfer_destination);
         $this->assertDatabaseHas('generus_assignments', [
             'id' => $oldAssignment->id,
-            'status' => 'ended',
+            'ended_at' => now()->toDateString(),
         ]);
         $this->assertSame(1, $generus->assignments()->count());
     }
@@ -663,7 +651,6 @@ class GenerusTest extends TestCase
                 'full_name' => 'Generus Kelompok Sendiri',
                 'status' => 'pindah_sambung',
                 'transfer_destination' => 'internal',
-                'assignment_status' => 'active',
             ])
             ->assertSessionHasNoErrors();
 
@@ -677,13 +664,13 @@ class GenerusTest extends TestCase
 
         $pending = $this->createPlacedGenerus($group, 'PPG-PS-003', 'Generus Menunggu');
         $pending->update(['status' => 'pindah_sambung', 'transfer_destination' => 'internal']);
-        $pending->assignments()->firstOrFail()->update(['status' => 'ended', 'ended_at' => now()->toDateString()]);
+        $pending->assignments()->firstOrFail()->update(['ended_at' => now()->toDateString()]);
 
         $stillActive = $this->createPlacedGenerus($group, 'PPG-PS-004', 'Generus Masih Aktif');
 
         $pendingElsewhere = $this->createPlacedGenerus($otherGroup, 'PPG-PS-005', 'Generus Kelompok Lain');
         $pendingElsewhere->update(['status' => 'pindah_sambung', 'transfer_destination' => 'internal']);
-        $pendingElsewhere->assignments()->firstOrFail()->update(['status' => 'ended', 'ended_at' => now()->toDateString()]);
+        $pendingElsewhere->assignments()->firstOrFail()->update(['ended_at' => now()->toDateString()]);
 
         $response = $this->actingAs($this->createScopedUser('group', $group->id))
             ->getJson("/generus/pending-transfers?group_id={$group->id}")
@@ -696,13 +683,13 @@ class GenerusTest extends TestCase
 
     public function test_receive_transfer_keeps_identity_but_moves_generus_to_new_group(): void
     {
-        [$user, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        [$user, $region, $village, $group, $level] = $this->createGenerusImportContext();
         $destinationGroup = $this->createGroupIn($village, 'Kelompok Tujuan');
 
         $pending = $this->createPlacedGenerus($group, 'PPG-PS-006', 'Generus Sebelum Pindah');
         $pending->update(['status' => 'pindah_sambung', 'transfer_destination' => 'internal', 'nis' => 'PPG-PS-006']);
         $oldAssignment = $pending->assignments()->firstOrFail();
-        $oldAssignment->update(['status' => 'ended', 'ended_at' => now()->toDateString()]);
+        $oldAssignment->update(['ended_at' => now()->toDateString()]);
 
         $this->actingAs($user)
             ->post('/generus/receive-transfer', [
@@ -712,8 +699,6 @@ class GenerusTest extends TestCase
                 'village_id' => $village->id,
                 'group_id' => $destinationGroup->id,
                 'level_id' => $level->id,
-                'academic_year_id' => $year->id,
-                'assignment_status' => 'active',
             ])
             ->assertRedirect("/generus/{$pending->id}")
             ->assertSessionHasNoErrors();
@@ -727,18 +712,18 @@ class GenerusTest extends TestCase
 
         $this->assertDatabaseHas('generus_assignments', [
             'id' => $oldAssignment->id,
-            'status' => 'ended',
+            'ended_at' => now()->toDateString(),
         ]);
         $this->assertDatabaseHas('generus_assignments', [
             'generus_id' => $pending->id,
             'group_id' => $destinationGroup->id,
-            'status' => 'active',
+            'ended_at' => null,
         ]);
     }
 
     public function test_receive_transfer_rejects_generus_not_pending(): void
     {
-        [$user, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        [$user, $region, $village, $group, $level] = $this->createGenerusImportContext();
         $activeGenerus = $this->createPlacedGenerus($group, 'PPG-PS-007', 'Generus Aktif');
 
         $this->actingAs($user)
@@ -749,8 +734,6 @@ class GenerusTest extends TestCase
                 'village_id' => $village->id,
                 'group_id' => $group->id,
                 'level_id' => $level->id,
-                'academic_year_id' => $year->id,
-                'assignment_status' => 'active',
             ])
             ->assertSessionHasErrors('generus_id');
 
@@ -759,12 +742,12 @@ class GenerusTest extends TestCase
 
     public function test_scoped_user_cannot_receive_transfer_outside_scope(): void
     {
-        [, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        [, $region, $village, $group, $level] = $this->createGenerusImportContext();
         $outsideGroup = $this->createGroupIn($village, 'Kelompok Luar Cakupan');
 
         $pending = $this->createPlacedGenerus($group, 'PPG-PS-008', 'Generus Menunggu Cakupan');
         $pending->update(['status' => 'pindah_sambung', 'transfer_destination' => 'internal']);
-        $pending->assignments()->firstOrFail()->update(['status' => 'ended', 'ended_at' => now()->toDateString()]);
+        $pending->assignments()->firstOrFail()->update(['ended_at' => now()->toDateString()]);
 
         $this->actingAs($this->createScopedUser('group', $outsideGroup->id))
             ->post('/generus/receive-transfer', [
@@ -774,8 +757,6 @@ class GenerusTest extends TestCase
                 'village_id' => $village->id,
                 'group_id' => $group->id,
                 'level_id' => $level->id,
-                'academic_year_id' => $year->id,
-                'assignment_status' => 'active',
             ])
             ->assertSessionHasErrors(['group_id' => 'Kelompok yang dipilih berada di luar wilayah akses Anda.']);
 
@@ -797,12 +778,12 @@ class GenerusTest extends TestCase
 
     public function test_new_registration_number_skips_numbers_of_deleted_generus(): void
     {
-        [$user, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        [$user, $region, $village, $group, $level] = $this->createGenerusImportContext();
         $deleted = $this->createPlacedGenerus($group, now()->format('ym').'0001', 'Generus Dihapus');
         $deleted->delete();
 
         $this->actingAs($user)
-            ->post('/generus', $this->generusPayload($region, $village, $group, $level, $year))
+            ->post('/generus', $this->generusPayload($region, $village, $group, $level))
             ->assertRedirect('/generus');
 
         $this->assertDatabaseHas('generus', [
@@ -829,12 +810,12 @@ class GenerusTest extends TestCase
     public function test_uploaded_photo_is_stored_privately_and_shown_on_the_id_card(): void
     {
         Storage::fake();
-        [$user, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        [$user, $region, $village, $group, $level] = $this->createGenerusImportContext();
         $generus = $this->createPlacedGenerus($group, '26090001', 'Generus Berfoto');
 
         $this->actingAs($user)
             ->put("/generus/{$generus->id}", [
-                ...$this->generusPayload($region, $village, $group, $level, $year),
+                ...$this->generusPayload($region, $village, $group, $level),
                 'full_name' => 'Generus Berfoto',
                 'photo' => $this->fakePhoto(),
             ])
@@ -858,11 +839,11 @@ class GenerusTest extends TestCase
     public function test_replacing_photo_deletes_the_old_file_and_keeping_it_leaves_it_untouched(): void
     {
         Storage::fake();
-        [$user, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        [$user, $region, $village, $group, $level] = $this->createGenerusImportContext();
         $generus = $this->createPlacedGenerus($group, 'PPG-FOTO-002', 'Generus Ganti Foto');
         $oldPhotoPath = Storage::putFileAs(Generus::PHOTO_DIRECTORY, $this->fakePhoto(), 'lama.png');
         $generus->update(['photo' => $oldPhotoPath]);
-        $payload = $this->generusPayload($region, $village, $group, $level, $year);
+        $payload = $this->generusPayload($region, $village, $group, $level);
 
         $this->actingAs($user)->put("/generus/{$generus->id}", $payload)->assertSessionHasNoErrors();
 
@@ -879,12 +860,12 @@ class GenerusTest extends TestCase
     public function test_photo_must_be_an_image(): void
     {
         Storage::fake();
-        [$user, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        [$user, $region, $village, $group, $level] = $this->createGenerusImportContext();
         $generus = $this->createPlacedGenerus($group, 'PPG-FOTO-003', 'Generus Salah Foto');
 
         $this->actingAs($user)
             ->put("/generus/{$generus->id}", [
-                ...$this->generusPayload($region, $village, $group, $level, $year),
+                ...$this->generusPayload($region, $village, $group, $level),
                 'photo' => UploadedFile::fake()->createWithContent('foto.pdf', '%PDF-1.4'),
             ])
             ->assertSessionHasErrors('photo');
@@ -955,7 +936,6 @@ class GenerusTest extends TestCase
             'region_id' => $group->village->region_id,
             'village_id' => $group->village_id,
             'group_id' => $group->id,
-            'status' => 'active',
         ]);
 
         return $generus;
@@ -964,7 +944,7 @@ class GenerusTest extends TestCase
     /**
      * @return array<string, mixed>
      */
-    private function generusPayload(Region $region, Village $village, Group $group, Level $level, AcademicYear $year): array
+    private function generusPayload(Region $region, Village $village, Group $group, Level $level): array
     {
         return [
             'full_name' => 'Generus Scope',
@@ -973,8 +953,6 @@ class GenerusTest extends TestCase
             'village_id' => $village->id,
             'group_id' => $group->id,
             'level_id' => $level->id,
-            'academic_year_id' => $year->id,
-            'assignment_status' => 'active',
         ];
     }
 
@@ -1005,7 +983,7 @@ class GenerusTest extends TestCase
     }
 
     /**
-     * @return array{0: User, 1: Region, 2: Village, 3: Group, 4: Level, 5: AcademicYear}
+     * @return array{0: User, 1: Region, 2: Village, 3: Group, 4: Level}
      */
     private function createGenerusImportContext(): array
     {
@@ -1060,14 +1038,6 @@ class GenerusTest extends TestCase
             'is_active' => true,
         ]);
 
-        $year = AcademicYear::create([
-            'name' => '2025/2026',
-            'code' => fake()->unique()->bothify('2025-####'),
-            'start_year' => 2025,
-            'end_year' => 2026,
-            'is_active' => true,
-        ]);
-
-        return [$user, $region, $village, $group, $level, $year];
+        return [$user, $region, $village, $group, $level];
     }
 }

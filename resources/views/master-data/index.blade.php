@@ -92,6 +92,22 @@
         </section>
 
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h3 class="text-lg font-bold text-slate-950">Kelas</h3>
+            <p class="mt-1 text-sm text-slate-500">{{ $classGrades->count() }} data terdaftar. Dipakai untuk pilihan Kelas Sekolah dan Kelas KBM pada data generus.</p>
+            <form method="POST" action="{{ route('master-data.class-grades.store') }}" class="mt-4">
+                @csrf
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <input class="{{ $inputClass }}" name="name" placeholder="Nama kelas, contoh Kelas 4" required>
+                    <input class="{{ $inputClass }}" name="code" placeholder="Kode kelas" required>
+                    <input class="{{ $inputClass }}" name="sort_order" type="number" min="0" value="0" placeholder="Urutan" required>
+                </div>
+                <input type="hidden" name="is_active" value="1">
+                <button class="{{ $buttonClass }}">Tambah Kelas</button>
+            </form>
+            <div class="mt-5 space-y-2 text-sm">@foreach ($classGrades as $classGrade)<div class="flex justify-between border-t border-slate-100 pt-2"><span>{{ $classGrade->name }} <span class="text-slate-400">({{ $classGrade->code }})</span></span><span>{{ $classGrade->is_active ? 'Aktif' : 'Nonaktif' }}</span></div>@endforeach</div>
+        </section>
+
+        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h3 class="text-lg font-bold text-slate-950">Tahun Akademik</h3>
             <p class="mt-1 text-sm text-slate-500">{{ $academicYears->count() }} data terdaftar.</p>
             <form method="POST" action="{{ route('master-data.academic-years.store') }}" class="mt-4">

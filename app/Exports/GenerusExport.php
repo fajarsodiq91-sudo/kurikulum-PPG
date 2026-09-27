@@ -21,10 +21,12 @@ class GenerusExport implements FromQuery, WithHeadings, WithMapping
         return Generus::query()
             ->when($this->user, fn (Builder $query, User $user) => $query->visibleTo($user))
             ->with([
+                'schoolGrade',
+                'learningClass',
                 'assignments' => fn ($query) => $query
-                    ->where('status', 'active')
+                    ->whereNull('ended_at')
                     ->latest('assigned_at')
-                    ->with(['region', 'village', 'group', 'level', 'academicYear']),
+                    ->with(['region', 'village', 'group', 'level']),
             ])
             ->orderBy('id');
     }
@@ -47,9 +49,8 @@ class GenerusExport implements FromQuery, WithHeadings, WithMapping
             'birth_date',
             'birth_order',
             'sibling_count',
-            'school_grade',
-            'learning_class',
-            'educational_level',
+            'school_grade_code',
+            'learning_class_code',
             'status',
             'transfer_destination',
             'notes',
@@ -57,8 +58,6 @@ class GenerusExport implements FromQuery, WithHeadings, WithMapping
             'village_code',
             'group_code',
             'level_code',
-            'academic_year_code',
-            'assignment_status',
             'assignment_notes',
         ];
     }
@@ -83,9 +82,8 @@ class GenerusExport implements FromQuery, WithHeadings, WithMapping
             $generus->birth_date?->format('Y-m-d'),
             $generus->birth_order,
             $generus->sibling_count,
-            $generus->school_grade,
-            $generus->learning_class,
-            $generus->educational_level,
+            $generus->schoolGrade?->code,
+            $generus->learningClass?->code,
             $generus->status,
             $generus->transfer_destination,
             $generus->notes,
@@ -93,8 +91,6 @@ class GenerusExport implements FromQuery, WithHeadings, WithMapping
             $assignment?->village?->code,
             $assignment?->group?->code,
             $assignment?->level?->code,
-            $assignment?->academicYear?->code,
-            $assignment?->status,
             $assignment?->notes,
         ];
     }

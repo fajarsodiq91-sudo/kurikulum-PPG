@@ -4,6 +4,7 @@ namespace App\Http\Controllers\MasterData;
 
 use App\Http\Controllers\Controller;
 use App\Models\AcademicYear;
+use App\Models\ClassGrade;
 use App\Models\Group;
 use App\Models\Level;
 use App\Models\Region;
@@ -23,6 +24,7 @@ class MasterDataController extends Controller
             'villages' => Village::query()->with('region')->latest()->get(),
             'groups' => Group::query()->with('village.region')->latest()->get(),
             'levels' => Level::query()->orderBy('sort_order')->latest()->get(),
+            'classGrades' => ClassGrade::query()->orderBy('sort_order')->latest()->get(),
             'academicYears' => AcademicYear::query()->latest()->get(),
             'semesters' => Semester::query()->with('academicYear')->orderBy('sort_order')->latest()->get(),
         ]);
@@ -81,6 +83,20 @@ class MasterDataController extends Controller
         Level::create($validated);
 
         return $this->success('Jenjang berhasil ditambahkan.');
+    }
+
+    public function storeClassGrade(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'code' => ['required', 'string', 'max:50', 'unique:class_grades,code'],
+            'sort_order' => ['required', 'integer', 'min:0'],
+            'is_active' => ['required', 'boolean'],
+            'description' => ['nullable', 'string'],
+        ]);
+        ClassGrade::create($validated);
+
+        return $this->success('Kelas berhasil ditambahkan.');
     }
 
     public function storeAcademicYear(Request $request): RedirectResponse

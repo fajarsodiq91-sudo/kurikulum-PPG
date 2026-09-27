@@ -15,8 +15,6 @@ class GenerusAssignment extends Model
         'village_id',
         'group_id',
         'level_id',
-        'academic_year_id',
-        'status',
         'assigned_at',
         'ended_at',
         'notes',
@@ -45,10 +43,5 @@ class GenerusAssignment extends Model
     public function level(): BelongsTo
     {
         return $this->belongsTo(Level::class);
-    }
-
-    public function academicYear(): BelongsTo
-    {
-        return $this->belongsTo(AcademicYear::class);
     }
 }

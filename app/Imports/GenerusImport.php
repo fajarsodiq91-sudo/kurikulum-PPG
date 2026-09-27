@@ -2,7 +2,7 @@
 
 namespace App\Imports;
 
-use App\Models\AcademicYear;
+use App\Models\ClassGrade;
 use App\Models\Generus;
 use App\Models\GenerusAssignment;
 use App\Models\Group;
@@ -58,9 +58,8 @@ class GenerusImport implements OnEachRow, WithChunkReading, WithHeadingRow
             'birth_date' => ['nullable', 'date'],
             'birth_order' => ['nullable', 'integer', 'min:1', 'max:32767'],
             'sibling_count' => ['nullable', 'integer', 'min:0', 'max:32767'],
-            'school_grade' => ['nullable', 'string', 'max:50'],
-            'learning_class' => ['nullable', 'string', 'max:100'],
-            'educational_level' => ['nullable', 'string', 'max:100'],
+            'school_grade_code' => ['nullable', 'string', 'max:50'],
+            'learning_class_code' => ['nullable', 'string', 'max:50'],
             'status' => ['required', Rule::in(['active', 'pindah_sambung', 'married'])],
             'transfer_destination' => ['nullable', Rule::in(['internal', 'external'])],
             'notes' => ['nullable', 'string'],
@@ -68,8 +67,6 @@ class GenerusImport implements OnEachRow, WithChunkReading, WithHeadingRow
             'village_code' => ['nullable', 'string', 'max:50'],
             'group_code' => ['nullable', 'string', 'max:50'],
             'level_code' => ['nullable', 'string', 'max:50'],
-            'academic_year_code' => ['nullable', 'string', 'max:50'],
-            'assignment_status' => ['nullable', 'string', 'max:50'],
             'assignment_notes' => ['nullable', 'string'],
         ]);
 
@@ -86,8 +83,6 @@ class GenerusImport implements OnEachRow, WithChunkReading, WithHeadingRow
             'village_code',
             'group_code',
             'level_code',
-            'academic_year_code',
-            'assignment_status',
         ]);
         $hasAssignment = $assignmentFields->contains(fn (string $field): bool => filled($validated[$field] ?? null));
 
@@ -129,10 +124,9 @@ class GenerusImport implements OnEachRow, WithChunkReading, WithHeadingRow
         $village = Village::query()->where('code', $validated['village_code'])->where('region_id', $region?->id)->where('is_active', true)->first();
         $group = Group::query()->where('code', $validated['group_code'])->where('village_id', $village?->id)->where('is_active', true)->first();
         $level = Level::query()->where('code', $validated['level_code'])->where('is_active', true)->first();
-        $academicYear = AcademicYear::query()->where('code', $validated['academic_year_code'])->where('is_active', true)->first();
 
-        if (! $region || ! $village || ! $group || ! $level || ! $academicYear) {
-            $this->addErrors($row->getIndex(), ['Kode wilayah, jenjang, atau tahun akademik tidak ditemukan atau tidak aktif.']);
+        if (! $region || ! $village || ! $group || ! $level) {
+            $this->addErrors($row->getIndex(), ['Kode wilayah atau jenjang tidak ditemukan atau tidak aktif.']);
 
             return;
         }
@@ -143,20 +137,19 @@ class GenerusImport implements OnEachRow, WithChunkReading, WithHeadingRow
             return;
         }
 
-        DB::transaction(function () use ($validated, $region, $village, $group, $level, $academicYear): void {
+        DB::transaction(function () use ($validated, $region, $village, $group, $level): void {
             $generus = $this->upsertGenerus($validated);
 
             GenerusAssignment::updateOrCreate(
                 [
                     'generus_id' => $generus->id,
-                    'academic_year_id' => $academicYear->id,
+                    'ended_at' => null,
                 ],
                 [
                     'region_id' => $region->id,
                     'village_id' => $village->id,
                     'group_id' => $group->id,
                     'level_id' => $level->id,
-                    'status' => $validated['assignment_status'],
                     'assigned_at' => now()->toDateString(),
                     'notes' => $validated['assignment_notes'] ?? null,
                 ],
@@ -171,29 +164,39 @@ class GenerusImport implements OnEachRow, WithChunkReading, WithHeadingRow
     {
         return Generus::updateOrCreate(
             ['registration_number' => $validated['registration_number']],
-            collect($validated)->only([
-                'record_number',
-                'full_name',
-                'school_name',
-                'nis',
-                'father_name',
-                'mother_name',
-                'father_occupation',
-                'mother_occupation',
-                'phone_number',
-                'gender',
-                'birth_place',
-                'birth_date',
-                'birth_order',
-                'sibling_count',
-                'school_grade',
-                'learning_class',
-                'educational_level',
-                'status',
-                'transfer_destination',
-                'notes',
-            ])->all(),
+            [
+                ...collect($validated)->only([
+                    'record_number',
+                    'full_name',
+                    'school_name',
+                    'nis',
+                    'father_name',
+                    'mother_name',
+                    'father_occupation',
+                    'mother_occupation',
+                    'phone_number',
+                    'gender',
+                    'birth_place',
+                    'birth_date',
+                    'birth_order',
+                    'sibling_count',
+                    'status',
+                    'transfer_destination',
+                    'notes',
+                ])->all(),
+                'school_grade_id' => $this->classGradeId($validated['school_grade_code'] ?? null),
+                'learning_class_id' => $this->classGradeId($validated['learning_class_code'] ?? null),
+            ],
         );
+    }
+
+    private function classGradeId(?string $code): ?int
+    {
+        if (blank($code)) {
+            return null;
+        }
+
+        return ClassGrade::query()->where('code', $code)->where('is_active', true)->value('id');
     }
 
     private function isScopedUser(): bool

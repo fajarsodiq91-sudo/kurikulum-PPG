@@ -1,7 +1,7 @@
 {{--
     Shared generus form for create and edit.
     Expects: $action, $generus (null on create), $currentAssignment, $registrationNumber, $recordNumber, $nis,
-    $regions, $villages, $groups, $levels, $academicYears.
+    $regions, $villages, $groups, $levels, $classGrades, $defaultRegionId (optional, create only).
 --}}
 <form method="POST" action="{{ $action }}" enctype="multipart/form-data" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         @csrf
@@ -81,9 +81,6 @@
                 ['mother_occupation', 'Pekerjaan Ibu'],
                 ['phone_number', 'Nomor WhatsApp'],
                 ['birth_place', 'Tempat Lahir'],
-                ['school_grade', 'Kelas Sekolah'],
-                ['learning_class', 'Kelas KBM'],
-                ['educational_level', 'Jenjang Generus'],
             ] as [$field, $label])
                 <div>
                     <label class="mb-2 block text-sm font-medium text-slate-700" for="{{ $field }}">{{ $label }}</label>
@@ -97,6 +94,27 @@
                     @endif
                 </div>
             @endforeach
+
+            <div>
+                <label class="mb-2 block text-sm font-medium text-slate-700" for="school_grade_id">Kelas Sekolah</label>
+                <select id="school_grade_id" name="school_grade_id" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
+                    <option value="">-- Pilih --</option>
+                    @foreach($classGrades as $classGrade)
+                        <option value="{{ $classGrade->id }}" @selected(old('school_grade_id', $generus?->school_grade_id) == $classGrade->id)>{{ $classGrade->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <label class="mb-2 block text-sm font-medium text-slate-700" for="learning_class_id">Kelas KBM</label>
+                <select id="learning_class_id" name="learning_class_id" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
+                    <option value="">-- Pilih --</option>
+                    @foreach($classGrades as $classGrade)
+                        <option value="{{ $classGrade->id }}" @selected(old('learning_class_id', $generus?->learning_class_id) == $classGrade->id)>{{ $classGrade->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
             <div>
                 <label class="mb-2 block text-sm font-medium text-slate-700" for="birth_order">Anak Ke</label>
                 <input id="birth_order" name="birth_order" type="number" min="1" value="{{ old('birth_order', $generus?->birth_order) }}" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
@@ -128,7 +146,7 @@
                 <select id="region_id" name="region_id" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
                     <option value="">-- Pilih --</option>
                     @foreach($regions as $region)
-                        <option value="{{ $region->id }}" @selected(old('region_id', $currentAssignment?->region_id) == $region->id)>{{ $region->name }}</option>
+                        <option value="{{ $region->id }}" @selected(old('region_id', $currentAssignment?->region_id ?? ($defaultRegionId ?? null)) == $region->id)>{{ $region->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -163,23 +181,6 @@
                 </select>
             </div>
 
-            <div>
-                <label class="mb-2 block text-sm font-medium text-slate-700" for="academic_year_id">Tahun <span class="text-rose-500">*</span></label>
-                <select id="academic_year_id" name="academic_year_id" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
-                    <option value="">-- Pilih --</option>
-                    @foreach($academicYears as $year)
-                        <option value="{{ $year->id }}" @selected(old('academic_year_id', $currentAssignment?->academic_year_id) == $year->id)>{{ $year->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div>
-                <label class="mb-2 block text-sm font-medium text-slate-700" for="assignment_status">Status Penempatan</label>
-                <select id="assignment_status" name="assignment_status" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
-                    <option value="active" @selected(old('assignment_status', $currentAssignment?->status ?? 'active') === 'active')>Aktif</option>
-                    <option value="inactive" @selected(old('assignment_status', $currentAssignment?->status) === 'inactive')>Nonaktif</option>
-                </select>
-            </div>
         </div>
 
         <div class="mt-5">
@@ -198,7 +199,7 @@
     const transferSection = document.getElementById('transfer-section');
     const transferDestination = document.getElementById('transfer_destination');
     const placementSection = document.getElementById('placement-section');
-    const placementFields = ['region_id', 'village_id', 'group_id', 'level_id', 'academic_year_id'].map((id) => document.getElementById(id));
+    const placementFields = ['region_id', 'village_id', 'group_id', 'level_id'].map((id) => document.getElementById(id));
 
     if (statusField && transferSection && transferDestination) {
         function updateTransferFields() {
@@ -251,5 +252,22 @@
 
         villageField.addEventListener('change', filterGroupsByVillage);
         filterGroupsByVillage();
+    }
+
+    const schoolGradeField = document.getElementById('school_grade_id');
+    const learningClassField = document.getElementById('learning_class_id');
+
+    if (schoolGradeField && learningClassField) {
+        let learningClassTouchedByUser = learningClassField.value !== '' && learningClassField.value !== schoolGradeField.value;
+
+        schoolGradeField.addEventListener('change', () => {
+            if (!learningClassTouchedByUser) {
+                learningClassField.value = schoolGradeField.value;
+            }
+        });
+
+        learningClassField.addEventListener('change', () => {
+            learningClassTouchedByUser = learningClassField.value !== schoolGradeField.value;
+        });
     }
 </script>
