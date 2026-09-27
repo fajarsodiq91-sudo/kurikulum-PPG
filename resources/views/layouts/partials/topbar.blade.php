@@ -2,7 +2,7 @@
     <div class="flex items-center gap-3">
         <button type="button" class="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 lg:hidden" data-sidebar-toggle aria-controls="app-sidebar" aria-expanded="false">Menu</button>
         <div>
-            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">PPG Management & Learning Monitoring System</p>
+            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Kurikulum Management System</p>
             <h1 class="mt-1 text-lg font-bold text-slate-900">@yield('page-title', 'Dashboard')</h1>
         </div>
     </div>

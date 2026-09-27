@@ -1,7 +1,7 @@
-<div class="flex h-14 shrink-0 items-center gap-2.5 border-b border-brand-800 px-4">
+<div class="flex h-14 shrink-0 items-center gap-2.5 border-b border-slate-200 px-4">
     <img src="{{ asset('images/logo-ppg-karawang-timur.png') }}" alt="Logo PPG Karawang Timur" class="h-9 w-9 shrink-0 object-contain">
     <div>
-        <p class="text-xs font-bold leading-tight tracking-wide text-white">PPG Bid. Kurikulum</p>
+        <p class="text-xs font-bold leading-tight tracking-wide text-slate-900">PPG Bid. Kurikulum</p>
         <p class="text-[11px] leading-tight text-slate-500">Karawang Timur</p>
     </div>
 </div>
@@ -78,22 +78,22 @@
 
         @if ($sectionAllowed && (isset($section['route']) || $visibleItems->isNotEmpty()))
             @if (isset($section['route']))
-                <a href="{{ route($section['route']) }}" class="flex items-center gap-2.5 rounded-md border-l-2 px-2.5 py-2 text-[13px] font-medium transition {{ $isActive ? 'border-amber-400 bg-amber-400 text-slate-950 hover:bg-amber-300' : 'border-transparent text-slate-400 hover:bg-brand-900 hover:text-white' }}">
+                <a href="{{ route($section['route']) }}" class="flex items-center gap-2.5 rounded-md border-l-2 px-2.5 py-2 text-[13px] font-medium transition {{ $isActive ? 'border-amber-500 bg-amber-50 text-amber-700' : 'border-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
                     <span class="w-4 text-center text-sm">{{ $section['icon'] ?? '•' }}</span>
                     <span>{{ $section['label'] }}</span>
                 </a>
             @else
                 <details class="group" @if ($isActive) open @endif>
-                    <summary class="flex cursor-pointer list-none items-center justify-between rounded-md border-l-2 px-2.5 py-2 text-[13px] font-medium transition [&::-webkit-details-marker]:hidden {{ $isActive ? 'border-amber-400 text-white hover:bg-brand-900' : 'border-transparent text-slate-400 hover:bg-brand-900 hover:text-white' }}">
+                    <summary class="flex cursor-pointer list-none items-center justify-between rounded-md border-l-2 px-2.5 py-2 text-[13px] font-medium transition [&::-webkit-details-marker]:hidden {{ $isActive ? 'border-amber-500 text-slate-900 hover:bg-slate-100' : 'border-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}">
                         <span class="flex items-center gap-2.5">
                             <span class="w-4 text-center text-sm">{{ $section['icon'] ?? '•' }}</span>
                             <span>{{ $section['label'] }}</span>
                         </span>
-                        <span class="text-[9px] text-slate-500 transition-transform duration-200 group-open:rotate-180">▾</span>
+                        <span class="text-[9px] text-slate-400 transition-transform duration-200 group-open:rotate-180">▾</span>
                     </summary>
                     <div class="space-y-0.5 py-0.5 pl-6">
                         @foreach ($visibleItems as $item)
-                            <a href="{{ route($item['route']) }}" class="block rounded-md border-l-2 px-2.5 py-1.5 text-[13px] transition {{ request()->routeIs($item['route']) ? 'border-amber-400 bg-slate-800 font-semibold text-white hover:bg-slate-700' : 'border-transparent text-slate-400 hover:bg-brand-900 hover:text-white' }}">
+                            <a href="{{ route($item['route']) }}" class="block rounded-md border-l-2 px-2.5 py-1.5 text-[13px] transition {{ request()->routeIs($item['route']) ? 'border-amber-500 bg-amber-50 font-semibold text-amber-700 hover:bg-amber-100' : 'border-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-900' }}">
                                 {{ $item['label'] }}
                             </a>
                         @endforeach

@@ -45,7 +45,9 @@
                 <label class="mb-2 block text-sm font-medium text-slate-700" for="status">Status Generus</label>
                 <select id="status" name="status" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
                     <option value="active" @selected(old('status', $generus?->status ?? 'active') === 'active')>Aktif</option>
-                    <option value="pindah_sambung" @selected(old('status', $generus?->status) === 'pindah_sambung')>Pindah Sambung</option>
+                    @if ($allowTransferStatus ?? true)
+                        <option value="pindah_sambung" @selected(old('status', $generus?->status) === 'pindah_sambung')>Pindah Sambung</option>
+                    @endif
                     <option value="married" @selected(old('status', $generus?->status) === 'married')>Sudah Menikah</option>
                 </select>
             </div>
@@ -105,19 +107,21 @@
             </div>
         </div>
 
-        <div class="mt-8 border-t border-slate-200 pt-6">
-            <h3 class="text-lg font-bold text-slate-950">Pindah Sambung</h3>
-            <p class="mt-1 text-sm text-slate-500">Jika status Pindah Sambung, tentukan tujuan penempatan terbaru.</p>
-        </div>
-        <div id="transfer-section" class="mt-6 hidden rounded-xl border border-amber-200 bg-amber-50 p-4">
-            <label class="mb-2 block text-sm font-medium text-slate-700" for="transfer_destination">Tujuan Pindah Sambung <span class="text-rose-500">*</span></label>
-            <select id="transfer_destination" name="transfer_destination" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
-                <option value="">-- Pilih tujuan --</option>
-                <option value="internal" @selected(old('transfer_destination', $generus?->transfer_destination) === 'internal')>Daerah terdaftar di sistem</option>
-                <option value="external" @selected(old('transfer_destination', $generus?->transfer_destination) === 'external')>Luar daerah</option>
-            </select>
-            <p class="mt-2 text-xs text-slate-600">Untuk daerah terdaftar, pilih daerah, desa, dan kelompok pada bagian di bawah.</p>
-        </div>
+        @if ($allowTransferStatus ?? true)
+            <div class="mt-8 border-t border-slate-200 pt-6">
+                <h3 class="text-lg font-bold text-slate-950">Pindah Sambung</h3>
+                <p class="mt-1 text-sm text-slate-500">Jika status Pindah Sambung, tentukan tujuan generus ini keluar.</p>
+            </div>
+            <div id="transfer-section" class="mt-6 hidden rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <label class="mb-2 block text-sm font-medium text-slate-700" for="transfer_destination">Tujuan Pindah Sambung <span class="text-rose-500">*</span></label>
+                <select id="transfer_destination" name="transfer_destination" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
+                    <option value="">-- Pilih tujuan --</option>
+                    <option value="internal" @selected(old('transfer_destination', $generus?->transfer_destination) === 'internal')>Daerah terdaftar di sistem</option>
+                    <option value="external" @selected(old('transfer_destination', $generus?->transfer_destination) === 'external')>Luar daerah</option>
+                </select>
+                <p class="mt-2 text-xs text-slate-600">Untuk daerah terdaftar, isi daerah/desa/kelompok tujuan di bawah jika sudah pasti, atau kosongkan jika belum diketahui. Generus akan muncul pada daftar "pindah sambung" saat kelompok tujuan menerimanya lewat menu Tambah Generus.</p>
+            </div>
+        @endif
         <div id="placement-section" class="mt-6 grid gap-5 md:grid-cols-2">
             <div>
                 <label class="mb-2 block text-sm font-medium text-slate-700" for="region_id">Daerah <span class="text-rose-500">*</span></label>
@@ -196,20 +200,22 @@
     const placementSection = document.getElementById('placement-section');
     const placementFields = ['region_id', 'village_id', 'group_id', 'level_id', 'academic_year_id'].map((id) => document.getElementById(id));
 
-    function updateTransferFields() {
-        const isTransfer = statusField.value === 'pindah_sambung';
-        const isExternal = isTransfer && transferDestination.value === 'external';
+    if (statusField && transferSection && transferDestination) {
+        function updateTransferFields() {
+            const isTransfer = statusField.value === 'pindah_sambung';
+            const isExternal = isTransfer && transferDestination.value === 'external';
 
-        transferSection.classList.toggle('hidden', !isTransfer);
-        placementSection.classList.toggle('hidden', isExternal);
-        transferDestination.required = isTransfer;
-        placementFields.forEach((field) => {
-            field.required = !isExternal;
-            field.disabled = isExternal;
-        });
+            transferSection.classList.toggle('hidden', !isTransfer);
+            placementSection.classList.toggle('hidden', isExternal);
+            transferDestination.required = isTransfer;
+            placementFields.forEach((field) => {
+                field.required = !isTransfer;
+                field.disabled = isExternal;
+            });
+        }
+
+        statusField.addEventListener('change', updateTransferFields);
+        transferDestination.addEventListener('change', updateTransferFields);
+        updateTransferFields();
     }
-
-    statusField.addEventListener('change', updateTransferFields);
-    transferDestination.addEventListener('change', updateTransferFields);
-    updateTransferFields();
 </script>

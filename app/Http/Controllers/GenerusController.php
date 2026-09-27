@@ -14,7 +14,9 @@ use App\Models\User;
 use App\Models\Village;
 use chillerlan\QRCode\QRCode;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -135,7 +137,85 @@ class GenerusController extends Controller
             'generatedRegistrationNumber' => $this->generateRegistrationNumber(),
             'generatedRecordNumber' => $this->generateRecordNumber(),
             ...$this->placementOptions($request->user()),
+            'originVillages' => Village::where('is_active', true)->orderBy('name')->get(),
+            'originGroups' => Group::where('is_active', true)->orderBy('name')->get(),
         ]);
+    }
+
+    /**
+     * Generus recorded as pindah sambung (internal) who left their origin group and have no
+     * placement yet, matched by the group they left. Used by the "Tambah Generus" intake
+     * flow to look up who to receive without retyping their biodata.
+     */
+    public function pendingTransfers(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'group_id' => ['required', 'integer', Rule::exists('groups', 'id')],
+        ]);
+
+        $candidates = $this->pendingTransferCandidates((int) $validated['group_id']);
+
+        return response()->json([
+            'data' => $candidates->map(fn (Generus $generus): array => [
+                'id' => $generus->id,
+                'registration_number' => $generus->registration_number,
+                'nis' => $generus->nis,
+                'full_name' => $generus->full_name,
+                'school_name' => $generus->school_name,
+                'father_name' => $generus->father_name,
+                'mother_name' => $generus->mother_name,
+                'father_occupation' => $generus->father_occupation,
+                'mother_occupation' => $generus->mother_occupation,
+                'phone_number' => $generus->phone_number,
+                'gender' => $generus->gender,
+                'birth_place' => $generus->birth_place,
+                'birth_date' => $generus->birth_date?->format('Y-m-d'),
+                'birth_order' => $generus->birth_order,
+                'sibling_count' => $generus->sibling_count,
+                'school_grade' => $generus->school_grade,
+                'learning_class' => $generus->learning_class,
+                'educational_level' => $generus->educational_level,
+                'notes' => $generus->notes,
+            ])->values(),
+        ]);
+    }
+
+    /**
+     * Completes an internal pindah sambung: the existing generus keeps their identity
+     * (registration number and NIS) but gets a fresh placement at the receiving group, and
+     * their status returns to active.
+     */
+    public function receiveTransfer(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        $validated = $this->validateReceiveTransfer($request);
+
+        $generus = Generus::query()->whereKey($validated['generus_id'])->firstOrFail();
+
+        if ($generus->status !== 'pindah_sambung'
+            || $generus->transfer_destination !== 'internal'
+            || $this->currentAssignment($generus) !== null) {
+            throw ValidationException::withMessages([
+                'generus_id' => 'Generus ini sudah tidak berstatus menunggu pindah sambung.',
+            ]);
+        }
+
+        $this->ensurePlacementIsWithinUserScope($user, $validated);
+
+        DB::transaction(function () use ($generus, $validated): void {
+            $generus->update([
+                ...collect(self::EDITABLE_FIELDS)
+                    ->reject(fn (string $field): bool => $field === 'status')
+                    ->mapWithKeys(fn (string $field): array => [$field => $validated[$field] ?? null])
+                    ->all(),
+                'status' => 'active',
+                'transfer_destination' => null,
+            ]);
+
+            $this->syncPlacement($generus, $validated);
+        });
+
+        return redirect()->route('generus.show', $generus)->with('success', 'Generus berhasil diterima dari pindah sambung.');
     }
 
     public function show(Request $request, Generus $generus): View
@@ -257,6 +337,10 @@ class GenerusController extends Controller
             ]);
         }
 
+        if (($validated['transfer_destination'] ?? null) === 'internal' && ($validated['group_id'] ?? null) === null) {
+            return;
+        }
+
         $isCovered = $user->coversPlacement(
             Generus::MANAGE_PERMISSION,
             (int) $validated['region_id'],
@@ -333,31 +417,31 @@ class GenerusController extends Controller
                 Rule::in(['internal', 'external']),
             ],
             'region_id' => [
-                Rule::requiredIf(fn (): bool => $request->input('transfer_destination') !== 'external'),
+                Rule::requiredIf(fn (): bool => $request->input('status') !== 'pindah_sambung'),
                 'nullable',
                 Rule::exists('regions', 'id')->where('is_active', true),
             ],
             'village_id' => [
-                Rule::requiredIf(fn (): bool => $request->input('transfer_destination') !== 'external'),
+                Rule::requiredIf(fn (): bool => $request->input('status') !== 'pindah_sambung'),
                 'nullable',
                 Rule::exists('villages', 'id')
                     ->where('region_id', $request->input('region_id'))
                     ->where('is_active', true),
             ],
             'group_id' => [
-                Rule::requiredIf(fn (): bool => $request->input('transfer_destination') !== 'external'),
+                Rule::requiredIf(fn (): bool => $request->input('status') !== 'pindah_sambung'),
                 'nullable',
                 Rule::exists('groups', 'id')
                     ->where('village_id', $request->input('village_id'))
                     ->where('is_active', true),
             ],
             'level_id' => [
-                Rule::requiredIf(fn (): bool => $request->input('transfer_destination') !== 'external'),
+                Rule::requiredIf(fn (): bool => $request->input('status') !== 'pindah_sambung'),
                 'nullable',
                 Rule::exists('levels', 'id')->where('is_active', true),
             ],
             'academic_year_id' => [
-                Rule::requiredIf(fn (): bool => $request->input('transfer_destination') !== 'external'),
+                Rule::requiredIf(fn (): bool => $request->input('status') !== 'pindah_sambung'),
                 'nullable',
                 Rule::exists('academic_years', 'id')->where('is_active', true),
             ],
@@ -373,18 +457,31 @@ class GenerusController extends Controller
 
     /**
      * Ends the current placement and records a new one when the placement changed;
-     * otherwise only the current placement's status is updated.
+     * otherwise only the current placement's status is updated. A pindah sambung marked
+     * without a known destination group simply ends the current placement, leaving the
+     * generus pending until another group receives them.
      *
      * @param  array<string, mixed>  $validated
      */
     private function syncPlacement(Generus $generus, array $validated): void
     {
         $isExternal = ($validated['transfer_destination'] ?? null) === 'external';
-        $placement = collect(self::PLACEMENT_FIELDS)
-            ->mapWithKeys(fn (string $field): array => [$field => $isExternal ? null : (int) $validated[$field]])
-            ->all();
-
         $currentAssignment = $this->currentAssignment($generus);
+
+        if (! $isExternal && ($validated['group_id'] ?? null) === null) {
+            $currentAssignment?->update([
+                'status' => 'ended',
+                'ended_at' => now()->toDateString(),
+            ]);
+
+            return;
+        }
+
+        $placement = collect(self::PLACEMENT_FIELDS)
+            ->mapWithKeys(fn (string $field): array => [
+                $field => $isExternal || $validated[$field] === null ? null : (int) $validated[$field],
+            ])
+            ->all();
 
         $isSamePlacement = $currentAssignment !== null && collect($placement)
             ->every(fn (?int $id, string $field): bool => ($currentAssignment->{$field} === null ? null : (int) $currentAssignment->{$field}) === $id);
@@ -415,6 +512,69 @@ class GenerusController extends Controller
             ->latest('assigned_at')
             ->latest('id')
             ->first();
+    }
+
+    /**
+     * Generus marked pindah sambung (internal) whose most recent assignment ended at the
+     * given group and who have not been placed anywhere since.
+     *
+     * @return EloquentCollection<int, Generus>
+     */
+    private function pendingTransferCandidates(int $groupId): EloquentCollection
+    {
+        return Generus::query()
+            ->where('status', 'pindah_sambung')
+            ->where('transfer_destination', 'internal')
+            ->with(['assignments' => fn ($query) => $query->latest('assigned_at')->latest('id')])
+            ->get()
+            ->filter(function (Generus $generus) use ($groupId): bool {
+                $latest = $generus->assignments->first();
+
+                return $latest !== null && $latest->status === 'ended' && (int) $latest->group_id === $groupId;
+            })
+            ->values();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function validateReceiveTransfer(Request $request): array
+    {
+        return $request->validate([
+            'generus_id' => ['required', 'integer', Rule::exists('generus', 'id')],
+            'full_name' => ['required', 'string', 'max:255'],
+            'school_name' => ['nullable', 'string', 'max:255'],
+            'father_name' => ['nullable', 'string', 'max:255'],
+            'mother_name' => ['nullable', 'string', 'max:255'],
+            'father_occupation' => ['nullable', 'string', 'max:255'],
+            'mother_occupation' => ['nullable', 'string', 'max:255'],
+            'phone_number' => ['nullable', 'string', 'max:50'],
+            'gender' => ['nullable', 'string', 'max:50'],
+            'birth_place' => ['nullable', 'string', 'max:255'],
+            'birth_date' => ['nullable', 'date'],
+            'birth_order' => ['nullable', 'integer', 'min:1', 'max:32767'],
+            'sibling_count' => ['nullable', 'integer', 'min:0', 'max:32767'],
+            'school_grade' => ['nullable', 'string', 'max:50'],
+            'learning_class' => ['nullable', 'string', 'max:100'],
+            'educational_level' => ['nullable', 'string', 'max:100'],
+            'region_id' => ['required', Rule::exists('regions', 'id')->where('is_active', true)],
+            'village_id' => [
+                'required',
+                Rule::exists('villages', 'id')
+                    ->where('region_id', $request->input('region_id'))
+                    ->where('is_active', true),
+            ],
+            'group_id' => [
+                'required',
+                Rule::exists('groups', 'id')
+                    ->where('village_id', $request->input('village_id'))
+                    ->where('is_active', true),
+            ],
+            'level_id' => ['required', Rule::exists('levels', 'id')->where('is_active', true)],
+            'academic_year_id' => ['required', Rule::exists('academic_years', 'id')->where('is_active', true)],
+            'assignment_status' => ['required', 'string', 'max:50'],
+            'notes' => ['nullable', 'string'],
+        ]);
     }
 
     /**

@@ -113,6 +113,10 @@ Route::middleware(['auth', 'permission:manage-generus'])->group(function () {
         ->name('generus.create');
     Route::post('/generus', [GenerusController::class, 'store'])
         ->name('generus.store');
+    Route::get('/generus/pending-transfers', [GenerusController::class, 'pendingTransfers'])
+        ->name('generus.pending-transfers');
+    Route::post('/generus/receive-transfer', [GenerusController::class, 'receiveTransfer'])
+        ->name('generus.receive-transfer');
     Route::post('/generus/import', [GenerusController::class, 'import'])
         ->name('generus.import');
     Route::get('/generus/export', [GenerusController::class, 'export'])

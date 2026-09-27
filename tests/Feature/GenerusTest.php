@@ -383,11 +383,15 @@ class GenerusTest extends TestCase
         [, , $village, $group] = $this->createGenerusImportContext();
         $otherGroup = $this->createGroupIn($village, 'Kelompok Tetangga');
 
-        $this->actingAs($this->createScopedUser('group', $group->id))
+        $response = $this->actingAs($this->createScopedUser('group', $group->id))
             ->get('/generus/create')
-            ->assertOk()
-            ->assertSee('Kelompok Import')
-            ->assertDontSee('Kelompok Tetangga');
+            ->assertOk();
+
+        $response->assertViewHas('groups', fn ($groups) => $groups->pluck('id')->contains($group->id)
+            && ! $groups->pluck('id')->contains($otherGroup->id));
+
+        // The pindah sambung origin picker searches the whole system, so it is not scope-limited.
+        $response->assertViewHas('originGroups', fn ($groups) => $groups->pluck('id')->contains($otherGroup->id));
     }
 
     public function test_village_scoped_user_can_create_generus_in_any_group_of_the_village(): void
@@ -621,6 +625,161 @@ class GenerusTest extends TestCase
             ->assertSessionHasNoErrors();
 
         $this->assertNull($generus->fresh()->transfer_destination);
+    }
+
+    public function test_marking_pindah_sambung_internal_without_destination_leaves_generus_pending(): void
+    {
+        [$user, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        $generus = $this->createPlacedGenerus($group, 'PPG-PS-001', 'Generus Menunggu Pindah');
+        $oldAssignment = $generus->assignments()->firstOrFail();
+
+        $this->actingAs($user)
+            ->put("/generus/{$generus->id}", [
+                'full_name' => 'Generus Menunggu Pindah',
+                'status' => 'pindah_sambung',
+                'transfer_destination' => 'internal',
+                'assignment_status' => 'active',
+            ])
+            ->assertRedirect("/generus/{$generus->id}")
+            ->assertSessionHasNoErrors();
+
+        $generus->refresh();
+        $this->assertSame('pindah_sambung', $generus->status);
+        $this->assertSame('internal', $generus->transfer_destination);
+        $this->assertDatabaseHas('generus_assignments', [
+            'id' => $oldAssignment->id,
+            'status' => 'ended',
+        ]);
+        $this->assertSame(1, $generus->assignments()->count());
+    }
+
+    public function test_scoped_user_can_mark_pindah_sambung_without_destination(): void
+    {
+        [, , , $group] = $this->createGenerusImportContext();
+        $generus = $this->createPlacedGenerus($group, 'PPG-PS-002', 'Generus Kelompok Sendiri');
+
+        $this->actingAs($this->createScopedUser('group', $group->id))
+            ->put("/generus/{$generus->id}", [
+                'full_name' => 'Generus Kelompok Sendiri',
+                'status' => 'pindah_sambung',
+                'transfer_destination' => 'internal',
+                'assignment_status' => 'active',
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('pindah_sambung', $generus->fresh()->status);
+    }
+
+    public function test_pending_transfers_lists_only_generus_who_left_the_given_group(): void
+    {
+        [, , $village, $group] = $this->createGenerusImportContext();
+        $otherGroup = $this->createGroupIn($village);
+
+        $pending = $this->createPlacedGenerus($group, 'PPG-PS-003', 'Generus Menunggu');
+        $pending->update(['status' => 'pindah_sambung', 'transfer_destination' => 'internal']);
+        $pending->assignments()->firstOrFail()->update(['status' => 'ended', 'ended_at' => now()->toDateString()]);
+
+        $stillActive = $this->createPlacedGenerus($group, 'PPG-PS-004', 'Generus Masih Aktif');
+
+        $pendingElsewhere = $this->createPlacedGenerus($otherGroup, 'PPG-PS-005', 'Generus Kelompok Lain');
+        $pendingElsewhere->update(['status' => 'pindah_sambung', 'transfer_destination' => 'internal']);
+        $pendingElsewhere->assignments()->firstOrFail()->update(['status' => 'ended', 'ended_at' => now()->toDateString()]);
+
+        $response = $this->actingAs($this->createScopedUser('group', $group->id))
+            ->getJson("/generus/pending-transfers?group_id={$group->id}")
+            ->assertOk();
+
+        $response->assertJsonFragment(['full_name' => 'Generus Menunggu']);
+        $response->assertJsonMissing(['full_name' => 'Generus Masih Aktif']);
+        $response->assertJsonMissing(['full_name' => 'Generus Kelompok Lain']);
+    }
+
+    public function test_receive_transfer_keeps_identity_but_moves_generus_to_new_group(): void
+    {
+        [$user, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        $destinationGroup = $this->createGroupIn($village, 'Kelompok Tujuan');
+
+        $pending = $this->createPlacedGenerus($group, 'PPG-PS-006', 'Generus Sebelum Pindah');
+        $pending->update(['status' => 'pindah_sambung', 'transfer_destination' => 'internal', 'nis' => 'PPG-PS-006']);
+        $oldAssignment = $pending->assignments()->firstOrFail();
+        $oldAssignment->update(['status' => 'ended', 'ended_at' => now()->toDateString()]);
+
+        $this->actingAs($user)
+            ->post('/generus/receive-transfer', [
+                'generus_id' => $pending->id,
+                'full_name' => 'Generus Setelah Pindah',
+                'region_id' => $region->id,
+                'village_id' => $village->id,
+                'group_id' => $destinationGroup->id,
+                'level_id' => $level->id,
+                'academic_year_id' => $year->id,
+                'assignment_status' => 'active',
+            ])
+            ->assertRedirect("/generus/{$pending->id}")
+            ->assertSessionHasNoErrors();
+
+        $pending->refresh();
+        $this->assertSame('active', $pending->status);
+        $this->assertNull($pending->transfer_destination);
+        $this->assertSame('Generus Setelah Pindah', $pending->full_name);
+        $this->assertSame('PPG-PS-006', $pending->registration_number);
+        $this->assertSame('PPG-PS-006', $pending->nis);
+
+        $this->assertDatabaseHas('generus_assignments', [
+            'id' => $oldAssignment->id,
+            'status' => 'ended',
+        ]);
+        $this->assertDatabaseHas('generus_assignments', [
+            'generus_id' => $pending->id,
+            'group_id' => $destinationGroup->id,
+            'status' => 'active',
+        ]);
+    }
+
+    public function test_receive_transfer_rejects_generus_not_pending(): void
+    {
+        [$user, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        $activeGenerus = $this->createPlacedGenerus($group, 'PPG-PS-007', 'Generus Aktif');
+
+        $this->actingAs($user)
+            ->post('/generus/receive-transfer', [
+                'generus_id' => $activeGenerus->id,
+                'full_name' => 'Generus Aktif',
+                'region_id' => $region->id,
+                'village_id' => $village->id,
+                'group_id' => $group->id,
+                'level_id' => $level->id,
+                'academic_year_id' => $year->id,
+                'assignment_status' => 'active',
+            ])
+            ->assertSessionHasErrors('generus_id');
+
+        $this->assertSame('active', $activeGenerus->fresh()->status);
+    }
+
+    public function test_scoped_user_cannot_receive_transfer_outside_scope(): void
+    {
+        [, $region, $village, $group, $level, $year] = $this->createGenerusImportContext();
+        $outsideGroup = $this->createGroupIn($village, 'Kelompok Luar Cakupan');
+
+        $pending = $this->createPlacedGenerus($group, 'PPG-PS-008', 'Generus Menunggu Cakupan');
+        $pending->update(['status' => 'pindah_sambung', 'transfer_destination' => 'internal']);
+        $pending->assignments()->firstOrFail()->update(['status' => 'ended', 'ended_at' => now()->toDateString()]);
+
+        $this->actingAs($this->createScopedUser('group', $outsideGroup->id))
+            ->post('/generus/receive-transfer', [
+                'generus_id' => $pending->id,
+                'full_name' => 'Generus Menunggu Cakupan',
+                'region_id' => $region->id,
+                'village_id' => $village->id,
+                'group_id' => $group->id,
+                'level_id' => $level->id,
+                'academic_year_id' => $year->id,
+                'assignment_status' => 'active',
+            ])
+            ->assertSessionHasErrors(['group_id' => 'Kelompok yang dipilih berada di luar wilayah akses Anda.']);
+
+        $this->assertSame('pindah_sambung', $pending->fresh()->status);
     }
 
     public function test_delete_soft_deletes_generus_and_hides_it_from_the_list(): void
