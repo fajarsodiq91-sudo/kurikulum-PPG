@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Generus;
+use App\Models\Guardian;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Teacher;
@@ -506,5 +507,93 @@ class AuthAndAuthorizationTest extends TestCase
             ->get('/reports')
             ->assertOk()
             ->assertViewIs('reports.index');
+    }
+
+    public function test_guest_with_view_generus_permission_can_read_but_not_write(): void
+    {
+        $guestRole = Role::create(['name' => 'Tamu', 'slug' => 'guest', 'is_active' => true]);
+
+        $guestRole->permissions()->attach(Permission::create([
+            'name' => 'View Generus',
+            'slug' => 'view-generus',
+            'module' => 'generus',
+            'is_active' => true,
+        ])->id);
+
+        $generus = Generus::create([
+            'registration_number' => 'G-001',
+            'full_name' => 'Generus Publik',
+            'status' => 'active',
+        ]);
+
+        $this->get('/generus')->assertOk()->assertSee('Generus Publik');
+        $this->get("/generus/{$generus->id}")->assertOk()->assertSee('Generus Publik');
+
+        $this->get('/generus/create')->assertRedirect('/login');
+        $this->get("/generus/{$generus->id}/edit")->assertRedirect('/login');
+        $this->post('/generus', ['full_name' => 'Hacked'])->assertRedirect('/login');
+        $this->put("/generus/{$generus->id}", ['full_name' => 'Hacked'])->assertRedirect('/login');
+        $this->delete("/generus/{$generus->id}")->assertRedirect('/login');
+
+        $this->assertDatabaseHas('generus', ['id' => $generus->id, 'full_name' => 'Generus Publik']);
+    }
+
+    public function test_guest_with_view_teachers_permission_can_read_but_not_write(): void
+    {
+        $guestRole = Role::create(['name' => 'Tamu', 'slug' => 'guest', 'is_active' => true]);
+
+        $guestRole->permissions()->attach(Permission::create([
+            'name' => 'View Teachers',
+            'slug' => 'view-teachers',
+            'module' => 'teachers',
+            'is_active' => true,
+        ])->id);
+
+        $teacher = Teacher::create(['name' => 'Guru Publik', 'status' => 'active']);
+
+        $this->get('/teachers')->assertOk()->assertSee('Guru Publik')->assertDontSee('Tambah Guru');
+
+        $this->get("/teachers/{$teacher->id}/edit")->assertRedirect('/login');
+        $this->post('/teachers', ['name' => 'Hacked', 'status' => 'active'])->assertRedirect('/login');
+        $this->put("/teachers/{$teacher->id}", ['name' => 'Hacked', 'status' => 'active'])->assertRedirect('/login');
+        $this->delete("/teachers/{$teacher->id}")->assertRedirect('/login');
+
+        $this->assertDatabaseHas('teachers', ['id' => $teacher->id, 'name' => 'Guru Publik']);
+    }
+
+    public function test_guest_with_view_guardians_permission_can_read_but_not_write(): void
+    {
+        $guestRole = Role::create(['name' => 'Tamu', 'slug' => 'guest', 'is_active' => true]);
+
+        $guestRole->permissions()->attach(Permission::create([
+            'name' => 'View Guardians',
+            'slug' => 'view-guardians',
+            'module' => 'guardians',
+            'is_active' => true,
+        ])->id);
+
+        $guardian = Guardian::create([
+            'full_name' => 'Wali Publik',
+            'relationship' => 'Ayah',
+            'status' => 'active',
+        ]);
+
+        $this->get('/guardians')->assertOk()->assertSee('Wali Publik')->assertDontSee('Tambah Wali');
+
+        $this->get("/guardians/{$guardian->id}/edit")->assertRedirect('/login');
+        $this->post('/guardians', ['full_name' => 'Hacked', 'relationship' => 'Ayah', 'status' => 'active'])->assertRedirect('/login');
+        $this->put("/guardians/{$guardian->id}", ['full_name' => 'Hacked', 'relationship' => 'Ayah', 'status' => 'active'])->assertRedirect('/login');
+        $this->delete("/guardians/{$guardian->id}")->assertRedirect('/login');
+
+        $this->assertDatabaseHas('guardians', ['id' => $guardian->id, 'full_name' => 'Wali Publik']);
+    }
+
+    public function test_guest_without_view_permission_is_redirected_to_login_for_generus_teachers_and_guardians(): void
+    {
+        Role::create(['name' => 'Tamu', 'slug' => 'guest', 'is_active' => true]);
+
+        $this->get('/generus')->assertRedirect('/login');
+        $this->get('/teachers')->assertRedirect('/login');
+        $this->get('/guardians')->assertRedirect('/login');
     }
 }

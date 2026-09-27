@@ -10,21 +10,23 @@ use Symfony\Component\HttpFoundation\Response;
 class EnsureUserHasPermission
 {
     /**
-     * Authenticated users without the permission are forbidden. Anonymous visitors are
-     * granted read-only access when the guest role covers the permission, otherwise they
-     * are sent to log in to obtain the appropriate role permission.
+     * Authenticated users without any of the listed permissions are forbidden. Anonymous
+     * visitors are granted read-only access when the guest role covers one of the
+     * permissions, otherwise they are sent to log in to obtain the appropriate role
+     * permission. Listing a view-only permission alongside its manage counterpart lets
+     * both guests and full-access staff reach the same read-only route.
      */
-    public function handle(Request $request, Closure $next, string $permission): Response
+    public function handle(Request $request, Closure $next, string ...$permissions): Response
     {
         if ($user = $request->user()) {
-            if (! $user->hasPermission($permission)) {
+            if (! collect($permissions)->contains(fn (string $permission): bool => $user->hasPermission($permission))) {
                 abort(403, 'Forbidden');
             }
 
             return $next($request);
         }
 
-        if (! Access::can($permission)) {
+        if (! Access::can(...$permissions)) {
             return redirect()->guest(route('login'));
         }
 

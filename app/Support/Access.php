@@ -8,15 +8,19 @@ use Illuminate\Support\Facades\Auth;
 class Access
 {
     /**
-     * Whether the current visitor (authenticated user or anonymous guest) has the given permission.
+     * Whether the current visitor (authenticated user or anonymous guest) has any of the
+     * given permissions.
      */
-    public static function can(string $permissionSlug): bool
+    public static function can(string ...$permissionSlugs): bool
     {
         if ($user = Auth::user()) {
-            return $user->hasPermission($permissionSlug);
+            return collect($permissionSlugs)->contains(fn (string $slug): bool => $user->hasPermission($slug));
         }
 
-        return self::guestRole()?->permissions->contains('slug', $permissionSlug) ?? false;
+        $guestPermissions = self::guestRole()?->permissions;
+
+        return $guestPermissions !== null
+            && collect($permissionSlugs)->contains(fn (string $slug): bool => $guestPermissions->contains('slug', $slug));
     }
 
     /**

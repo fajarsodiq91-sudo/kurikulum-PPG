@@ -33,8 +33,11 @@ class DatabaseSeeder extends Seeder
             ['name' => 'View Master Data', 'slug' => 'view-master-data', 'module' => 'master-data'],
             ['name' => 'Manage Users', 'slug' => 'manage-users', 'module' => 'users'],
             ['name' => 'Manage Generus', 'slug' => 'manage-generus', 'module' => 'generus'],
+            ['name' => 'View Generus', 'slug' => 'view-generus', 'module' => 'generus'],
             ['name' => 'Manage Teachers', 'slug' => 'manage-teachers', 'module' => 'teachers'],
+            ['name' => 'View Teachers', 'slug' => 'view-teachers', 'module' => 'teachers'],
             ['name' => 'Manage Guardians', 'slug' => 'manage-guardians', 'module' => 'guardians'],
+            ['name' => 'View Guardians', 'slug' => 'view-guardians', 'module' => 'guardians'],
             ['name' => 'Manage Curriculum', 'slug' => 'manage-curriculum', 'module' => 'curriculum'],
             ['name' => 'Manage Learning Materials', 'slug' => 'manage-learning-materials', 'module' => 'learning-materials'],
             ['name' => 'Manage Learning Sessions', 'slug' => 'manage-learning-sessions', 'module' => 'learning-sessions'],
@@ -73,6 +76,9 @@ class DatabaseSeeder extends Seeder
 
         $guestRole->permissions()->syncWithoutDetaching([
             $permissions->firstWhere('slug', 'view-dashboard')->id,
+            $permissions->firstWhere('slug', 'view-generus')->id,
+            $permissions->firstWhere('slug', 'view-teachers')->id,
+            $permissions->firstWhere('slug', 'view-guardians')->id,
         ]);
 
         $admin = User::updateOrCreate(

@@ -99,9 +99,16 @@ Route::middleware(['auth', 'permission:view-master-data'])->group(function () {
         ->name('master-data.regions.index');
 });
 
-Route::middleware(['auth', 'permission:manage-generus'])->group(function () {
+// Publicly reachable, read-only for anonymous visitors covered by the guest role permissions.
+Route::middleware(['permission:view-generus,manage-generus'])->group(function () {
     Route::get('/generus', [GenerusController::class, 'index'])
         ->name('generus.index');
+    Route::get('/generus/{generus}', [GenerusController::class, 'show'])
+        ->whereNumber('generus')
+        ->name('generus.show');
+});
+
+Route::middleware(['auth', 'permission:manage-generus'])->group(function () {
     Route::get('/generus/create', [GenerusController::class, 'create'])
         ->name('generus.create');
     Route::post('/generus', [GenerusController::class, 'store'])
@@ -110,9 +117,6 @@ Route::middleware(['auth', 'permission:manage-generus'])->group(function () {
         ->name('generus.import');
     Route::get('/generus/export', [GenerusController::class, 'export'])
         ->name('generus.export');
-    Route::get('/generus/{generus}', [GenerusController::class, 'show'])
-        ->whereNumber('generus')
-        ->name('generus.show');
     Route::get('/generus/{generus}/id-card', [GenerusController::class, 'idCard'])
         ->whereNumber('generus')
         ->name('generus.id-card');
@@ -127,9 +131,13 @@ Route::middleware(['auth', 'permission:manage-generus'])->group(function () {
         ->name('generus.destroy');
 });
 
-Route::middleware(['auth', 'permission:manage-teachers'])->group(function () {
+// Publicly reachable, read-only for anonymous visitors covered by the guest role permissions.
+Route::middleware(['permission:view-teachers,manage-teachers'])->group(function () {
     Route::get('/teachers', [TeacherController::class, 'index'])
         ->name('teachers.index');
+});
+
+Route::middleware(['auth', 'permission:manage-teachers'])->group(function () {
     Route::post('/teachers', [TeacherController::class, 'store'])
         ->name('teachers.store');
     Route::get('/teachers/{teacher}/edit', [TeacherController::class, 'edit'])
@@ -146,9 +154,13 @@ Route::middleware(['auth', 'permission:manage-teachers'])->group(function () {
         ->name('teachers.destroy');
 });
 
-Route::middleware(['auth', 'permission:manage-guardians'])->group(function () {
+// Publicly reachable, read-only for anonymous visitors covered by the guest role permissions.
+Route::middleware(['permission:view-guardians,manage-guardians'])->group(function () {
     Route::get('/guardians', [GuardianController::class, 'index'])
         ->name('guardians.index');
+});
+
+Route::middleware(['auth', 'permission:manage-guardians'])->group(function () {
     Route::post('/guardians', [GuardianController::class, 'store'])
         ->name('guardians.store');
     Route::get('/guardians/{guardian}/edit', [GuardianController::class, 'edit'])

@@ -1,7 +1,7 @@
 <div class="flex h-14 shrink-0 items-center gap-2.5 border-b border-brand-800 px-4">
     <img src="{{ asset('images/logo-ppg-karawang-timur.png') }}" alt="Logo PPG Karawang Timur" class="h-9 w-9 shrink-0 object-contain">
     <div>
-        <p class="text-xs font-bold leading-tight tracking-wide text-white">PPG Management</p>
+        <p class="text-xs font-bold leading-tight tracking-wide text-white">PPG Bid. Kurikulum</p>
         <p class="text-[11px] leading-tight text-slate-500">Karawang Timur</p>
     </div>
 </div>
@@ -14,14 +14,14 @@
                 ['label' => 'Data Pengguna', 'route' => 'users.index'],
                 ['label' => 'Data Peran', 'route' => 'roles.index'],
             ]],
-            ['label' => 'Generus', 'permission' => 'manage-generus', 'icon' => '◎', 'items' => [
+            ['label' => 'Generus', 'permission' => ['view-generus', 'manage-generus'], 'icon' => '◎', 'items' => [
                 ['label' => 'Data Generus', 'route' => 'generus.index'],
-                ['label' => 'Tambah Generus', 'route' => 'generus.create'],
+                ['label' => 'Tambah Generus', 'route' => 'generus.create', 'permission' => 'manage-generus'],
             ]],
-            ['label' => 'Guru', 'permission' => 'manage-teachers', 'icon' => '✎', 'items' => [
+            ['label' => 'Guru', 'permission' => ['view-teachers', 'manage-teachers'], 'icon' => '✎', 'items' => [
                 ['label' => 'Data Guru', 'route' => 'teachers.index'],
             ]],
-            ['label' => 'Orang Tua / Wali', 'permission' => 'manage-guardians', 'icon' => '⌂', 'items' => [
+            ['label' => 'Orang Tua / Wali', 'permission' => ['view-guardians', 'manage-guardians'], 'icon' => '⌂', 'items' => [
                 ['label' => 'Data Wali', 'route' => 'guardians.index'],
             ]],
             ['label' => 'Organisasi', 'permission' => 'manage-organization-units', 'icon' => '▣', 'items' => [
@@ -69,8 +69,8 @@
     @foreach ($navigation as $section)
         @php
             $sectionPermission = $section['permission'] ?? null;
-            $sectionAllowed = ! $sectionPermission || \App\Support\Access::can($sectionPermission);
-            $visibleItems = collect($section['items'] ?? [])->filter(fn ($item) => ! isset($item['permission']) || \App\Support\Access::can($item['permission']));
+            $sectionAllowed = ! $sectionPermission || \App\Support\Access::can(...\Illuminate\Support\Arr::wrap($sectionPermission));
+            $visibleItems = collect($section['items'] ?? [])->filter(fn ($item) => ! isset($item['permission']) || \App\Support\Access::can(...\Illuminate\Support\Arr::wrap($item['permission'])));
             $isActive = isset($section['route'])
                 ? request()->routeIs($section['route'])
                 : $visibleItems->contains(fn ($item) => request()->routeIs($item['route']));

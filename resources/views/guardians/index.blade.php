@@ -17,20 +17,22 @@
 
     @include('layouts.partials.validation-errors')
 
-    <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">
-        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 class="text-lg font-bold text-slate-950">Tambah Wali</h2>
-            <p class="mt-1 text-sm text-slate-500">Tambahkan data orang tua atau wali.</p>
+    <div class="grid gap-6 {{ \App\Support\Access::can('manage-guardians') ? 'lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]' : '' }}">
+        @if (\App\Support\Access::can('manage-guardians'))
+            <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 class="text-lg font-bold text-slate-950">Tambah Wali</h2>
+                <p class="mt-1 text-sm text-slate-500">Tambahkan data orang tua atau wali.</p>
 
-            <form class="mt-6" method="POST" action="{{ route('guardians.store') }}">
-                    @csrf
-                    @include('guardians.partials.fields', ['guardian' => null])
+                <form class="mt-6" method="POST" action="{{ route('guardians.store') }}">
+                        @csrf
+                        @include('guardians.partials.fields', ['guardian' => null])
 
-                    <button type="submit" class="mt-6 w-full rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800">
-                        Simpan Wali
-                    </button>
-                </form>
-        </section>
+                        <button type="submit" class="mt-6 w-full rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800">
+                            Simpan Wali
+                        </button>
+                    </form>
+            </section>
+        @endif
 
         <section class="min-w-0 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 class="text-lg font-bold text-slate-950">Daftar Orang Tua / Wali</h2>
@@ -52,7 +54,11 @@
                                 <td class="py-3 pr-4">{{ $guardian->full_name }}</td>
                                 <td class="py-3 pr-4">{{ $guardian->relationship }}</td>
                                 <td class="py-3 pr-4"><span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $guardian->status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600' }}">{{ $guardian->status === 'active' ? 'Aktif' : 'Nonaktif' }}</span></td>
-                                <td class="py-3 text-right"><a href="{{ route('guardians.edit', $guardian) }}" class="text-xs font-semibold text-amber-600 hover:text-amber-700">Edit</a></td>
+                                <td class="py-3 text-right">
+                                    @if (\App\Support\Access::can('manage-guardians'))
+                                        <a href="{{ route('guardians.edit', $guardian) }}" class="text-xs font-semibold text-amber-600 hover:text-amber-700">Edit</a>
+                                    @endif
+                                </td>
                             </tr>
                         @empty
                             <tr><td colspan="4" class="py-10 text-center"><p class="font-semibold text-slate-700">Belum ada data orang tua / wali</p><p class="mt-1 text-sm text-slate-500">Tambahkan wali pertama untuk mulai mengelola relasi keluarga.</p></td></tr>

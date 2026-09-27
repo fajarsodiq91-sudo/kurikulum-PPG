@@ -11,10 +11,12 @@
             <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Data Generus</h2>
             <p class="mt-2 text-sm text-slate-500">Kelola identitas dan riwayat penempatan generus.</p>
         </div>
-        <div class="flex flex-wrap gap-3">
-            <a href="{{ route('generus.export') }}" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Export XLSX</a>
-            <a href="{{ route('generus.create') }}" class="inline-flex items-center justify-center rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800">Tambah Generus</a>
-        </div>
+        @if (\App\Support\Access::can('manage-generus'))
+            <div class="flex flex-wrap gap-3">
+                <a href="{{ route('generus.export') }}" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Export XLSX</a>
+                <a href="{{ route('generus.create') }}" class="inline-flex items-center justify-center rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800">Tambah Generus</a>
+            </div>
+        @endif
     </div>
 
     @if (session('success'))
@@ -32,18 +34,20 @@
         </div>
     @endif
 
-    <section class="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 class="text-lg font-bold text-slate-950">Import Database Generus</h2>
-        <p class="mt-1 text-sm text-slate-500">Gunakan file XLSX hasil export aplikasi ini agar kode master wilayah dapat dipetakan dengan benar.</p>
-        <form method="POST" action="{{ route('generus.import') }}" enctype="multipart/form-data" class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
-            @csrf
-            <div class="flex-1">
-                <label class="mb-2 block text-sm font-medium text-slate-700" for="file">File XLSX</label>
-                <input id="file" name="file" type="file" accept=".xlsx" required class="block w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm">
-            </div>
-            <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-600">Import XLSX</button>
-        </form>
-    </section>
+    @if (\App\Support\Access::can('manage-generus'))
+        <section class="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 class="text-lg font-bold text-slate-950">Import Database Generus</h2>
+            <p class="mt-1 text-sm text-slate-500">Gunakan file XLSX hasil export aplikasi ini agar kode master wilayah dapat dipetakan dengan benar.</p>
+            <form method="POST" action="{{ route('generus.import') }}" enctype="multipart/form-data" class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+                @csrf
+                <div class="flex-1">
+                    <label class="mb-2 block text-sm font-medium text-slate-700" for="file">File XLSX</label>
+                    <input id="file" name="file" type="file" accept=".xlsx" required class="block w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm">
+                </div>
+                <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-600">Import XLSX</button>
+            </form>
+        </section>
+    @endif
 
     <section class="min-w-0 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div class="flex items-center justify-between gap-4">
@@ -81,8 +85,10 @@
                             </td>
                             <td class="py-3 text-right whitespace-nowrap">
                                 <a href="{{ route('generus.show', $item) }}" class="text-xs font-semibold text-slate-600 hover:text-slate-900">Detail</a>
-                                <a href="{{ route('generus.edit', $item) }}" class="ml-3 text-xs font-semibold text-amber-600 hover:text-amber-700">Edit</a>
-                                <a href="{{ route('generus.id-card', $item) }}" class="ml-3 text-xs font-semibold text-slate-600 hover:text-slate-900">ID Card</a>
+                                @if (\App\Support\Access::can('manage-generus'))
+                                    <a href="{{ route('generus.edit', $item) }}" class="ml-3 text-xs font-semibold text-amber-600 hover:text-amber-700">Edit</a>
+                                    <a href="{{ route('generus.id-card', $item) }}" class="ml-3 text-xs font-semibold text-slate-600 hover:text-slate-900">ID Card</a>
+                                @endif
                             </td>
                         </tr>
                     @empty

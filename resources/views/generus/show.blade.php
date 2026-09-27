@@ -23,13 +23,15 @@
         </div>
         <div class="flex flex-wrap gap-3">
             <a href="{{ route('generus.index') }}" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Kembali ke data</a>
-            <a href="{{ route('generus.id-card', $generus) }}" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">ID Card</a>
-            <a href="{{ route('generus.edit', $generus) }}" class="inline-flex items-center justify-center rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800">Edit</a>
-            <form method="POST" action="{{ route('generus.destroy', $generus) }}" onsubmit="return confirm(@js('Hapus generus '.$generus->full_name.'? Data dapat dipulihkan oleh administrator database.'))">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-rose-200 bg-white px-4 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50">Hapus</button>
-            </form>
+            @if (\App\Support\Access::can('manage-generus'))
+                <a href="{{ route('generus.id-card', $generus) }}" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">ID Card</a>
+                <a href="{{ route('generus.edit', $generus) }}" class="inline-flex items-center justify-center rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800">Edit</a>
+                <form method="POST" action="{{ route('generus.destroy', $generus) }}" onsubmit="return confirm(@js('Hapus generus '.$generus->full_name.'? Data dapat dipulihkan oleh administrator database.'))">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-rose-200 bg-white px-4 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50">Hapus</button>
+                </form>
+            @endif
         </div>
     </div>
 

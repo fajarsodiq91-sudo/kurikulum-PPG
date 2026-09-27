@@ -448,7 +448,7 @@ class GenerusController extends Controller
     /**
      * Out-of-scope generus respond with 404 so their existence is not revealed.
      */
-    private function ensureGenerusIsVisible(User $user, Generus $generus): void
+    private function ensureGenerusIsVisible(?User $user, Generus $generus): void
     {
         abort_unless(Generus::visibleTo($user)->whereKey($generus->id)->exists(), 404);
     }

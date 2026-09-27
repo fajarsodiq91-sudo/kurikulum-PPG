@@ -55,11 +55,13 @@ class Generus extends Model
 
     /**
      * Limit to generus whose active placement falls inside the user's role scopes.
+     * Anonymous guests carry no placement scope, so they see everything the guest role's
+     * view permission already exposes at the route level.
      */
     #[Scope]
-    protected function visibleTo(Builder $query, User $user): void
+    protected function visibleTo(Builder $query, ?User $user): void
     {
-        if ($user->hasGlobalAccess(self::MANAGE_PERMISSION)) {
+        if ($user === null || $user->hasGlobalAccess(self::MANAGE_PERMISSION)) {
             return;
         }
 
