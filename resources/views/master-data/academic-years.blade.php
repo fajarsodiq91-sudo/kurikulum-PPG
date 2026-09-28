@@ -26,6 +26,8 @@
         </div>
     @endif
 
+    @include('layouts.partials.spreadsheet-tools', ['exportUrl' => route('master-data.export', 'academic-years'), 'importUrl' => route('master-data.import', 'academic-years')])
+
     <section class="max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h3 class="text-lg font-bold text-slate-950">Tahun Akademik</h3>
         <p class="mt-1 text-sm text-slate-500">{{ $academicYears->count() }} data terdaftar.</p>

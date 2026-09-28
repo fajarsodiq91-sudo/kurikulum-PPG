@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Evaluation;
 use App\Models\EvaluationScore;
 use App\Models\Generus;
+use App\Support\StudentScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,7 +17,7 @@ class EvaluationScoreController extends Controller
     public function index(): View
     {
         return view('evaluation-scores.index', [
-            'scores' => EvaluationScore::with(['evaluation', 'generus'])->latest()->paginate(25),
+            'scores' => StudentScope::limit(EvaluationScore::with(['evaluation', 'generus'])->latest(), $this->studentIds())->paginate(25),
             ...$this->formOptions(),
         ]);
     }
@@ -30,6 +31,8 @@ class EvaluationScoreController extends Controller
 
     public function edit(EvaluationScore $evaluationScore): View
     {
+        $this->authorizeRecord($evaluationScore);
+
         return view('evaluation-scores.edit', [
             'score' => $evaluationScore,
             ...$this->formOptions($evaluationScore),
@@ -38,6 +41,8 @@ class EvaluationScoreController extends Controller
 
     public function update(Request $request, EvaluationScore $evaluationScore): RedirectResponse
     {
+        $this->authorizeRecord($evaluationScore);
+
         $evaluationScore->update($this->validateScore($request, $evaluationScore));
 
         return redirect()->route('evaluation-scores.index')->with('success', 'Skor evaluasi berhasil diperbarui.');
@@ -45,6 +50,8 @@ class EvaluationScoreController extends Controller
 
     public function destroy(EvaluationScore $evaluationScore): RedirectResponse
     {
+        $this->authorizeRecord($evaluationScore);
+
         $evaluationScore->delete();
 
         return redirect()->route('evaluation-scores.index')->with('success', 'Skor evaluasi berhasil dihapus.');
@@ -59,8 +66,8 @@ class EvaluationScoreController extends Controller
     {
         return [
             'evaluations' => Evaluation::latest()->get(),
-            'generus' => Generus::where('status', 'active')
-                ->when($score, fn (Builder $query) => $query->orWhere('id', $score->generus_id))
+            'generus' => StudentScope::limit(Generus::where('status', 'active')
+                ->when($score, fn (Builder $query) => $query->orWhere('id', $score->generus_id)), $this->studentIds(), 'id')
                 ->get(),
         ];
     }
@@ -74,7 +81,7 @@ class EvaluationScoreController extends Controller
             'evaluation_id' => ['required', 'exists:evaluations,id'],
             'generus_id' => [
                 'required',
-                'exists:generus,id',
+                StudentScope::existsRule($request->user(), 'manage-evaluations'),
                 Rule::unique('evaluation_scores')
                     ->where('evaluation_id', $request->input('evaluation_id'))
                     ->ignore($score?->id),
@@ -85,5 +92,15 @@ class EvaluationScoreController extends Controller
         ], [
             'generus_id.unique' => 'Generus ini sudah memiliki nilai untuk evaluasi tersebut.',
         ]);
+    }
+
+    private function studentIds(): ?array
+    {
+        return StudentScope::ids(request()->user(), 'manage-evaluations');
+    }
+
+    private function authorizeRecord(EvaluationScore $score): void
+    {
+        StudentScope::authorize(request()->user(), 'manage-evaluations', $score->generus_id);
     }
 }

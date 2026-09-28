@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\HandlesSheets;
 use App\Models\Group;
 use App\Models\Region;
 use App\Models\Teacher;
 use App\Models\User;
 use App\Models\Village;
+use App\Support\Sheets\TeacherSheet;
 use chillerlan\QRCode\QRCode;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -18,10 +20,13 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Throwable;
 
 class TeacherController extends Controller
 {
+    use HandlesSheets;
+
     private const MANAGE_PERMISSION = 'manage-teachers';
 
     public function index(Request $request): View
@@ -39,11 +44,21 @@ class TeacherController extends Controller
 
         retry(3, fn () => Teacher::create([
             ...Arr::except($validated, 'photo'),
-            'registration_number' => $this->generateRegistrationNumber(),
+            'registration_number' => Teacher::nextRegistrationNumber(),
             'photo' => $photoPath,
         ]), when: fn (Throwable $exception): bool => $exception instanceof UniqueConstraintViolationException);
 
         return redirect()->route('teachers.index')->with('success', 'Data guru berhasil ditambahkan.');
+    }
+
+    public function export(Request $request): BinaryFileResponse
+    {
+        return $this->exportSheet(new TeacherSheet($request->user()));
+    }
+
+    public function import(Request $request): RedirectResponse
+    {
+        return $this->importSheet($request, new TeacherSheet($request->user()));
     }
 
     public function edit(Request $request, Teacher $teacher): View
@@ -220,23 +235,5 @@ class TeacherController extends Controller
     private function storePhoto(?UploadedFile $photo): ?string
     {
         return $photo?->store(Teacher::PHOTO_DIRECTORY);
-    }
-
-    /**
-     * Teacher numbers are YYMM, the fixed code 99 and a 3-digit monthly sequence, which keeps
-     * them distinct from generus numbers (YYMM plus a 4-digit sequence).
-     */
-    private function generateRegistrationNumber(): string
-    {
-        $prefix = now()->format('ym').'99';
-        $lastNumber = Teacher::where('registration_number', 'like', $prefix.'%')
-            ->orderByDesc('registration_number')
-            ->value('registration_number');
-
-        $sequence = $lastNumber !== null && preg_match('/^'.preg_quote($prefix, '/').'(\d{3})$/', $lastNumber, $matches)
-            ? (int) $matches[1] + 1
-            : 1;
-
-        return $prefix.str_pad((string) $sequence, 3, '0', STR_PAD_LEFT);
     }
 }

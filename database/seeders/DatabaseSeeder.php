@@ -55,6 +55,8 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Manage Assignments', 'slug' => 'manage-assignments', 'module' => 'assignments'],
             ['name' => 'Manage Activity Schedules', 'slug' => 'manage-activity-schedules', 'module' => 'activity'],
             ['name' => 'Manage Activity Executions', 'slug' => 'manage-activity-executions', 'module' => 'activity'],
+            ['name' => 'Manage My Students', 'slug' => 'manage-my-students', 'module' => 'teachers'],
+            ['name' => 'Manage Parent Communications', 'slug' => 'manage-parent-communications', 'module' => 'parent-communications'],
         ])->map(fn (array $permission) => Permission::updateOrCreate(
             ['slug' => $permission['slug']],
             [...$permission, 'is_active' => true],

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Support\MemberAccounts;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 
@@ -41,6 +42,24 @@ class Teacher extends Model
         static::deleting(fn (self $teacher) => MemberAccounts::setStatus('teacher_id', $teacher->id, 'inactive'));
     }
 
+    /**
+     * Teacher numbers are YYMM, the fixed code 99 and a 3-digit monthly sequence, which keeps
+     * them distinct from generus numbers (YYMM plus a 4-digit sequence).
+     */
+    public static function nextRegistrationNumber(): string
+    {
+        $prefix = now()->format('ym').'99';
+        $lastNumber = self::where('registration_number', 'like', $prefix.'%')
+            ->orderByDesc('registration_number')
+            ->value('registration_number');
+
+        $sequence = $lastNumber !== null && preg_match('/^'.preg_quote($prefix, '/').'(\d{3})$/', $lastNumber, $matches)
+            ? (int) $matches[1] + 1
+            : 1;
+
+        return $prefix.str_pad((string) $sequence, 3, '0', STR_PAD_LEFT);
+    }
+
     public function region(): BelongsTo
     {
         return $this->belongsTo(Region::class);
@@ -54,6 +73,11 @@ class Teacher extends Model
     public function group(): BelongsTo
     {
         return $this->belongsTo(Group::class);
+    }
+
+    public function students(): BelongsToMany
+    {
+        return $this->belongsToMany(Generus::class, 'teacher_generus')->withTimestamps();
     }
 
     public function learningSessions(): HasMany

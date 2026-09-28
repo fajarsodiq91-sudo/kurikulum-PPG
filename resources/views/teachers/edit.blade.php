@@ -12,6 +12,7 @@
         </div>
         <div class="flex flex-wrap gap-3">
             <a href="{{ route('teachers.index') }}" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Kembali ke data</a>
+            <a href="{{ route('teachers.students.edit', $teacher) }}" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Murid</a>
             <a href="{{ route('teachers.id-card', $teacher) }}" class="inline-flex items-center justify-center rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800">ID Card</a>
         </div>
     </div>

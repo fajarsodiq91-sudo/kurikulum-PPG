@@ -6,6 +6,7 @@ use App\Models\AcademicYear;
 use App\Models\Generus;
 use App\Models\ReportCard;
 use App\Models\Semester;
+use App\Support\StudentScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -16,7 +17,7 @@ class ReportCardController extends Controller
     public function index(): View
     {
         return view('report-cards.index', [
-            'reportCards' => ReportCard::with(['generus', 'academicYear', 'semester'])->latest()->paginate(25),
+            'reportCards' => StudentScope::limit(ReportCard::with(['generus', 'academicYear', 'semester'])->latest(), $this->studentIds())->paginate(25),
             ...$this->formOptions(),
         ]);
     }
@@ -30,6 +31,8 @@ class ReportCardController extends Controller
 
     public function edit(ReportCard $reportCard): View
     {
+        $this->authorizeRecord($reportCard);
+
         return view('report-cards.edit', [
             'reportCard' => $reportCard,
             ...$this->formOptions(),
@@ -38,6 +41,8 @@ class ReportCardController extends Controller
 
     public function update(Request $request, ReportCard $reportCard): RedirectResponse
     {
+        $this->authorizeRecord($reportCard);
+
         $reportCard->update($this->validateReportCard($request, $reportCard));
 
         return redirect()->route('report-cards.index')->with('success', 'Rapor berhasil diperbarui.');
@@ -45,6 +50,8 @@ class ReportCardController extends Controller
 
     public function destroy(ReportCard $reportCard): RedirectResponse
     {
+        $this->authorizeRecord($reportCard);
+
         $reportCard->delete();
 
         return redirect()->route('report-cards.index')->with('success', 'Rapor berhasil dihapus.');
@@ -56,7 +63,7 @@ class ReportCardController extends Controller
     private function formOptions(): array
     {
         return [
-            'generus' => Generus::all(),
+            'generus' => StudentScope::limit(Generus::query(), $this->studentIds(), 'id')->get(),
             'academicYears' => AcademicYear::where('is_active', true)->get(),
             'semesters' => Semester::where('is_active', true)->get(),
         ];
@@ -70,7 +77,7 @@ class ReportCardController extends Controller
         return $request->validate([
             'generus_id' => [
                 'required',
-                'exists:generus,id',
+                StudentScope::existsRule($request->user(), 'manage-report-cards'),
                 Rule::unique('report_cards')
                     ->where('academic_year_id', $request->input('academic_year_id'))
                     ->where('semester_id', $request->input('semester_id'))
@@ -85,5 +92,15 @@ class ReportCardController extends Controller
         ], [
             'generus_id.unique' => 'Generus ini sudah memiliki rapor untuk tahun ajaran dan semester tersebut.',
         ]);
+    }
+
+    private function studentIds(): ?array
+    {
+        return StudentScope::ids(request()->user(), 'manage-report-cards');
+    }
+
+    private function authorizeRecord(ReportCard $reportCard): void
+    {
+        StudentScope::authorize(request()->user(), 'manage-report-cards', $reportCard->generus_id);
     }
 }

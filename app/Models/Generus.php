@@ -104,6 +104,11 @@ class Generus extends Model
         return $this->hasMany(GenerusAssignment::class);
     }
 
+    public function teachers(): BelongsToMany
+    {
+        return $this->belongsToMany(Teacher::class, 'teacher_generus')->withTimestamps();
+    }
+
     public function guardians(): BelongsToMany
     {
         return $this->belongsToMany(Guardian::class, 'generus_guardian')->withTimestamps();

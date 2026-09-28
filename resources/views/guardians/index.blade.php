@@ -17,6 +17,10 @@
 
     @include('layouts.partials.validation-errors')
 
+    @if (\App\Support\Access::can('manage-guardians'))
+        @include('layouts.partials.spreadsheet-tools', ['exportUrl' => route('guardians.export'), 'importUrl' => route('guardians.import')])
+    @endif
+
     <div class="grid gap-6 {{ \App\Support\Access::can('manage-guardians') ? 'lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]' : '' }}">
         @if (\App\Support\Access::can('manage-guardians'))
             <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\MasterData;
 
+use App\Http\Controllers\Concerns\HandlesSheets;
 use App\Http\Controllers\Controller;
 use App\Models\AcademicYear;
 use App\Models\ClassGrade;
@@ -10,13 +11,23 @@ use App\Models\Level;
 use App\Models\Region;
 use App\Models\Semester;
 use App\Models\Village;
+use App\Support\Sheets\AcademicYearSheet;
+use App\Support\Sheets\ClassGradeSheet;
+use App\Support\Sheets\GroupSheet;
+use App\Support\Sheets\LevelSheet;
+use App\Support\Sheets\SemesterSheet;
+use App\Support\Sheets\Sheet;
+use App\Support\Sheets\VillageSheet;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class MasterDataController extends Controller
 {
+    use HandlesSheets;
+
     public function index(): RedirectResponse
     {
         return redirect()->route('master-data.villages.index');
@@ -230,6 +241,29 @@ class MasterDataController extends Controller
         $semester->update($validated);
 
         return $this->success('Semester berhasil diperbarui.', 'semesters');
+    }
+
+    public function export(string $page): BinaryFileResponse
+    {
+        return $this->exportSheet($this->sheetFor($page));
+    }
+
+    public function import(Request $request, string $page): RedirectResponse
+    {
+        return $this->importSheet($request, $this->sheetFor($page));
+    }
+
+    private function sheetFor(string $page): Sheet
+    {
+        return match ($page) {
+            'villages' => new VillageSheet,
+            'groups' => new GroupSheet,
+            'levels' => new LevelSheet,
+            'class-grades' => new ClassGradeSheet,
+            'academic-years' => new AcademicYearSheet,
+            'semesters' => new SemesterSheet,
+            default => abort(404),
+        };
     }
 
     private function success(string $message, string $page): RedirectResponse

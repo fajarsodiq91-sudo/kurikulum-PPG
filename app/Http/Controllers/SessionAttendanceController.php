@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Generus;
 use App\Models\LearningSession;
 use App\Models\SessionAttendance;
+use App\Support\StudentScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,7 +17,7 @@ class SessionAttendanceController extends Controller
     public function index(): View
     {
         return view('session-attendances.index', [
-            'attendances' => SessionAttendance::with(['learningSession', 'generus'])->latest()->paginate(25),
+            'attendances' => StudentScope::limit(SessionAttendance::with(['learningSession', 'generus'])->latest(), $this->studentIds())->paginate(25),
             ...$this->formOptions(),
         ]);
     }
@@ -30,6 +31,8 @@ class SessionAttendanceController extends Controller
 
     public function edit(SessionAttendance $sessionAttendance): View
     {
+        $this->authorizeRecord($sessionAttendance);
+
         return view('session-attendances.edit', [
             'attendance' => $sessionAttendance,
             ...$this->formOptions($sessionAttendance),
@@ -38,6 +41,8 @@ class SessionAttendanceController extends Controller
 
     public function update(Request $request, SessionAttendance $sessionAttendance): RedirectResponse
     {
+        $this->authorizeRecord($sessionAttendance);
+
         $sessionAttendance->update($this->validateAttendance($request, $sessionAttendance));
 
         return redirect()->route('session-attendances.index')->with('success', 'Presensi berhasil diperbarui.');
@@ -45,6 +50,8 @@ class SessionAttendanceController extends Controller
 
     public function destroy(SessionAttendance $sessionAttendance): RedirectResponse
     {
+        $this->authorizeRecord($sessionAttendance);
+
         $sessionAttendance->delete();
 
         return redirect()->route('session-attendances.index')->with('success', 'Presensi berhasil dihapus.');
@@ -59,8 +66,8 @@ class SessionAttendanceController extends Controller
     {
         return [
             'sessions' => LearningSession::with('teacher')->latest()->get(),
-            'generus' => Generus::where('status', 'active')
-                ->when($attendance, fn (Builder $query) => $query->orWhere('id', $attendance->generus_id))
+            'generus' => StudentScope::limit(Generus::where('status', 'active')
+                ->when($attendance, fn (Builder $query) => $query->orWhere('id', $attendance->generus_id)), $this->studentIds(), 'id')
                 ->get(),
         ];
     }
@@ -74,7 +81,7 @@ class SessionAttendanceController extends Controller
             'learning_session_id' => ['required', 'exists:learning_sessions,id'],
             'generus_id' => [
                 'required',
-                'exists:generus,id',
+                StudentScope::existsRule($request->user(), 'manage-learning-attendance'),
                 Rule::unique('session_attendances')
                     ->where('learning_session_id', $request->input('learning_session_id'))
                     ->ignore($attendance?->id),
@@ -84,5 +91,15 @@ class SessionAttendanceController extends Controller
         ], [
             'generus_id.unique' => 'Presensi generus ini untuk sesi tersebut sudah dicatat.',
         ]);
+    }
+
+    private function studentIds(): ?array
+    {
+        return StudentScope::ids(request()->user(), 'manage-learning-attendance');
+    }
+
+    private function authorizeRecord(SessionAttendance $attendance): void
+    {
+        StudentScope::authorize(request()->user(), 'manage-learning-attendance', $attendance->generus_id);
     }
 }

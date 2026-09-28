@@ -26,6 +26,8 @@
         </div>
     @endif
 
+    @include('layouts.partials.spreadsheet-tools', ['exportUrl' => route('master-data.export', 'villages'), 'importUrl' => route('master-data.import', 'villages')])
+
     <section class="max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h3 class="text-lg font-bold text-slate-950">Desa</h3>
         <p class="mt-1 text-sm text-slate-500">{{ $villages->count() }} data terdaftar.</p>

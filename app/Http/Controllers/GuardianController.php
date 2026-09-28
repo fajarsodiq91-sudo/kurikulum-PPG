@@ -2,13 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\HandlesSheets;
 use App\Models\Guardian;
+use App\Support\Sheets\GuardianSheet;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class GuardianController extends Controller
 {
+    use HandlesSheets;
+
     public function index(): View
     {
         return view('guardians.index', [
@@ -21,6 +26,16 @@ class GuardianController extends Controller
         Guardian::create($this->validateGuardian($request));
 
         return redirect()->route('guardians.index')->with('success', 'Data orang tua/wali berhasil ditambahkan.');
+    }
+
+    public function export(): BinaryFileResponse
+    {
+        return $this->exportSheet(new GuardianSheet);
+    }
+
+    public function import(Request $request): RedirectResponse
+    {
+        return $this->importSheet($request, new GuardianSheet);
     }
 
     public function edit(Guardian $guardian): View

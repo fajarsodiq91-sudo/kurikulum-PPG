@@ -6,6 +6,7 @@ use App\Models\AcademicYear;
 use App\Models\Generus;
 use App\Models\Munaqosah;
 use App\Models\Semester;
+use App\Support\StudentScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -15,8 +16,8 @@ class MunaqosahController extends Controller
     public function index(): View
     {
         return view('munaqosahs.index', [
-            'munaqosahs' => Munaqosah::with(['generus', 'academicYear', 'semester'])->latest()->paginate(25),
-            'generus' => Generus::all(),
+            'munaqosahs' => StudentScope::limit(Munaqosah::with(['generus', 'academicYear', 'semester'])->latest(), $this->studentIds())->paginate(25),
+            'generus' => StudentScope::limit(Generus::query(), $this->studentIds(), 'id')->get(),
             'academicYears' => AcademicYear::where('is_active', true)->get(),
             'semesters' => Semester::where('is_active', true)->get(),
         ]);
@@ -25,7 +26,7 @@ class MunaqosahController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'generus_id' => ['required', 'exists:generus,id'],
+            'generus_id' => ['required', StudentScope::existsRule($request->user(), 'manage-munaqosah')],
             'academic_year_id' => ['required', 'exists:academic_years,id'],
             'semester_id' => ['required', 'exists:semesters,id'],
             'title' => ['required', 'string', 'max:255'],
@@ -39,5 +40,10 @@ class MunaqosahController extends Controller
         Munaqosah::create($validated);
 
         return redirect()->route('munaqosahs.index')->with('success', 'Munaqosah berhasil ditambahkan.');
+    }
+
+    private function studentIds(): ?array
+    {
+        return StudentScope::ids(request()->user(), 'manage-munaqosah');
     }
 }

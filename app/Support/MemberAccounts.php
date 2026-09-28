@@ -15,16 +15,32 @@ use Illuminate\Support\Facades\Hash;
  */
 class MemberAccounts
 {
-    private const PERMISSIONS = ['view-dashboard', 'view-generus', 'view-teachers', 'view-guardians'];
+    private const BASE_PERMISSIONS = ['view-dashboard', 'view-generus', 'view-teachers', 'view-guardians'];
+
+    /**
+     * Teachers also work with their own students, so these are limited to those students
+     * by StudentScope rather than granted for everyone.
+     */
+    private const TEACHER_PERMISSIONS = [
+        'manage-my-students',
+        'manage-learning-attendance',
+        'manage-evaluations',
+        'manage-follow-ups',
+        'manage-progress-tracking',
+        'manage-report-cards',
+        'manage-milestones',
+        'manage-munaqosah',
+        'manage-parent-communications',
+    ];
 
     public static function forGenerus(Generus $generus): void
     {
-        self::ensure($generus->registration_number, $generus->full_name, 'generus_id', $generus->id, 'generus', 'Generus', 'active');
+        self::ensure($generus->registration_number, $generus->full_name, 'generus_id', $generus->id, 'generus', 'Generus', 'active', self::BASE_PERMISSIONS);
     }
 
     public static function forTeacher(Teacher $teacher): void
     {
-        self::ensure($teacher->registration_number, $teacher->name, 'teacher_id', $teacher->id, 'guru', 'Guru', $teacher->status === 'active' ? 'active' : 'inactive');
+        self::ensure($teacher->registration_number, $teacher->name, 'teacher_id', $teacher->id, 'guru', 'Guru', $teacher->status === 'active' ? 'active' : 'inactive', [...self::BASE_PERMISSIONS, ...self::TEACHER_PERMISSIONS], 'teacher');
     }
 
     public static function setStatus(string $linkColumn, int $id, string $status): void
@@ -37,22 +53,36 @@ class MemberAccounts
         User::where($linkColumn, $id)->update(['name' => $name]);
     }
 
-    private static function ensure(?string $number, string $name, string $linkColumn, int $id, string $roleSlug, string $roleName, string $status): void
+    /**
+     * Creates the account when missing and always (re)applies the role, so accounts made
+     * before a permission existed pick it up the next time they are synced.
+     *
+     * @param  list<string>  $permissionSlugs
+     */
+    private static function ensure(?string $number, string $name, string $linkColumn, int $id, string $roleSlug, string $roleName, string $status, array $permissionSlugs, string $scopeType = 'global'): void
     {
-        if (blank($number) || User::where('username', $number)->exists()) {
+        if (blank($number)) {
             return;
         }
 
-        $user = User::create([
-            'name' => $name,
-            'username' => $number,
-            'password' => Hash::make($number),
-            'status' => $status,
-        ]);
-        $user->forceFill([$linkColumn => $id])->save();
+        $user = User::where('username', $number)->first();
+
+        if ($user === null) {
+            $user = User::create([
+                'name' => $name,
+                'username' => $number,
+                'password' => Hash::make($number),
+                'status' => $status,
+            ]);
+            $user->forceFill([$linkColumn => $id])->save();
+        }
 
         $role = Role::firstOrCreate(['slug' => $roleSlug], ['name' => $roleName, 'is_active' => true]);
-        $role->permissions()->syncWithoutDetaching(Permission::whereIn('slug', self::PERMISSIONS)->pluck('id'));
-        $user->assignRole($role->id);
+        $role->permissions()->syncWithoutDetaching(
+            collect($permissionSlugs)
+                ->map(fn (string $slug): int => Permission::firstOrCreate(['slug' => $slug], ['name' => $slug, 'module' => $slug, 'is_active' => true])->id)
+                ->all(),
+        );
+        $user->assignRole($role->id, $scopeType, $scopeType === 'global' ? null : $id);
     }
 }

@@ -6,6 +6,7 @@ use App\Models\AcademicYear;
 use App\Models\Generus;
 use App\Models\Milestone;
 use App\Models\Semester;
+use App\Support\StudentScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -15,8 +16,8 @@ class MilestoneController extends Controller
     public function index(): View
     {
         return view('milestones.index', [
-            'milestones' => Milestone::with(['generus', 'academicYear', 'semester'])->latest()->paginate(25),
-            'generus' => Generus::all(),
+            'milestones' => StudentScope::limit(Milestone::with(['generus', 'academicYear', 'semester'])->latest(), $this->studentIds())->paginate(25),
+            'generus' => StudentScope::limit(Generus::query(), $this->studentIds(), 'id')->get(),
             'academicYears' => AcademicYear::where('is_active', true)->get(),
             'semesters' => Semester::where('is_active', true)->get(),
         ]);
@@ -25,7 +26,7 @@ class MilestoneController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'generus_id' => ['required', 'exists:generus,id'],
+            'generus_id' => ['required', StudentScope::existsRule($request->user(), 'manage-milestones')],
             'academic_year_id' => ['required', 'exists:academic_years,id'],
             'semester_id' => ['required', 'exists:semesters,id'],
             'title' => ['required', 'string', 'max:255'],
@@ -38,5 +39,10 @@ class MilestoneController extends Controller
         Milestone::create($validated);
 
         return redirect()->route('milestones.index')->with('success', 'Milestone berhasil ditambahkan.');
+    }
+
+    private function studentIds(): ?array
+    {
+        return StudentScope::ids(request()->user(), 'manage-milestones');
     }
 }

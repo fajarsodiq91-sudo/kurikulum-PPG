@@ -20,9 +20,11 @@
             ]],
             ['label' => 'Guru', 'permission' => ['view-teachers', 'manage-teachers'], 'icon' => '✎', 'items' => [
                 ['label' => 'Data Guru', 'route' => 'teachers.index'],
+                ['label' => 'Murid Saya', 'route' => 'my-students.edit', 'permission' => 'manage-my-students'],
             ]],
             ['label' => 'Orang Tua / Wali', 'permission' => ['view-guardians', 'manage-guardians'], 'icon' => '⌂', 'items' => [
                 ['label' => 'Data Wali', 'route' => 'guardians.index'],
+                ['label' => 'Komunikasi Orang Tua', 'route' => 'parent-communications.index', 'permission' => 'manage-parent-communications'],
             ]],
             ['label' => 'Organisasi', 'permission' => 'manage-organization-units', 'icon' => '▣', 'items' => [
                 ['label' => 'Struktur Organisasi', 'route' => 'organization-units.index'],

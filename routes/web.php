@@ -20,12 +20,14 @@ use App\Http\Controllers\MasterData\MasterDataController;
 use App\Http\Controllers\MilestoneController;
 use App\Http\Controllers\MunaqosahController;
 use App\Http\Controllers\OrganizationUnitController;
+use App\Http\Controllers\ParentCommunicationController;
 use App\Http\Controllers\ProgressTrackController;
 use App\Http\Controllers\ReportCardController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SessionAttendanceController;
 use App\Http\Controllers\TeacherController;
+use App\Http\Controllers\TeacherStudentController;
 use App\Http\Controllers\TrainingController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -86,6 +88,12 @@ Route::middleware(['auth', 'permission:view-reports'])->group(function () {
 });
 
 Route::middleware(['auth', 'permission:view-master-data'])->group(function () {
+    Route::get('/master-data/{page}/export', [MasterDataController::class, 'export'])
+        ->whereIn('page', ['villages', 'groups', 'levels', 'class-grades', 'academic-years', 'semesters'])
+        ->name('master-data.export');
+    Route::post('/master-data/{page}/import', [MasterDataController::class, 'import'])
+        ->whereIn('page', ['villages', 'groups', 'levels', 'class-grades', 'academic-years', 'semesters'])
+        ->name('master-data.import');
     Route::get('/master-data', [MasterDataController::class, 'index'])
         ->name('master-data.index');
     Route::get('/master-data/villages', [MasterDataController::class, 'villages'])
@@ -171,6 +179,16 @@ Route::middleware(['permission:view-teachers,manage-teachers'])->group(function 
 });
 
 Route::middleware(['auth', 'permission:manage-teachers'])->group(function () {
+    Route::get('/teachers/{teacher}/students', [TeacherStudentController::class, 'edit'])
+        ->whereNumber('teacher')
+        ->name('teachers.students.edit');
+    Route::put('/teachers/{teacher}/students', [TeacherStudentController::class, 'update'])
+        ->whereNumber('teacher')
+        ->name('teachers.students.update');
+    Route::get('/teachers/export', [TeacherController::class, 'export'])
+        ->name('teachers.export');
+    Route::post('/teachers/import', [TeacherController::class, 'import'])
+        ->name('teachers.import');
     Route::post('/teachers', [TeacherController::class, 'store'])
         ->name('teachers.store');
     Route::get('/teachers/{teacher}/edit', [TeacherController::class, 'edit'])
@@ -194,6 +212,10 @@ Route::middleware(['permission:view-guardians,manage-guardians'])->group(functio
 });
 
 Route::middleware(['auth', 'permission:manage-guardians'])->group(function () {
+    Route::get('/guardians/export', [GuardianController::class, 'export'])
+        ->name('guardians.export');
+    Route::post('/guardians/import', [GuardianController::class, 'import'])
+        ->name('guardians.import');
     Route::post('/guardians', [GuardianController::class, 'store'])
         ->name('guardians.store');
     Route::get('/guardians/{guardian}/edit', [GuardianController::class, 'edit'])
@@ -356,4 +378,18 @@ Route::middleware(['auth', 'permission:manage-activity-executions'])->group(func
         ->name('activity-executions.index');
     Route::post('/activity-executions', [ActivityExecutionController::class, 'store'])
         ->name('activity-executions.store');
+});
+
+Route::middleware(['auth', 'permission:manage-my-students'])->group(function () {
+    Route::get('/my-students', [TeacherStudentController::class, 'mine'])
+        ->name('my-students.edit');
+    Route::put('/my-students', [TeacherStudentController::class, 'updateMine'])
+        ->name('my-students.update');
+});
+
+Route::middleware(['auth', 'permission:manage-parent-communications'])->group(function () {
+    Route::get('/parent-communications', [ParentCommunicationController::class, 'index'])
+        ->name('parent-communications.index');
+    Route::post('/parent-communications', [ParentCommunicationController::class, 'store'])
+        ->name('parent-communications.store');
 });
