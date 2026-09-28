@@ -370,6 +370,20 @@ class GenerusTest extends TestCase
         Excel::assertDownloaded('generus.xlsx', fn (GenerusExport $export): bool => $export->query()->pluck('registration_number')->all() === ['PPG-SCOPE-001']);
     }
 
+    public function test_generus_forms_have_no_region_field_and_region_is_karawang_timur(): void
+    {
+        [$user, $region, $village, $group, $level] = $this->createGenerusImportContext();
+
+        $this->actingAs($user)->get('/generus/create')->assertOk()->assertDontSee('name="region_id"', false);
+
+        $this->actingAs($user)
+            ->post('/generus', ['full_name' => 'Tanpa Daerah', 'status' => 'active', 'village_id' => $village->id, 'group_id' => $group->id, 'level_id' => $level->id])
+            ->assertRedirect('/generus')
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('generus_assignments', ['region_id' => $region->id, 'group_id' => $group->id]);
+    }
+
     public function test_create_form_lists_only_groups_in_scope(): void
     {
         [, , $village, $group] = $this->createGenerusImportContext();

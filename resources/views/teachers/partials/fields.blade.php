@@ -1,4 +1,4 @@
-{{-- Teacher form fields shared by create (index) and edit. Expects: $teacher (null on create), $regions, $villages, $groups, $lockedPlacement, $defaultRegionId. --}}
+{{-- Teacher form fields shared by create (index) and edit. Expects: $teacher (null on create), $villages, $groups, $lockedPlacement. --}}
 <div class="space-y-4">
     @if ($teacher)
         <div>
@@ -19,20 +19,11 @@
         </select>
     </div>
     <div>
-        <label class="mb-2 block text-sm font-medium text-slate-700" for="region_id">Daerah <span class="text-rose-500">*</span></label>
-        <select id="region_id" name="region_id" required @disabled(isset($lockedPlacement['region_id'])) class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100 disabled:bg-slate-100 disabled:text-slate-600">
-            <option value="">-- Pilih --</option>
-            @foreach($regions as $region)
-                <option value="{{ $region->id }}" @selected(old('region_id', $lockedPlacement['region_id'] ?? $teacher?->region_id ?? $defaultRegionId) == $region->id)>{{ $region->name }}</option>
-            @endforeach
-        </select>
-    </div>
-    <div>
         <label class="mb-2 block text-sm font-medium text-slate-700" for="village_id">Desa <span class="text-rose-500">*</span></label>
         <select id="village_id" name="village_id" required @disabled(isset($lockedPlacement['village_id'])) class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100 disabled:bg-slate-100 disabled:text-slate-600">
             <option value="">-- Pilih --</option>
             @foreach($villages as $village)
-                <option value="{{ $village->id }}" data-region-id="{{ $village->region_id }}" @selected(old('village_id', $lockedPlacement['village_id'] ?? $teacher?->village_id) == $village->id)>{{ $village->name }}</option>
+                <option value="{{ $village->id }}" @selected(old('village_id', $lockedPlacement['village_id'] ?? $teacher?->village_id) == $village->id)>{{ $village->name }}</option>
             @endforeach
         </select>
     </div>
@@ -83,7 +74,6 @@
 
 <script>
     (function () {
-        const region = document.getElementById('region_id');
         const village = document.getElementById('village_id');
         const group = document.getElementById('group_id');
 
@@ -102,11 +92,9 @@
         }
 
         function refresh() {
-            narrow(village, region.value, 'regionId');
             narrow(group, village.value, 'villageId');
         }
 
-        region.addEventListener('change', refresh);
         village.addEventListener('change', refresh);
         refresh();
     })();

@@ -1,7 +1,7 @@
 {{--
     Shared generus form for create and edit.
     Expects: $action, $generus (null on create), $currentAssignment, $registrationNumber, $recordNumber, $nis,
-    $regions, $villages, $groups, $levels, $classGrades, $defaultRegionId (optional, create only).
+    $villages, $groups, $levels, $classGrades.
 --}}
 <form method="POST" action="{{ $action }}" enctype="multipart/form-data" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         @csrf
@@ -142,16 +142,6 @@
         @endif
         <div id="placement-section" class="mt-6 grid gap-5 md:grid-cols-2">
             <div>
-                <label class="mb-2 block text-sm font-medium text-slate-700" for="region_id">Daerah <span class="text-rose-500">*</span></label>
-                <select id="region_id" name="region_id" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
-                    <option value="">-- Pilih --</option>
-                    @foreach($regions as $region)
-                        <option value="{{ $region->id }}" @selected(old('region_id', $currentAssignment?->region_id ?? ($defaultRegionId ?? null)) == $region->id)>{{ $region->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div>
                 <label class="mb-2 block text-sm font-medium text-slate-700" for="village_id">Desa <span class="text-rose-500">*</span></label>
                 <select id="village_id" name="village_id" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
                     <option value="">-- Pilih --</option>
@@ -199,7 +189,7 @@
     const transferSection = document.getElementById('transfer-section');
     const transferDestination = document.getElementById('transfer_destination');
     const placementSection = document.getElementById('placement-section');
-    const placementFields = ['region_id', 'village_id', 'group_id', 'level_id'].map((id) => document.getElementById(id));
+    const placementFields = ['village_id', 'group_id', 'level_id'].map((id) => document.getElementById(id));
 
     if (statusField && transferSection && transferDestination) {
         function updateTransferFields() {

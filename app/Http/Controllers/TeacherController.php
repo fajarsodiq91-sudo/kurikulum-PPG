@@ -107,7 +107,7 @@ class TeacherController extends Controller
     private function validateTeacher(Request $request, ?Teacher $teacher = null): array
     {
         $user = $request->user();
-        $request->merge($this->lockedPlacement($user));
+        $request->merge([...$this->lockedPlacement($user), 'region_id' => Region::karawangTimur()->id]);
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -138,8 +138,8 @@ class TeacherController extends Controller
     }
 
     /**
-     * Placement values a scoped user cannot change: a group role fixes region, village and
-     * group; a village role fixes region and village; a region role fixes the region.
+     * Placement values a scoped user cannot change: a group role fixes village and group;
+     * a village role fixes the village.
      *
      * @return array<string, int>
      */
@@ -152,10 +152,9 @@ class TeacherController extends Controller
         $ids = $user->scopedPlacementIds(self::MANAGE_PERMISSION);
 
         if (count($ids['group_id'] ?? []) === 1 && ! isset($ids['village_id']) && ! isset($ids['region_id'])) {
-            $group = Group::with('village')->find($ids['group_id'][0]);
+            $group = Group::find($ids['group_id'][0]);
 
             return $group === null ? [] : [
-                'region_id' => $group->village->region_id,
                 'village_id' => $group->village_id,
                 'group_id' => $group->id,
             ];
@@ -164,11 +163,7 @@ class TeacherController extends Controller
         if (count($ids['village_id'] ?? []) === 1 && ! isset($ids['region_id'])) {
             $village = Village::find($ids['village_id'][0]);
 
-            return $village === null ? [] : ['region_id' => $village->region_id, 'village_id' => $village->id];
-        }
-
-        if (count($ids['region_id'] ?? []) === 1 && ! isset($ids['village_id']) && ! isset($ids['group_id'])) {
-            return ['region_id' => $ids['region_id'][0]];
+            return $village === null ? [] : ['village_id' => $village->id];
         }
 
         return [];
@@ -180,7 +175,7 @@ class TeacherController extends Controller
     private function placementOptions(?User $user): array
     {
         if ($user === null) {
-            return ['regions' => collect(), 'villages' => collect(), 'groups' => collect(), 'lockedPlacement' => [], 'defaultRegionId' => null];
+            return ['villages' => collect(), 'groups' => collect(), 'lockedPlacement' => []];
         }
 
         $isGlobal = $user->hasGlobalAccess(self::MANAGE_PERMISSION);
@@ -214,17 +209,11 @@ class TeacherController extends Controller
             ->when(! $isGlobal, fn (Builder $query) => $query->whereIn('id', $groups->pluck('village_id')))
             ->orderBy('name')
             ->get();
-        $regions = Region::where('is_active', true)
-            ->when(! $isGlobal, fn (Builder $query) => $query->whereIn('id', $villages->pluck('region_id')))
-            ->orderBy('name')
-            ->get();
 
         return [
-            'regions' => $regions,
             'villages' => $villages,
             'groups' => $groups,
             'lockedPlacement' => $this->lockedPlacement($user),
-            'defaultRegionId' => Region::where('name', 'Karawang Timur')->value('id'),
         ];
     }
 

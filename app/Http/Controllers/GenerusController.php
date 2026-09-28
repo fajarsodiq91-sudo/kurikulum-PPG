@@ -133,7 +133,6 @@ class GenerusController extends Controller
             'generatedRegistrationNumber' => $this->generateRegistrationNumber(),
             'generatedRecordNumber' => $this->generateRecordNumber(),
             ...$this->placementOptions($request->user()),
-            'defaultRegionId' => Region::where('name', 'Karawang Timur')->value('id'),
             'originVillages' => Village::where('is_active', true)->orderBy('name')->get(),
             'originGroups' => Group::where('is_active', true)->orderBy('name')->get(),
         ]);
@@ -389,6 +388,10 @@ class GenerusController extends Controller
             $request->merge(['transfer_destination' => null]);
         }
 
+        if ($request->input('status') !== 'pindah_sambung' || filled($request->input('village_id'))) {
+            $request->merge(['region_id' => Region::karawangTimur()->id]);
+        }
+
         return $request->validate([
             'full_name' => ['required', 'string', 'max:255'],
             'school_name' => ['nullable', 'string', 'max:255'],
@@ -525,6 +528,8 @@ class GenerusController extends Controller
      */
     private function validateReceiveTransfer(Request $request): array
     {
+        $request->merge(['region_id' => Region::karawangTimur()->id]);
+
         return $request->validate([
             'generus_id' => ['required', 'integer', Rule::exists('generus', 'id')],
             'full_name' => ['required', 'string', 'max:255'],
@@ -574,12 +579,8 @@ class GenerusController extends Controller
         $villages = Village::where('is_active', true)
             ->when(! $isGlobal, fn (Builder $query) => $query->whereIn('id', $groups->pluck('village_id')))
             ->get();
-        $regions = Region::where('is_active', true)
-            ->when(! $isGlobal, fn (Builder $query) => $query->whereIn('id', $villages->pluck('region_id')))
-            ->get();
 
         return [
-            'regions' => $regions,
             'villages' => $villages,
             'groups' => $groups,
             'levels' => Level::where('is_active', true)->orderBy('sort_order')->get(),

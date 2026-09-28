@@ -94,7 +94,6 @@
     <div id="internal-form" class="hidden">
         @include('generus.partials.transfer-form', [
             'action' => route('generus.receive-transfer'),
-            'regions' => $regions,
             'villages' => $villages,
             'groups' => $groups,
             'levels' => $levels,

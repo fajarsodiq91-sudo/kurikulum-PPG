@@ -3,7 +3,7 @@
     under another kelompok. Selecting them (see create.blade.php) fills these fields from
     their existing record; everything stays editable except their identity (registration
     number and NIS), which the server keeps untouched.
-    Expects: $action, $regions, $villages, $groups, $levels, $classGrades.
+    Expects: $action, $villages, $groups, $levels, $classGrades.
 --}}
 <form id="transfer-form" method="POST" action="{{ $action }}" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
     @csrf
@@ -100,16 +100,6 @@
         <p class="mt-1 text-sm text-slate-500">Tentukan penempatan generus ini di kelompok tujuan.</p>
     </div>
     <div class="mt-6 grid gap-5 md:grid-cols-2">
-        <div>
-            <label class="mb-2 block text-sm font-medium text-slate-700" for="transfer_region_id">Daerah <span class="text-rose-500">*</span></label>
-            <select id="transfer_region_id" name="region_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
-                <option value="">-- Pilih --</option>
-                @foreach($regions as $region)
-                    <option value="{{ $region->id }}" @selected(old('region_id') == $region->id)>{{ $region->name }}</option>
-                @endforeach
-            </select>
-        </div>
-
         <div>
             <label class="mb-2 block text-sm font-medium text-slate-700" for="transfer_village_id">Desa <span class="text-rose-500">*</span></label>
             <select id="transfer_village_id" name="village_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">

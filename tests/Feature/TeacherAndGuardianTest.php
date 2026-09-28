@@ -257,15 +257,21 @@ class TeacherAndGuardianTest extends TestCase
         $this->assertDatabaseMissing('teachers', ['name' => 'Guru Luar']);
     }
 
-    public function test_create_form_defaults_region_to_karawang_timur(): void
+    public function test_teacher_form_has_no_region_field_and_saves_karawang_timur(): void
     {
-        $this->createAdmin();
-        $region = Region::create(['name' => 'Karawang Timur', 'code' => 'KT', 'is_active' => true]);
+        $admin = $this->createAdmin();
+        $payload = $this->placementPayload();
 
-        $this->actingAs(User::firstOrFail())
+        $this->actingAs($admin)
             ->get('/teachers')
             ->assertOk()
-            ->assertSee('<option value="'.$region->id.'" selected>', false);
+            ->assertDontSee('name="region_id"', false);
+
+        $this->actingAs($admin)
+            ->post('/teachers', ['name' => 'Guru Tanpa Daerah', 'status' => 'active', 'village_id' => $payload['village_id'], 'group_id' => $payload['group_id']])
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('teachers', ['name' => 'Guru Tanpa Daerah', 'region_id' => $payload['region_id']]);
     }
 
     /**
