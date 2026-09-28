@@ -69,6 +69,7 @@
                 ['label' => 'Pesan dan Riwayat', 'route' => 'communications.index'],
             ]],
             ['label' => 'Laporan', 'permission' => 'view-reports', 'route' => 'reports.index', 'icon' => '▤'],
+            ['label' => 'Tutorial', 'route' => 'tutorial', 'icon' => '?'],
         ];
     @endphp
 

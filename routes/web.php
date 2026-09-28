@@ -29,10 +29,13 @@ use App\Http\Controllers\SessionAttendanceController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\TeacherStudentController;
 use App\Http\Controllers\TrainingController;
+use App\Http\Controllers\TutorialController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => redirect()->route('dashboard'));
+
+Route::get('/tutorial', [TutorialController::class, 'index'])->name('tutorial');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');

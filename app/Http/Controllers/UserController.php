@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Group;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\Village;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class UserController extends Controller
@@ -17,6 +20,7 @@ class UserController extends Controller
         return view('users.index', [
             'users' => User::with('roles')->latest()->paginate(25),
             'roles' => Role::query()->where('is_active', true)->orderBy('name')->get(),
+            ...$this->scopeOptions(),
         ]);
     }
 
@@ -31,7 +35,7 @@ class UserController extends Controller
             'status' => $validated['status'],
         ]);
 
-        $user->roles()->sync($validated['roles'] ?? []);
+        $this->syncRoles($request, $user, $validated['roles'] ?? []);
 
         return redirect()->route('users.index')->with('success', 'Data pengguna berhasil ditambahkan.');
     }
@@ -41,6 +45,7 @@ class UserController extends Controller
         return view('users.edit', [
             'user' => $user->load('roles'),
             'roles' => Role::query()->where('is_active', true)->orderBy('name')->get(),
+            ...$this->scopeOptions(),
         ]);
     }
 
@@ -59,7 +64,7 @@ class UserController extends Controller
         }
 
         $user->update($payload);
-        $user->roles()->sync($validated['roles'] ?? []);
+        $this->syncRoles($request, $user, $validated['roles'] ?? []);
 
         return redirect()->route('users.index')->with('success', 'Data pengguna berhasil diperbarui.');
     }
@@ -76,6 +81,52 @@ class UserController extends Controller
         $user->delete();
 
         return redirect()->route('users.index')->with('success', 'Data pengguna berhasil dihapus.');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function scopeOptions(): array
+    {
+        return [
+            'villages' => Village::where('is_active', true)->orderBy('name')->get(),
+            'groups' => Group::with('village')->where('is_active', true)->orderBy('name')->get(),
+        ];
+    }
+
+    /**
+     * Each checked role carries its own scope: global, one village or one group. A role without
+     * a submitted scope keeps the scope it already had (e.g. a teacher account's own scope), or
+     * becomes global for a newly added role.
+     *
+     * @param  list<int|string|null>  $roleIds
+     */
+    private function syncRoles(Request $request, User $user, array $roleIds): void
+    {
+        $existing = $user->roles()->get()->keyBy('id');
+        $sync = [];
+
+        foreach (array_filter($roleIds) as $roleId) {
+            $type = $request->input("role_scopes.{$roleId}.type");
+            $scopeId = $request->input("role_scopes.{$roleId}.id");
+
+            if (in_array($type, ['village', 'group'], true)) {
+                $exists = $type === 'village' ? Village::whereKey($scopeId)->exists() : Group::whereKey($scopeId)->exists();
+
+                if (! $exists) {
+                    throw ValidationException::withMessages(['role_scopes' => 'Pilih '.($type === 'village' ? 'desa' : 'kelompok').' untuk cakupan peran yang dipilih.']);
+                }
+
+                $sync[$roleId] = ['scope_type' => $type, 'scope_id' => (int) $scopeId, 'is_active' => true];
+            } elseif ($type === 'global' || ! $existing->has((int) $roleId)) {
+                $sync[$roleId] = ['scope_type' => 'global', 'scope_id' => null, 'is_active' => true];
+            } else {
+                $pivot = $existing->get((int) $roleId)->pivot;
+                $sync[$roleId] = ['scope_type' => $pivot->scope_type, 'scope_id' => $pivot->scope_id, 'is_active' => (bool) $pivot->is_active];
+            }
+        }
+
+        $user->roles()->sync($sync);
     }
 
     /**
