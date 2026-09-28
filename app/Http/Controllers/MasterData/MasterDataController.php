@@ -43,8 +43,11 @@ class MasterDataController extends Controller
     public function groups(): View
     {
         return view('master-data.groups', [
-            'villages' => Village::query()->get(),
-            'groups' => Group::query()->with('village')->latest()->get(),
+            'villages' => Village::query()->orderBy('name')->get(),
+            'groups' => Group::query()->with('village')->get()
+                ->sort(fn (Group $a, Group $b): int => [mb_strtolower($a->village?->name ?? ''), mb_strtolower($a->name)]
+                    <=> [mb_strtolower($b->village?->name ?? ''), mb_strtolower($b->name)])
+                ->values(),
         ]);
     }
 

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\AcademicYear;
+use App\Models\Group;
 use App\Models\Permission;
 use App\Models\Region;
 use App\Models\Role;
@@ -85,6 +86,21 @@ class MasterDataTest extends TestCase
             ->assertRedirect('/master-data/villages');
 
         $this->assertDatabaseHas('villages', ['id' => $village->id, 'name' => 'Desa B', 'is_active' => false, 'region_id' => $region->id]);
+    }
+
+    public function test_groups_page_lists_groups_ordered_by_village_then_name(): void
+    {
+        [$user, $region] = $this->createMasterDataUser();
+        $desaB = Village::create(['region_id' => $region->id, 'name' => 'Desa B', 'is_active' => true]);
+        $desaA = Village::create(['region_id' => $region->id, 'name' => 'Desa A', 'is_active' => true]);
+        Group::create(['village_id' => $desaB->id, 'name' => 'Kelompok Bravo', 'is_active' => true]);
+        Group::create(['village_id' => $desaA->id, 'name' => 'Kelompok Zulu', 'is_active' => true]);
+        Group::create(['village_id' => $desaA->id, 'name' => 'Kelompok Alfa', 'is_active' => true]);
+
+        $this->actingAs($user)
+            ->get('/master-data/groups')
+            ->assertOk()
+            ->assertSeeInOrder(['Desa A', 'Kelompok Alfa', 'Kelompok Zulu', 'Desa B', 'Kelompok Bravo']);
     }
 
     public function test_master_data_root_redirects_to_villages_and_each_page_renders(): void

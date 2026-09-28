@@ -45,11 +45,15 @@
             <button class="{{ $buttonClass }}">Tambah Kelompok</button>
         </form>
 @endif
-        <div class="mt-5 space-y-2 text-sm">
-            @foreach ($groups as $group)
+        <div class="mt-5 space-y-5 text-sm">
+            @foreach ($groups->groupBy(fn ($group) => $group->village?->name ?? 'Tanpa desa') as $villageName => $villageGroups)
+            <div>
+                <h4 class="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">{{ $villageName }} <span class="font-normal normal-case">({{ $villageGroups->count() }} kelompok)</span></h4>
+                <div class="space-y-2">
+            @foreach ($villageGroups as $group)
                 <details class="border-t border-slate-100 pt-2">
                     <summary class="flex cursor-pointer list-none justify-between">
-                        <span>{{ $group->name }} <span class="text-slate-400">/ {{ $group->village?->name }}</span></span>
+                        <span>{{ $group->name }}</span>
                         @if (\App\Support\Access::can('manage-master-data'))<span class="text-amber-600 underline">Edit</span>@endif
                     </summary>
                     @if (\App\Support\Access::can('manage-master-data'))
@@ -74,6 +78,9 @@
                     </form>
 @endif
                 </details>
+            @endforeach
+                </div>
+            </div>
             @endforeach
         </div>
     </section>
