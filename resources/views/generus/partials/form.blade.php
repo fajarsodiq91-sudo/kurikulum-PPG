@@ -65,8 +65,9 @@
                         <img src="{{ $photoDataUri }}" alt="Foto {{ $generus->full_name }}" class="h-20 w-15 shrink-0 rounded-lg object-cover ring-1 ring-slate-200">
                     @endif
                     <div class="min-w-0 flex-1">
-                        <input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-slate-700">
-                        <p class="mt-1 text-xs text-slate-500">JPG, PNG, atau WEBP maksimal 2 MB, rasio 3:4. {{ $generus?->photo ? 'Kosongkan jika tidak ingin mengganti foto.' : 'Dipakai pada ID card dan absensi scan wajah.' }}</p>
+                        <input id="photo" name="photo" type="file" data-face-source accept="image/jpeg,image/png,image/webp" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-slate-700">
+                        <p class="mt-1 text-xs text-slate-500">JPG, PNG, atau WEBP maksimal 2 MB, rasio 3:4. {{ $generus?->photo ? 'Kosongkan jika tidak ingin mengganti foto.' : 'Dipakai pada ID card, absensi scan wajah, dan login wajah.' }}</p>
+                        @include('layouts.partials.face-descriptor-field')
                     </div>
                 </div>
             </div>

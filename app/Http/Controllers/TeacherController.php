@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\HandlesSheets;
+use App\Models\Generus;
 use App\Models\Group;
 use App\Models\Region;
 use App\Models\Teacher;
 use App\Models\User;
 use App\Models\Village;
+use App\Support\FaceDescriptors;
 use App\Support\Sheets\TeacherSheet;
 use chillerlan\QRCode\QRCode;
 use Illuminate\Database\Eloquent\Builder;
@@ -43,9 +45,10 @@ class TeacherController extends Controller
         $photoPath = $this->storePhoto($validated['photo'] ?? null);
 
         retry(3, fn () => Teacher::create([
-            ...Arr::except($validated, 'photo'),
+            ...Arr::except($validated, ['photo', 'face_descriptor']),
             'registration_number' => Teacher::nextRegistrationNumber(),
             'photo' => $photoPath,
+            'face_descriptor' => $photoPath !== null ? FaceDescriptors::parse($validated['face_descriptor'] ?? null) : null,
         ]), when: fn (Throwable $exception): bool => $exception instanceof UniqueConstraintViolationException);
 
         return redirect()->route('teachers.index')->with('success', 'Data guru berhasil ditambahkan.');
@@ -80,8 +83,8 @@ class TeacherController extends Controller
         $newPhotoPath = $this->storePhoto($validated['photo'] ?? null);
 
         $teacher->update([
-            ...Arr::except($validated, 'photo'),
-            ...($newPhotoPath !== null ? ['photo' => $newPhotoPath] : []),
+            ...Arr::except($validated, ['photo', 'face_descriptor']),
+            ...($newPhotoPath !== null ? ['photo' => $newPhotoPath, 'face_descriptor' => FaceDescriptors::parse($validated['face_descriptor'] ?? null)] : []),
         ]);
 
         if ($newPhotoPath !== null && $oldPhotoPath !== null) {
@@ -130,7 +133,11 @@ class TeacherController extends Controller
     private function validateTeacher(Request $request, ?Teacher $teacher = null): array
     {
         $user = $request->user();
-        $request->merge([...$this->lockedPlacement($user), 'region_id' => Region::karawangTimur()->id]);
+        $request->merge([
+            ...$this->lockedPlacement($user),
+            'region_id' => Region::karawangTimur()->id,
+            'rfid_uid' => Generus::normalizeRfidUid($request->input('rfid_uid')),
+        ]);
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -138,6 +145,8 @@ class TeacherController extends Controller
             'phone' => ['nullable', 'string', 'max:50'],
             'email' => ['nullable', 'email', 'max:255', Rule::unique('teachers', 'email')->ignore($teacher?->id)],
             'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'face_descriptor' => ['nullable', FaceDescriptors::rule()],
+            'rfid_uid' => ['nullable', 'string', 'max:50', Rule::unique('teachers', 'rfid_uid')->ignore($teacher?->id)],
             'region_id' => ['required', Rule::exists('regions', 'id')->where('is_active', true)],
             'village_id' => [
                 'required',

@@ -17,6 +17,7 @@ class Teacher extends Model
 
     protected $fillable = [
         'registration_number',
+        'rfid_uid',
         'name',
         'gender',
         'phone',
@@ -25,6 +26,7 @@ class Teacher extends Model
         'village_id',
         'group_id',
         'photo',
+        'face_descriptor',
         'status',
         'notes',
     ];
@@ -42,6 +44,11 @@ class Teacher extends Model
             }
         });
         static::deleting(fn (self $teacher) => MemberAccounts::setStatus('teacher_id', $teacher->id, 'inactive'));
+    }
+
+    protected function casts(): array
+    {
+        return ['face_descriptor' => 'array'];
     }
 
     /**

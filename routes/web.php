@@ -11,6 +11,7 @@ use App\Http\Controllers\CurriculumProgramController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EvaluationController;
 use App\Http\Controllers\EvaluationScoreController;
+use App\Http\Controllers\FaceEnrollmentController;
 use App\Http\Controllers\FollowUpController;
 use App\Http\Controllers\GenerusController;
 use App\Http\Controllers\GuardianController;
@@ -41,6 +42,8 @@ Route::get('/tutorial', [TutorialController::class, 'index'])->name('tutorial');
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:5,1');
+    Route::post('/login/rfid', [LoginController::class, 'rfid'])->middleware('throttle:10,1')->name('login.rfid');
+    Route::post('/login/face', [LoginController::class, 'face'])->middleware('throttle:10,1')->name('login.face');
 });
 
 Route::post('/logout', [LoginController::class, 'logout'])->middleware('auth')->name('logout');
@@ -84,6 +87,19 @@ Route::middleware(['auth', 'permission:manage-users'])->group(function () {
     Route::delete('/roles/{role}', [RoleController::class, 'destroy'])
         ->whereNumber('role')
         ->name('roles.destroy');
+});
+
+Route::middleware(['auth', 'permission:manage-users'])->group(function () {
+    Route::get('/face-enrollment', [FaceEnrollmentController::class, 'index'])
+        ->name('face-enrollment.index');
+    Route::get('/face-enrollment/{type}/{id}/photo', [FaceEnrollmentController::class, 'photo'])
+        ->whereIn('type', ['generus', 'teacher'])
+        ->whereNumber('id')
+        ->name('face-enrollment.photo');
+    Route::post('/face-enrollment/{type}/{id}', [FaceEnrollmentController::class, 'store'])
+        ->whereIn('type', ['generus', 'teacher'])
+        ->whereNumber('id')
+        ->name('face-enrollment.store');
 });
 
 Route::middleware(['auth', 'permission:view-reports'])->group(function () {

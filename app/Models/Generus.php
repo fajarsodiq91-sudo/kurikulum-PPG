@@ -43,6 +43,7 @@ class Generus extends Model
         'learning_class_id',
         'photo',
         'rfid_uid',
+        'face_descriptor',
         'status',
         'transfer_destination',
         'notes',
@@ -67,6 +68,7 @@ class Generus extends Model
             'birth_date' => 'date',
             'birth_order' => 'integer',
             'sibling_count' => 'integer',
+            'face_descriptor' => 'array',
         ];
     }
 

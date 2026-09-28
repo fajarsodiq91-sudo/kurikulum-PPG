@@ -1,5 +1,7 @@
 // Attendance scanners (QR camera, RFID reader, face) for the session attendance sheet.
 // The heavy libraries are imported lazily, only when their mode is opened.
+import { describeFace, loadFaceApi } from './face';
+
 const panel = document.querySelector('[data-attendance-scanner]');
 
 if (panel) {
@@ -128,16 +130,10 @@ if (panel) {
 			}
 
 			showMessage('Memuat model pengenalan wajah...');
-			const faceapi = await import('@vladmandic/face-api');
-			const modelUrl = panel.dataset.modelUrl;
-			await Promise.all([
-				faceapi.nets.tinyFaceDetector.loadFromUri(modelUrl),
-				faceapi.nets.faceLandmark68Net.loadFromUri(modelUrl),
-				faceapi.nets.faceRecognitionNet.loadFromUri(modelUrl),
-			]);
+			const engine = await loadFaceApi(panel.dataset.modelUrl);
+			const { faceapi } = engine;
 
 			const people = await (await fetch(facesUrl, { headers: { Accept: 'application/json' } })).json();
-			const detector = new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 });
 			const labeled = [];
 			let unreadable = 0;
 
@@ -146,10 +142,10 @@ if (panel) {
 
 				try {
 					const photo = await faceapi.fetchImage(person.photo);
-					const result = await faceapi.detectSingleFace(photo, detector).withFaceLandmarks().withFaceDescriptor();
+					const descriptor = await describeFace(engine, photo);
 
-					if (result) {
-						labeled.push(new faceapi.LabeledFaceDescriptors(String(person.id), [result.descriptor]));
+					if (descriptor) {
+						labeled.push(new faceapi.LabeledFaceDescriptors(String(person.id), [Float32Array.from(descriptor)]));
 						continue;
 					}
 				} catch {
@@ -179,10 +175,10 @@ if (panel) {
 				busy = true;
 
 				try {
-					const result = await faceapi.detectSingleFace(video, detector).withFaceLandmarks().withFaceDescriptor();
+					const descriptor = await describeFace(engine, video);
 
-					if (result) {
-						const best = matcher.findBestMatch(result.descriptor);
+					if (descriptor) {
+						const best = matcher.findBestMatch(Float32Array.from(descriptor));
 
 						if (best.label !== 'unknown' && !isRepeat(`face:${best.label}`, 6000)) {
 							submitScan({ method: 'face', generus_id: Number(best.label) });

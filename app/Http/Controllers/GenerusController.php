@@ -13,6 +13,7 @@ use App\Models\Level;
 use App\Models\Region;
 use App\Models\User;
 use App\Models\Village;
+use App\Support\FaceDescriptors;
 use chillerlan\QRCode\QRCode;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -108,6 +109,7 @@ class GenerusController extends Controller
                 'learning_class_id' => $validated['learning_class_id'] ?? null,
                 'photo' => $photoPath,
                 'rfid_uid' => $validated['rfid_uid'] ?? null,
+                'face_descriptor' => $photoPath !== null ? FaceDescriptors::parse($validated['face_descriptor'] ?? null) : null,
                 'status' => $validated['status'],
                 'transfer_destination' => $validated['transfer_destination'] ?? null,
                 'notes' => $validated['notes'] ?? null,
@@ -300,7 +302,7 @@ class GenerusController extends Controller
                 ...collect(self::EDITABLE_FIELDS)->mapWithKeys(fn (string $field): array => [$field => $validated[$field] ?? null])->all(),
                 'transfer_destination' => $validated['transfer_destination'] ?? null,
                 'rfid_uid' => $validated['rfid_uid'] ?? null,
-                ...($newPhotoPath !== null ? ['photo' => $newPhotoPath] : []),
+                ...($newPhotoPath !== null ? ['photo' => $newPhotoPath, 'face_descriptor' => FaceDescriptors::parse($validated['face_descriptor'] ?? null)] : []),
             ]);
 
             $this->syncPlacement($generus, $validated);
@@ -442,6 +444,7 @@ class GenerusController extends Controller
             'learning_class_id' => ['nullable', Rule::exists('class_grades', 'id')->where('is_active', true)],
             'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'rfid_uid' => ['nullable', 'string', 'max:50', Rule::unique('generus', 'rfid_uid')->ignore($request->route('generus'))],
+            'face_descriptor' => ['nullable', FaceDescriptors::rule()],
             'status' => ['required', Rule::in(['active', 'pindah_sambung', 'married'])],
             'transfer_destination' => [
                 Rule::requiredIf(fn (): bool => $request->input('status') === 'pindah_sambung'),

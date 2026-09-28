@@ -13,6 +13,7 @@
             ['label' => 'Manajemen Pengguna', 'permission' => 'manage-users', 'icon' => '⚙', 'items' => [
                 ['label' => 'Data Pengguna', 'route' => 'users.index'],
                 ['label' => 'Data Peran', 'route' => 'roles.index'],
+                ['label' => 'Data Wajah', 'route' => 'face-enrollment.index'],
             ]],
             ['label' => 'Generus', 'permission' => ['view-generus', 'manage-generus'], 'icon' => '◎', 'items' => [
                 ['label' => 'Data Generus', 'route' => 'generus.index'],
