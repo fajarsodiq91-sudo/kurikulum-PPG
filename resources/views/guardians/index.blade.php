@@ -44,6 +44,7 @@
                         <tr>
                             <th class="py-3 pr-4 font-semibold">Nama</th>
                             <th class="py-3 pr-4 font-semibold">Hubungan</th>
+                            <th class="py-3 pr-4 font-semibold">Anak (Generus)</th>
                             <th class="py-3 pr-4 font-semibold">Status</th>
                             <th class="py-3"><span class="sr-only">Aksi</span></th>
                         </tr>
@@ -53,6 +54,13 @@
                             <tr class="border-b border-slate-100 last:border-0">
                                 <td class="py-3 pr-4">{{ $guardian->full_name }}</td>
                                 <td class="py-3 pr-4">{{ $guardian->relationship }}</td>
+                                <td class="py-3 pr-4">
+                                    @forelse ($guardian->generus as $child)
+                                        <a href="{{ route('generus.show', $child) }}" class="text-amber-600 hover:text-amber-700">{{ $child->full_name }}</a>@unless ($loop->last), @endunless
+                                    @empty
+                                        <span class="text-slate-400">-</span>
+                                    @endforelse
+                                </td>
                                 <td class="py-3 pr-4"><span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $guardian->status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600' }}">{{ $guardian->status === 'active' ? 'Aktif' : 'Nonaktif' }}</span></td>
                                 <td class="py-3 text-right">
                                     @if (\App\Support\Access::can('manage-guardians'))
@@ -61,7 +69,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="4" class="py-10 text-center"><p class="font-semibold text-slate-700">Belum ada data orang tua / wali</p><p class="mt-1 text-sm text-slate-500">Tambahkan wali pertama untuk mulai mengelola relasi keluarga.</p></td></tr>
+                            <tr><td colspan="5" class="py-10 text-center"><p class="font-semibold text-slate-700">Belum ada data orang tua / wali</p><p class="mt-1 text-sm text-slate-500">Tambahkan wali pertama untuk mulai mengelola relasi keluarga.</p></td></tr>
                         @endforelse
                     </tbody>
                 </table>

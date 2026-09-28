@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use App\Support\MemberAccounts;
+use App\Support\ParentGuardians;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
@@ -48,6 +50,7 @@ class Generus extends Model
     protected static function booted(): void
     {
         static::created(fn (self $generus) => MemberAccounts::forGenerus($generus));
+        static::saved(fn (self $generus) => ParentGuardians::sync($generus));
         static::updated(function (self $generus): void {
             if ($generus->wasChanged('full_name')) {
                 MemberAccounts::rename('generus_id', $generus->id, $generus->full_name);
@@ -99,6 +102,11 @@ class Generus extends Model
     public function assignments(): HasMany
     {
         return $this->hasMany(GenerusAssignment::class);
+    }
+
+    public function guardians(): BelongsToMany
+    {
+        return $this->belongsToMany(Guardian::class, 'generus_guardian')->withTimestamps();
     }
 
     public function schoolGrade(): BelongsTo

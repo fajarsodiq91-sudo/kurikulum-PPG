@@ -61,7 +61,10 @@
         ] as [$field, $label])
             <div>
                 <label class="mb-2 block text-sm font-medium text-slate-700" for="transfer_{{ $field }}">{{ $label }}</label>
-                <input id="transfer_{{ $field }}" name="{{ $field }}" type="text" value="{{ old($field) }}" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
+                <input id="transfer_{{ $field }}" name="{{ $field }}" type="text" value="{{ old($field) }}" @if (in_array($field, ['father_name', 'mother_name'], true)) list="transfer_{{ $field }}_suggestions" data-parent-suggest="{{ $field === 'father_name' ? 'Ayah' : 'Ibu' }}" autocomplete="off" @endif class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
+                @if (in_array($field, ['father_name', 'mother_name'], true))
+                    <datalist id="transfer_{{ $field }}_suggestions"></datalist>
+                @endif
             </div>
         @endforeach
 

@@ -90,7 +90,10 @@
                             <p class="mt-1 text-xs text-slate-500">{{ $field === 'nis' ? 'Nomor induk mengikuti generator otomatis.' : 'Nomor urut lama dalam format 0001.' }}</p>
                         @endunless
                     @else
-                        <input id="{{ $field }}" name="{{ $field }}" type="text" value="{{ old($field, $generus?->{$field}) }}" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
+                        <input id="{{ $field }}" name="{{ $field }}" type="text" value="{{ old($field, $generus?->{$field}) }}" @if (in_array($field, ['father_name', 'mother_name'], true)) list="{{ $field }}_suggestions" data-parent-suggest="{{ $field === 'father_name' ? 'Ayah' : 'Ibu' }}" autocomplete="off" @endif class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
+                        @if (in_array($field, ['father_name', 'mother_name'], true))
+                            <datalist id="{{ $field }}_suggestions"></datalist>
+                        @endif
                     @endif
                 </div>
             @endforeach
@@ -260,4 +263,38 @@
             learningClassTouchedByUser = learningClassField.value !== schoolGradeField.value;
         });
     }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        if (window.parentSuggestionsReady) {
+            return;
+        }
+
+        window.parentSuggestionsReady = true;
+        const endpoint = @js(route('generus.parent-suggestions'));
+
+        document.querySelectorAll('[data-parent-suggest]').forEach((input) => {
+            const list = document.getElementById(input.getAttribute('list'));
+            let timer = null;
+
+            input.addEventListener('input', () => {
+                clearTimeout(timer);
+                timer = setTimeout(async () => {
+                    const params = new URLSearchParams({ relationship: input.dataset.parentSuggest, q: input.value });
+                    const response = await fetch(endpoint + '?' + params, { headers: { 'Accept': 'application/json' } });
+
+                    if (!response.ok) {
+                        return;
+                    }
+
+                    const payload = await response.json();
+                    list.replaceChildren(...payload.data.map((item) => {
+                        const option = document.createElement('option');
+                        option.value = item.name;
+                        option.label = item.children ? item.name + ' (anak: ' + item.children + ')' : item.name;
+                        return option;
+                    }));
+                }, 200);
+            });
+        });
+    });
 </script>

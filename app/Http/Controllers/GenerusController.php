@@ -8,6 +8,7 @@ use App\Models\ClassGrade;
 use App\Models\Generus;
 use App\Models\GenerusAssignment;
 use App\Models\Group;
+use App\Models\Guardian;
 use App\Models\Level;
 use App\Models\Region;
 use App\Models\User;
@@ -135,6 +136,33 @@ class GenerusController extends Controller
             ...$this->placementOptions($request->user()),
             'originVillages' => Village::where('is_active', true)->orderBy('name')->get(),
             'originGroups' => Group::where('is_active', true)->orderBy('name')->get(),
+        ]);
+    }
+
+    /**
+     * Names of parents already on record, for the father/mother inputs to suggest so the same
+     * parent is not typed differently for each child.
+     */
+    public function parentSuggestions(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'relationship' => ['required', Rule::in(['Ayah', 'Ibu'])],
+            'q' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $guardians = Guardian::query()
+            ->where('relationship', $validated['relationship'])
+            ->when(filled($validated['q'] ?? null), fn (Builder $query) => $query->where('full_name', 'like', '%'.addcslashes($validated['q'], '%_\\').'%'))
+            ->with('generus:id,full_name')
+            ->orderBy('full_name')
+            ->limit(10)
+            ->get();
+
+        return response()->json([
+            'data' => $guardians->map(fn (Guardian $guardian): array => [
+                'name' => $guardian->full_name,
+                'children' => $guardian->generus->pluck('full_name')->take(3)->implode(', '),
+            ])->values(),
         ]);
     }
 

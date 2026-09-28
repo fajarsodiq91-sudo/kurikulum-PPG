@@ -7,6 +7,7 @@ use App\Models\ClassGrade;
 use App\Models\Generus;
 use App\Models\GenerusAssignment;
 use App\Models\Group;
+use App\Models\Guardian;
 use App\Models\Level;
 use App\Models\Permission;
 use App\Models\Region;
@@ -382,6 +383,60 @@ class GenerusTest extends TestCase
             ->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('generus_assignments', ['region_id' => $region->id, 'group_id' => $group->id]);
+    }
+
+    public function test_parent_names_become_guardians_shared_between_siblings(): void
+    {
+        [$user, , $village, $group, $level] = $this->createGenerusImportContext();
+
+        foreach (['Anak Satu', 'Anak Dua'] as $childName) {
+            $this->actingAs($user)
+                ->post('/generus', [
+                    'full_name' => $childName,
+                    'father_name' => 'Budi Santoso',
+                    'mother_name' => 'siti aminah',
+                    'status' => 'active',
+                    'village_id' => $village->id,
+                    'group_id' => $group->id,
+                    'level_id' => $level->id,
+                ])
+                ->assertSessionHasNoErrors();
+        }
+
+        $father = Guardian::where('relationship', 'Ayah')->where('full_name', 'Budi Santoso')->firstOrFail();
+
+        $this->assertSame(1, Guardian::where('relationship', 'Ayah')->count());
+        $this->assertSame(1, Guardian::where('relationship', 'Ibu')->count());
+        $this->assertEqualsCanonicalizing(['Anak Satu', 'Anak Dua'], $father->generus->pluck('full_name')->all());
+    }
+
+    public function test_changing_parent_name_relinks_guardian_and_blank_name_unlinks(): void
+    {
+        [$user, , $village, $group, $level] = $this->createGenerusImportContext();
+        $generus = Generus::create(['registration_number' => 'PPG-WALI-001', 'full_name' => 'Anak Wali', 'father_name' => 'Ayah Lama', 'status' => 'active']);
+
+        $this->assertSame(['Ayah Lama'], $generus->guardians()->pluck('full_name')->all());
+
+        $generus->update(['father_name' => 'Ayah Baru']);
+        $this->assertSame(['Ayah Baru'], $generus->guardians()->pluck('full_name')->all());
+
+        $generus->update(['father_name' => null]);
+        $this->assertSame(0, $generus->guardians()->count());
+    }
+
+    public function test_parent_suggestions_return_existing_names_with_children(): void
+    {
+        [$user] = $this->createGenerusImportContext();
+        Generus::create(['registration_number' => 'PPG-WALI-002', 'full_name' => 'Anak Sugesti', 'father_name' => 'Ahmad Yusuf', 'mother_name' => 'Ahmad Ibu', 'status' => 'active']);
+
+        $this->actingAs($user)
+            ->getJson('/generus/parent-suggestions?relationship=Ayah&q=yus')
+            ->assertOk()
+            ->assertJsonPath('data.0.name', 'Ahmad Yusuf')
+            ->assertJsonPath('data.0.children', 'Anak Sugesti')
+            ->assertJsonCount(1, 'data');
+
+        $this->actingAs($user)->getJson('/generus/parent-suggestions?relationship=Paman')->assertUnprocessable();
     }
 
     public function test_create_form_lists_only_groups_in_scope(): void

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Guardian extends Model
 {
@@ -14,4 +15,9 @@ class Guardian extends Model
         'status',
         'notes',
     ];
+
+    public function generus(): BelongsToMany
+    {
+        return $this->belongsToMany(Generus::class, 'generus_guardian')->withTimestamps();
+    }
 }

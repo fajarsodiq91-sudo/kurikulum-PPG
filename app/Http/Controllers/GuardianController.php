@@ -12,7 +12,7 @@ class GuardianController extends Controller
     public function index(): View
     {
         return view('guardians.index', [
-            'guardians' => Guardian::latest()->paginate(25),
+            'guardians' => Guardian::with('generus:id,full_name')->latest()->paginate(25),
         ]);
     }
 
