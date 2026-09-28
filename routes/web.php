@@ -85,18 +85,32 @@ Route::middleware(['auth', 'permission:view-master-data'])->group(function () {
         ->name('master-data.index');
     Route::post('/master-data/regions', [MasterDataController::class, 'storeRegion'])
         ->name('master-data.regions.store');
+    Route::put('/master-data/regions/{region}', [MasterDataController::class, 'updateRegion'])
+        ->name('master-data.regions.update');
     Route::post('/master-data/villages', [MasterDataController::class, 'storeVillage'])
         ->name('master-data.villages.store');
+    Route::put('/master-data/villages/{village}', [MasterDataController::class, 'updateVillage'])
+        ->name('master-data.villages.update');
     Route::post('/master-data/groups', [MasterDataController::class, 'storeGroup'])
         ->name('master-data.groups.store');
+    Route::put('/master-data/groups/{group}', [MasterDataController::class, 'updateGroup'])
+        ->name('master-data.groups.update');
     Route::post('/master-data/levels', [MasterDataController::class, 'storeLevel'])
         ->name('master-data.levels.store');
+    Route::put('/master-data/levels/{level}', [MasterDataController::class, 'updateLevel'])
+        ->name('master-data.levels.update');
     Route::post('/master-data/class-grades', [MasterDataController::class, 'storeClassGrade'])
         ->name('master-data.class-grades.store');
+    Route::put('/master-data/class-grades/{classGrade}', [MasterDataController::class, 'updateClassGrade'])
+        ->name('master-data.class-grades.update');
     Route::post('/master-data/academic-years', [MasterDataController::class, 'storeAcademicYear'])
         ->name('master-data.academic-years.store');
+    Route::put('/master-data/academic-years/{academicYear}', [MasterDataController::class, 'updateAcademicYear'])
+        ->name('master-data.academic-years.update');
     Route::post('/master-data/semesters', [MasterDataController::class, 'storeSemester'])
         ->name('master-data.semesters.store');
+    Route::put('/master-data/semesters/{semester}', [MasterDataController::class, 'updateSemester'])
+        ->name('master-data.semesters.update');
     Route::get('/master-data/regions', [RegionController::class, 'index'])
         ->name('master-data.regions.index');
 });

@@ -40,7 +40,31 @@
                 <input type="hidden" name="is_active" value="1">
                 <button class="{{ $buttonClass }}">Tambah Daerah</button>
             </form>
-            <div class="mt-5 space-y-2 text-sm">@foreach ($regions as $region)<div class="flex justify-between border-t border-slate-100 pt-2"><span>{{ $region->name }} <span class="text-slate-400">({{ $region->code }})</span></span><span>{{ $region->is_active ? 'Aktif' : 'Nonaktif' }}</span></div>@endforeach</div>
+            <div class="mt-5 space-y-2 text-sm">
+                @foreach ($regions as $region)
+                    <details class="border-t border-slate-100 pt-2">
+                        <summary class="flex cursor-pointer list-none justify-between">
+                            <span>{{ $region->name }} <span class="text-slate-400">({{ $region->code }})</span></span>
+                            <span class="flex items-center gap-3"><span>{{ $region->is_active ? 'Aktif' : 'Nonaktif' }}</span><span class="text-amber-600 underline">Edit</span></span>
+                        </summary>
+                        <form method="POST" action="{{ route('master-data.regions.update', $region) }}" class="mt-3 rounded-lg bg-slate-50 p-3">
+                            @csrf
+                            @method('PUT')
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                <input class="{{ $inputClass }}" name="name" value="{{ $region->name }}" required>
+                                <input class="{{ $inputClass }}" name="code" value="{{ $region->code }}" required>
+                            </div>
+                            <textarea class="{{ $inputClass }} mt-3" name="description" rows="2" placeholder="Deskripsi (opsional)">{{ $region->description }}</textarea>
+                            <label class="mt-3 inline-flex items-center gap-2 text-sm text-slate-700">
+                                <input type="hidden" name="is_active" value="0">
+                                <input type="checkbox" name="is_active" value="1" @checked($region->is_active)>
+                                Aktif
+                            </label>
+                            <button class="mt-3 block rounded-lg bg-brand-950 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800">Simpan Perubahan</button>
+                        </form>
+                    </details>
+                @endforeach
+            </div>
         </section>
 
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -56,7 +80,35 @@
                 <input type="hidden" name="is_active" value="1">
                 <button class="{{ $buttonClass }}">Tambah Desa</button>
             </form>
-            <div class="mt-5 space-y-2 text-sm">@foreach ($villages as $village)<div class="flex justify-between border-t border-slate-100 pt-2"><span>{{ $village->name }} <span class="text-slate-400">/ {{ $village->region?->name }}</span></span><span>{{ $village->is_active ? 'Aktif' : 'Nonaktif' }}</span></div>@endforeach</div>
+            <div class="mt-5 space-y-2 text-sm">
+                @foreach ($villages as $village)
+                    <details class="border-t border-slate-100 pt-2">
+                        <summary class="flex cursor-pointer list-none justify-between">
+                            <span>{{ $village->name }} <span class="text-slate-400">/ {{ $village->region?->name }}</span></span>
+                            <span class="flex items-center gap-3"><span>{{ $village->is_active ? 'Aktif' : 'Nonaktif' }}</span><span class="text-amber-600 underline">Edit</span></span>
+                        </summary>
+                        <form method="POST" action="{{ route('master-data.villages.update', $village) }}" class="mt-3 rounded-lg bg-slate-50 p-3">
+                            @csrf
+                            @method('PUT')
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                <select class="{{ $inputClass }}" name="region_id" required>
+                                    @foreach ($regions->where('is_active', true) as $region)
+                                        <option value="{{ $region->id }}" @selected($village->region_id === $region->id)>{{ $region->name }}</option>
+                                    @endforeach
+                                </select>
+                                <input class="{{ $inputClass }}" name="name" value="{{ $village->name }}" required>
+                                <input class="{{ $inputClass }}" name="code" value="{{ $village->code }}">
+                            </div>
+                            <label class="mt-3 inline-flex items-center gap-2 text-sm text-slate-700">
+                                <input type="hidden" name="is_active" value="0">
+                                <input type="checkbox" name="is_active" value="1" @checked($village->is_active)>
+                                Aktif
+                            </label>
+                            <button class="mt-3 block rounded-lg bg-brand-950 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800">Simpan Perubahan</button>
+                        </form>
+                    </details>
+                @endforeach
+            </div>
         </section>
 
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -72,7 +124,35 @@
                 <input type="hidden" name="is_active" value="1">
                 <button class="{{ $buttonClass }}">Tambah Kelompok</button>
             </form>
-            <div class="mt-5 space-y-2 text-sm">@foreach ($groups as $group)<div class="border-t border-slate-100 pt-2">{{ $group->name }} <span class="text-slate-400">/ {{ $group->village?->name }}</span></div>@endforeach</div>
+            <div class="mt-5 space-y-2 text-sm">
+                @foreach ($groups as $group)
+                    <details class="border-t border-slate-100 pt-2">
+                        <summary class="flex cursor-pointer list-none justify-between">
+                            <span>{{ $group->name }} <span class="text-slate-400">/ {{ $group->village?->name }}</span></span>
+                            <span class="text-amber-600 underline">Edit</span>
+                        </summary>
+                        <form method="POST" action="{{ route('master-data.groups.update', $group) }}" class="mt-3 rounded-lg bg-slate-50 p-3">
+                            @csrf
+                            @method('PUT')
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                <select class="{{ $inputClass }}" name="village_id" required>
+                                    @foreach ($villages->where('is_active', true) as $village)
+                                        <option value="{{ $village->id }}" @selected($group->village_id === $village->id)>{{ $village->name }}</option>
+                                    @endforeach
+                                </select>
+                                <input class="{{ $inputClass }}" name="name" value="{{ $group->name }}" required>
+                                <input class="{{ $inputClass }}" name="code" value="{{ $group->code }}">
+                            </div>
+                            <label class="mt-3 inline-flex items-center gap-2 text-sm text-slate-700">
+                                <input type="hidden" name="is_active" value="0">
+                                <input type="checkbox" name="is_active" value="1" @checked($group->is_active)>
+                                Aktif
+                            </label>
+                            <button class="mt-3 block rounded-lg bg-brand-950 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800">Simpan Perubahan</button>
+                        </form>
+                    </details>
+                @endforeach
+            </div>
         </section>
 
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -88,7 +168,31 @@
                 <input type="hidden" name="is_active" value="1">
                 <button class="{{ $buttonClass }}">Tambah Jenjang</button>
             </form>
-            <div class="mt-5 space-y-2 text-sm">@foreach ($levels as $level)<div class="flex justify-between border-t border-slate-100 pt-2"><span>{{ $level->name }} <span class="text-slate-400">({{ $level->code }})</span></span><span>{{ $level->is_active ? 'Aktif' : 'Nonaktif' }}</span></div>@endforeach</div>
+            <div class="mt-5 space-y-2 text-sm">
+                @foreach ($levels as $level)
+                    <details class="border-t border-slate-100 pt-2">
+                        <summary class="flex cursor-pointer list-none justify-between">
+                            <span>{{ $level->name }} <span class="text-slate-400">({{ $level->code }})</span></span>
+                            <span class="flex items-center gap-3"><span>{{ $level->is_active ? 'Aktif' : 'Nonaktif' }}</span><span class="text-amber-600 underline">Edit</span></span>
+                        </summary>
+                        <form method="POST" action="{{ route('master-data.levels.update', $level) }}" class="mt-3 rounded-lg bg-slate-50 p-3">
+                            @csrf
+                            @method('PUT')
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                <input class="{{ $inputClass }}" name="name" value="{{ $level->name }}" required>
+                                <input class="{{ $inputClass }}" name="code" value="{{ $level->code }}" required>
+                                <input class="{{ $inputClass }}" name="sort_order" type="number" min="0" value="{{ $level->sort_order }}" required>
+                            </div>
+                            <label class="mt-3 inline-flex items-center gap-2 text-sm text-slate-700">
+                                <input type="hidden" name="is_active" value="0">
+                                <input type="checkbox" name="is_active" value="1" @checked($level->is_active)>
+                                Aktif
+                            </label>
+                            <button class="mt-3 block rounded-lg bg-brand-950 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800">Simpan Perubahan</button>
+                        </form>
+                    </details>
+                @endforeach
+            </div>
         </section>
 
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -104,7 +208,31 @@
                 <input type="hidden" name="is_active" value="1">
                 <button class="{{ $buttonClass }}">Tambah Kelas</button>
             </form>
-            <div class="mt-5 space-y-2 text-sm">@foreach ($classGrades as $classGrade)<div class="flex justify-between border-t border-slate-100 pt-2"><span>{{ $classGrade->name }} <span class="text-slate-400">({{ $classGrade->code }})</span></span><span>{{ $classGrade->is_active ? 'Aktif' : 'Nonaktif' }}</span></div>@endforeach</div>
+            <div class="mt-5 space-y-2 text-sm">
+                @foreach ($classGrades as $classGrade)
+                    <details class="border-t border-slate-100 pt-2">
+                        <summary class="flex cursor-pointer list-none justify-between">
+                            <span>{{ $classGrade->name }} <span class="text-slate-400">({{ $classGrade->code }})</span></span>
+                            <span class="flex items-center gap-3"><span>{{ $classGrade->is_active ? 'Aktif' : 'Nonaktif' }}</span><span class="text-amber-600 underline">Edit</span></span>
+                        </summary>
+                        <form method="POST" action="{{ route('master-data.class-grades.update', $classGrade) }}" class="mt-3 rounded-lg bg-slate-50 p-3">
+                            @csrf
+                            @method('PUT')
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                <input class="{{ $inputClass }}" name="name" value="{{ $classGrade->name }}" required>
+                                <input class="{{ $inputClass }}" name="code" value="{{ $classGrade->code }}" required>
+                                <input class="{{ $inputClass }}" name="sort_order" type="number" min="0" value="{{ $classGrade->sort_order }}" required>
+                            </div>
+                            <label class="mt-3 inline-flex items-center gap-2 text-sm text-slate-700">
+                                <input type="hidden" name="is_active" value="0">
+                                <input type="checkbox" name="is_active" value="1" @checked($classGrade->is_active)>
+                                Aktif
+                            </label>
+                            <button class="mt-3 block rounded-lg bg-brand-950 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800">Simpan Perubahan</button>
+                        </form>
+                    </details>
+                @endforeach
+            </div>
         </section>
 
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -121,7 +249,32 @@
                 <input type="hidden" name="is_active" value="1">
                 <button class="{{ $buttonClass }}">Tambah Tahun Akademik</button>
             </form>
-            <div class="mt-5 space-y-2 text-sm">@foreach ($academicYears as $year)<div class="border-t border-slate-100 pt-2">{{ $year->name }} <span class="text-slate-400">({{ $year->code }})</span></div>@endforeach</div>
+            <div class="mt-5 space-y-2 text-sm">
+                @foreach ($academicYears as $year)
+                    <details class="border-t border-slate-100 pt-2">
+                        <summary class="flex cursor-pointer list-none justify-between">
+                            <span>{{ $year->name }} <span class="text-slate-400">({{ $year->code }})</span></span>
+                            <span class="text-amber-600 underline">Edit</span>
+                        </summary>
+                        <form method="POST" action="{{ route('master-data.academic-years.update', $year) }}" class="mt-3 rounded-lg bg-slate-50 p-3">
+                            @csrf
+                            @method('PUT')
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                <input class="{{ $inputClass }}" name="name" value="{{ $year->name }}" required>
+                                <input class="{{ $inputClass }}" name="code" value="{{ $year->code }}" required>
+                                <input class="{{ $inputClass }}" name="start_year" type="number" min="2000" max="9999" value="{{ $year->start_year }}" required>
+                                <input class="{{ $inputClass }}" name="end_year" type="number" min="2000" max="9999" value="{{ $year->end_year }}" required>
+                            </div>
+                            <label class="mt-3 inline-flex items-center gap-2 text-sm text-slate-700">
+                                <input type="hidden" name="is_active" value="0">
+                                <input type="checkbox" name="is_active" value="1" @checked($year->is_active)>
+                                Aktif
+                            </label>
+                            <button class="mt-3 block rounded-lg bg-brand-950 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800">Simpan Perubahan</button>
+                        </form>
+                    </details>
+                @endforeach
+            </div>
         </section>
 
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -138,7 +291,36 @@
                 <input type="hidden" name="is_active" value="1">
                 <button class="{{ $buttonClass }}">Tambah Semester</button>
             </form>
-            <div class="mt-5 space-y-2 text-sm">@foreach ($semesters as $semester)<div class="border-t border-slate-100 pt-2">{{ $semester->name }} <span class="text-slate-400">/ {{ $semester->academicYear?->name }}</span></div>@endforeach</div>
+            <div class="mt-5 space-y-2 text-sm">
+                @foreach ($semesters as $semester)
+                    <details class="border-t border-slate-100 pt-2">
+                        <summary class="flex cursor-pointer list-none justify-between">
+                            <span>{{ $semester->name }} <span class="text-slate-400">/ {{ $semester->academicYear?->name }}</span></span>
+                            <span class="text-amber-600 underline">Edit</span>
+                        </summary>
+                        <form method="POST" action="{{ route('master-data.semesters.update', $semester) }}" class="mt-3 rounded-lg bg-slate-50 p-3">
+                            @csrf
+                            @method('PUT')
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                <select class="{{ $inputClass }}" name="academic_year_id" required>
+                                    @foreach ($academicYears->where('is_active', true) as $year)
+                                        <option value="{{ $year->id }}" @selected($semester->academic_year_id === $year->id)>{{ $year->name }}</option>
+                                    @endforeach
+                                </select>
+                                <input class="{{ $inputClass }}" name="name" value="{{ $semester->name }}" required>
+                                <input class="{{ $inputClass }}" name="code" value="{{ $semester->code }}">
+                                <input class="{{ $inputClass }}" name="sort_order" type="number" min="0" value="{{ $semester->sort_order }}" required>
+                            </div>
+                            <label class="mt-3 inline-flex items-center gap-2 text-sm text-slate-700">
+                                <input type="hidden" name="is_active" value="0">
+                                <input type="checkbox" name="is_active" value="1" @checked($semester->is_active)>
+                                Aktif
+                            </label>
+                            <button class="mt-3 block rounded-lg bg-brand-950 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800">Simpan Perubahan</button>
+                        </form>
+                    </details>
+                @endforeach
+            </div>
         </section>
     </div>
 @endsection

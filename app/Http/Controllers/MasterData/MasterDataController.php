@@ -43,6 +43,19 @@ class MasterDataController extends Controller
         return $this->success('Daerah berhasil ditambahkan.');
     }
 
+    public function updateRegion(Request $request, Region $region): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'code' => ['required', 'string', 'max:50', Rule::unique('regions', 'code')->ignore($region->id)],
+            'is_active' => ['required', 'boolean'],
+            'description' => ['nullable', 'string'],
+        ]);
+        $region->update($validated);
+
+        return $this->success('Daerah berhasil diperbarui.');
+    }
+
     public function storeVillage(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -55,6 +68,20 @@ class MasterDataController extends Controller
         Village::create($validated);
 
         return $this->success('Desa berhasil ditambahkan.');
+    }
+
+    public function updateVillage(Request $request, Village $village): RedirectResponse
+    {
+        $validated = $request->validate([
+            'region_id' => ['required', Rule::exists('regions', 'id')->where('is_active', true)],
+            'name' => ['required', 'string', 'max:255'],
+            'code' => ['nullable', 'string', 'max:50'],
+            'is_active' => ['required', 'boolean'],
+            'description' => ['nullable', 'string'],
+        ]);
+        $village->update($validated);
+
+        return $this->success('Desa berhasil diperbarui.');
     }
 
     public function storeGroup(Request $request): RedirectResponse
@@ -71,6 +98,20 @@ class MasterDataController extends Controller
         return $this->success('Kelompok berhasil ditambahkan.');
     }
 
+    public function updateGroup(Request $request, Group $group): RedirectResponse
+    {
+        $validated = $request->validate([
+            'village_id' => ['required', Rule::exists('villages', 'id')->where('is_active', true)],
+            'name' => ['required', 'string', 'max:255'],
+            'code' => ['nullable', 'string', 'max:50'],
+            'is_active' => ['required', 'boolean'],
+            'description' => ['nullable', 'string'],
+        ]);
+        $group->update($validated);
+
+        return $this->success('Kelompok berhasil diperbarui.');
+    }
+
     public function storeLevel(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -83,6 +124,20 @@ class MasterDataController extends Controller
         Level::create($validated);
 
         return $this->success('Jenjang berhasil ditambahkan.');
+    }
+
+    public function updateLevel(Request $request, Level $level): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'code' => ['required', 'string', 'max:50', Rule::unique('levels', 'code')->ignore($level->id)],
+            'sort_order' => ['required', 'integer', 'min:0'],
+            'is_active' => ['required', 'boolean'],
+            'description' => ['nullable', 'string'],
+        ]);
+        $level->update($validated);
+
+        return $this->success('Jenjang berhasil diperbarui.');
     }
 
     public function storeClassGrade(Request $request): RedirectResponse
@@ -99,6 +154,20 @@ class MasterDataController extends Controller
         return $this->success('Kelas berhasil ditambahkan.');
     }
 
+    public function updateClassGrade(Request $request, ClassGrade $classGrade): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'code' => ['required', 'string', 'max:50', Rule::unique('class_grades', 'code')->ignore($classGrade->id)],
+            'sort_order' => ['required', 'integer', 'min:0'],
+            'is_active' => ['required', 'boolean'],
+            'description' => ['nullable', 'string'],
+        ]);
+        $classGrade->update($validated);
+
+        return $this->success('Kelas berhasil diperbarui.');
+    }
+
     public function storeAcademicYear(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -113,6 +182,20 @@ class MasterDataController extends Controller
         return $this->success('Tahun akademik berhasil ditambahkan.');
     }
 
+    public function updateAcademicYear(Request $request, AcademicYear $academicYear): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'code' => ['required', 'string', 'max:50', Rule::unique('academic_years', 'code')->ignore($academicYear->id)],
+            'start_year' => ['required', 'integer', 'digits:4'],
+            'end_year' => ['required', 'integer', 'digits:4', 'gte:start_year'],
+            'is_active' => ['required', 'boolean'],
+        ]);
+        $academicYear->update($validated);
+
+        return $this->success('Tahun akademik berhasil diperbarui.');
+    }
+
     public function storeSemester(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -125,6 +208,20 @@ class MasterDataController extends Controller
         Semester::create($validated);
 
         return $this->success('Semester berhasil ditambahkan.');
+    }
+
+    public function updateSemester(Request $request, Semester $semester): RedirectResponse
+    {
+        $validated = $request->validate([
+            'academic_year_id' => ['required', Rule::exists('academic_years', 'id')->where('is_active', true)],
+            'name' => ['required', 'string', 'max:255'],
+            'code' => ['nullable', 'string', 'max:50'],
+            'sort_order' => ['required', 'integer', 'min:0'],
+            'is_active' => ['required', 'boolean'],
+        ]);
+        $semester->update($validated);
+
+        return $this->success('Semester berhasil diperbarui.');
     }
 
     private function success(string $message): RedirectResponse

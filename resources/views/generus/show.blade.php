@@ -10,15 +10,20 @@
     @endphp
 
     <div class="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div>
-            <p class="text-sm font-semibold text-amber-600">Generus · {{ $generus->registration_number }}</p>
-            <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">{{ $generus->full_name }}</h2>
-            <p class="mt-2">
-                <span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $generus->status === 'active' ? 'bg-emerald-100 text-emerald-700' : ($generus->status === 'pindah_sambung' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600') }}">{{ $statusLabel }}</span>
-                @if ($generus->transfer_destination)
-                    <span class="ml-1 text-xs text-slate-500">Tujuan: {{ $generus->transfer_destination === 'external' ? 'Luar daerah' : 'Daerah terdaftar' }}</span>
-                @endif
-            </p>
+        <div class="flex items-center gap-4">
+            @if ($photoDataUri = $generus->photoDataUri())
+                <img src="{{ $photoDataUri }}" alt="Foto {{ $generus->full_name }}" class="h-20 w-15 shrink-0 rounded-lg object-cover ring-1 ring-slate-200">
+            @endif
+            <div>
+                <p class="text-sm font-semibold text-amber-600">Generus · {{ $generus->registration_number }}</p>
+                <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">{{ $generus->full_name }}</h2>
+                <p class="mt-2">
+                    <span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $generus->status === 'active' ? 'bg-emerald-100 text-emerald-700' : ($generus->status === 'pindah_sambung' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600') }}">{{ $statusLabel }}</span>
+                    @if ($generus->transfer_destination)
+                        <span class="ml-1 text-xs text-slate-500">Tujuan: {{ $generus->transfer_destination === 'external' ? 'Luar daerah' : 'Daerah terdaftar' }}</span>
+                    @endif
+                </p>
+            </div>
         </div>
         <div class="flex flex-wrap gap-3">
             <a href="{{ route('generus.index') }}" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Kembali ke data</a>

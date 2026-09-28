@@ -4,11 +4,14 @@ namespace Tests\Feature;
 
 use App\Models\FollowUp;
 use App\Models\Generus;
+use App\Models\Group;
 use App\Models\Guardian;
 use App\Models\Permission;
+use App\Models\Region;
 use App\Models\Role;
 use App\Models\Teacher;
 use App\Models\User;
+use App\Models\Village;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
@@ -54,6 +57,7 @@ class TeacherAndGuardianTest extends TestCase
 
         $this->actingAs($user)
             ->post('/teachers', [
+                ...$this->placementPayload(),
                 'name' => 'Siti Nurhaliza',
                 'gender' => 'perempuan',
                 'phone' => '081234567890',
@@ -101,6 +105,7 @@ class TeacherAndGuardianTest extends TestCase
 
         $this->actingAs($this->createAdmin())
             ->put("/teachers/{$teacher->id}", [
+                ...$this->placementPayload(),
                 'name' => 'Guru Baru',
                 'email' => 'guru@ppg.test',
                 'status' => 'inactive',
@@ -117,7 +122,7 @@ class TeacherAndGuardianTest extends TestCase
         $teacher = Teacher::create(['name' => 'Guru', 'email' => 'guru@ppg.test', 'status' => 'active']);
 
         $this->actingAs($this->createAdmin())
-            ->put("/teachers/{$teacher->id}", ['name' => 'Guru', 'email' => 'lain@ppg.test', 'status' => 'active'])
+            ->put("/teachers/{$teacher->id}", [...$this->placementPayload(), 'name' => 'Guru', 'email' => 'lain@ppg.test', 'status' => 'active'])
             ->assertSessionHasErrors('email');
 
         $this->assertSame('guru@ppg.test', $teacher->fresh()->email);
@@ -176,10 +181,11 @@ class TeacherAndGuardianTest extends TestCase
     {
         Storage::fake();
         $this->travelTo(now()->setDate(2026, 9, 24));
-        Teacher::create(['registration_number' => '26090007', 'name' => 'Guru Pertama', 'status' => 'active']);
+        Teacher::create(['registration_number' => '260999007', 'name' => 'Guru Pertama', 'status' => 'active']);
 
         $this->actingAs($this->createAdmin())
             ->post('/teachers', [
+                ...$this->placementPayload(),
                 'name' => 'Guru Berfoto',
                 'status' => 'active',
                 'photo' => UploadedFile::fake()->createWithContent('foto.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==')),
@@ -188,21 +194,106 @@ class TeacherAndGuardianTest extends TestCase
             ->assertSessionHasNoErrors();
 
         $teacher = Teacher::where('name', 'Guru Berfoto')->firstOrFail();
-        $this->assertSame('26090008', $teacher->registration_number);
+        $this->assertSame('260999008', $teacher->registration_number);
         Storage::assertExists($teacher->photo);
     }
 
     public function test_teacher_id_card_shows_title_name_and_registration_qr_code(): void
     {
-        $teacher = Teacher::create(['registration_number' => '26090003', 'name' => 'Ustadz Kartu', 'status' => 'active']);
+        $teacher = Teacher::create(['registration_number' => '260999003', 'name' => 'Ustadz Kartu', 'status' => 'active']);
 
         $this->actingAs($this->createAdmin())
             ->get("/teachers/{$teacher->id}/id-card")
             ->assertOk()
             ->assertSee('Kartu Identitas Guru')
             ->assertSee('Ustadz Kartu')
-            ->assertSee('26090003')
+            ->assertSee('260999003')
             ->assertSee('src="data:image/svg+xml;base64,', false);
+    }
+
+    public function test_group_scoped_user_teacher_placement_is_locked_to_own_group(): void
+    {
+        $this->createAdmin();
+        $payload = $this->placementPayload();
+        $otherGroup = Group::create(['village_id' => $payload['village_id'], 'name' => 'Kelompok Lain', 'code' => 'K99', 'is_active' => true]);
+        $user = $this->createScopedTeacherManager('group', $payload['group_id']);
+
+        $this->actingAs($user)
+            ->get('/teachers')
+            ->assertOk()
+            ->assertSee('<select id="group_id" name="group_id" required disabled', false);
+
+        $this->actingAs($user)
+            ->post('/teachers', ['name' => 'Guru Terkunci', 'status' => 'active', 'group_id' => $otherGroup->id])
+            ->assertRedirect('/teachers')
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('teachers', [
+            'name' => 'Guru Terkunci',
+            'region_id' => $payload['region_id'],
+            'village_id' => $payload['village_id'],
+            'group_id' => $payload['group_id'],
+        ]);
+    }
+
+    public function test_village_scoped_user_locks_village_but_chooses_group(): void
+    {
+        $this->createAdmin();
+        $payload = $this->placementPayload();
+        $otherVillage = Village::create(['region_id' => $payload['region_id'], 'name' => 'Desa Lain', 'code' => 'D99', 'is_active' => true]);
+        $otherGroup = Group::create(['village_id' => $otherVillage->id, 'name' => 'Kelompok Desa Lain', 'code' => 'K98', 'is_active' => true]);
+        $user = $this->createScopedTeacherManager('village', $payload['village_id']);
+
+        $this->actingAs($user)
+            ->post('/teachers', ['name' => 'Guru Desa', 'status' => 'active', 'group_id' => $payload['group_id']])
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('teachers', ['name' => 'Guru Desa', 'village_id' => $payload['village_id'], 'group_id' => $payload['group_id']]);
+
+        $this->actingAs($user)
+            ->post('/teachers', ['name' => 'Guru Luar', 'status' => 'active', 'group_id' => $otherGroup->id])
+            ->assertSessionHasErrors('group_id');
+
+        $this->assertDatabaseMissing('teachers', ['name' => 'Guru Luar']);
+    }
+
+    public function test_create_form_defaults_region_to_karawang_timur(): void
+    {
+        $this->createAdmin();
+        $region = Region::create(['name' => 'Karawang Timur', 'code' => 'KT', 'is_active' => true]);
+
+        $this->actingAs(User::firstOrFail())
+            ->get('/teachers')
+            ->assertOk()
+            ->assertSee('<option value="'.$region->id.'" selected>', false);
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    private function placementPayload(): array
+    {
+        $region = Region::firstOrCreate(['code' => 'KRT'], ['name' => 'Karawang Timur', 'is_active' => true]);
+        $village = Village::firstOrCreate(['code' => 'DSA'], ['region_id' => $region->id, 'name' => 'Desa A', 'is_active' => true]);
+        $group = Group::firstOrCreate(['code' => 'K01'], ['village_id' => $village->id, 'name' => 'Kelompok 1', 'is_active' => true]);
+
+        return ['region_id' => $region->id, 'village_id' => $village->id, 'group_id' => $group->id];
+    }
+
+    private function createScopedTeacherManager(string $scopeType, int $scopeId): User
+    {
+        $role = Role::create(['name' => 'Admin Wilayah', 'slug' => 'admin-wilayah', 'is_active' => true]);
+        $role->permissions()->attach(Permission::where('slug', 'manage-teachers')->value('id'));
+
+        $user = User::create([
+            'name' => 'Admin Wilayah',
+            'email' => 'wilayah@ppg.test',
+            'password' => Hash::make('password123'),
+            'status' => 'active',
+        ]);
+        $user->assignRole($role->id, $scopeType, $scopeId);
+
+        return $user;
     }
 
     private function createAdmin(): User

@@ -56,6 +56,26 @@ class MasterDataTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_update_region_from_master_data_page(): void
+    {
+        [$user, $region] = $this->createMasterDataUser();
+
+        $this->actingAs($user)
+            ->put("/master-data/regions/{$region->id}", [
+                'name' => 'Karawang Barat',
+                'code' => 'KRB',
+                'is_active' => false,
+            ])
+            ->assertRedirect('/master-data');
+
+        $this->assertDatabaseHas('regions', [
+            'id' => $region->id,
+            'name' => 'Karawang Barat',
+            'code' => 'KRB',
+            'is_active' => false,
+        ]);
+    }
+
     public function test_admin_can_create_dependent_master_data_from_central_page(): void
     {
         [$user, $region] = $this->createMasterDataUser();
