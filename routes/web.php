@@ -26,6 +26,7 @@ use App\Http\Controllers\ReportCardController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SessionAttendanceController;
+use App\Http\Controllers\SessionAttendanceScanController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\TeacherStudentController;
 use App\Http\Controllers\TrainingController;
@@ -271,6 +272,21 @@ Route::middleware(['auth', 'permission:view-learning-attendance,manage-learning-
 });
 
 Route::middleware(['auth', 'permission:manage-learning-attendance'])->group(function () {
+    Route::get('/learning-sessions/{learningSession}/attendance', [SessionAttendanceController::class, 'sheet'])
+        ->whereNumber('learningSession')
+        ->name('learning-sessions.attendance.edit');
+    Route::put('/learning-sessions/{learningSession}/attendance', [SessionAttendanceController::class, 'saveSheet'])
+        ->whereNumber('learningSession')
+        ->name('learning-sessions.attendance.update');
+    Route::post('/learning-sessions/{learningSession}/attendance/scan', [SessionAttendanceScanController::class, 'store'])
+        ->whereNumber('learningSession')
+        ->name('learning-sessions.attendance.scan');
+    Route::get('/learning-sessions/{learningSession}/attendance/faces', [SessionAttendanceScanController::class, 'faces'])
+        ->whereNumber('learningSession')
+        ->name('learning-sessions.attendance.faces');
+    Route::get('/learning-sessions/{learningSession}/attendance/faces/{generus}/photo', [SessionAttendanceScanController::class, 'photo'])
+        ->whereNumber(['learningSession', 'generus'])
+        ->name('learning-sessions.attendance.photo');
     Route::post('/session-attendances', [SessionAttendanceController::class, 'store'])
         ->name('session-attendances.store');
     Route::get('/session-attendances/{sessionAttendance}/edit', [SessionAttendanceController::class, 'edit'])

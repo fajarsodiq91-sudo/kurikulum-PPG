@@ -166,6 +166,9 @@
                 ['title' => 'Absensi Sesi (KBM)', 'permission' => ['manage-learning-attendance', 'view-learning-attendance'], 'steps' => [
                     'Buka "KBM" lalu "Absensi Sesi". Pilih sesi, pilih generus, tentukan status hadir, dan tambahkan catatan.',
                     'Absensi satu generus untuk satu sesi hanya bisa dicatat sekali; gunakan Edit bila perlu mengubah.',
+                    'Daftar hadir per sesi: buka "KBM" lalu "Sesi KBM", klik "Daftar Hadir" pada sesi, pilih status tiap generus, lalu "Simpan Daftar Hadir". Generus yang belum dipilih tidak dicatat.',
+                    'Absensi cepat: di halaman Daftar Hadir, pilih "Scan QR Code" (arahkan kamera ke QR pada ID card), "Scan RFID" (tempelkan kartu pada pembaca USB), atau "Scan Wajah" (hanya untuk generus yang fotonya sudah diunggah). Scan langsung tercatat hadir. UID RFID diisi di form generus.',
+                    'Sesi tingkat desa diisi oleh Perwakilan PPG Desa (seluruh generus desa itu). Sesi tingkat kelompok diisi oleh Pelaksana PPG Kelompok, hanya untuk murid masing-masing.',
                 ]],
                 ['title' => 'Nilai Evaluasi', 'permission' => ['manage-evaluations', 'view-evaluations'], 'steps' => [
                     'Buka "Evaluasi" lalu "Nilai Evaluasi". Pilih evaluasi dan generus, isi skor 0 sampai 100 dan grade.',

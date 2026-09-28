@@ -107,6 +107,7 @@ class GenerusController extends Controller
                 'school_grade_id' => $validated['school_grade_id'] ?? null,
                 'learning_class_id' => $validated['learning_class_id'] ?? null,
                 'photo' => $photoPath,
+                'rfid_uid' => $validated['rfid_uid'] ?? null,
                 'status' => $validated['status'],
                 'transfer_destination' => $validated['transfer_destination'] ?? null,
                 'notes' => $validated['notes'] ?? null,
@@ -298,6 +299,7 @@ class GenerusController extends Controller
             $generus->update([
                 ...collect(self::EDITABLE_FIELDS)->mapWithKeys(fn (string $field): array => [$field => $validated[$field] ?? null])->all(),
                 'transfer_destination' => $validated['transfer_destination'] ?? null,
+                'rfid_uid' => $validated['rfid_uid'] ?? null,
                 ...($newPhotoPath !== null ? ['photo' => $newPhotoPath] : []),
             ]);
 
@@ -416,6 +418,8 @@ class GenerusController extends Controller
             $request->merge(['transfer_destination' => null]);
         }
 
+        $request->merge(['rfid_uid' => Generus::normalizeRfidUid($request->input('rfid_uid'))]);
+
         if ($request->input('status') !== 'pindah_sambung' || filled($request->input('village_id'))) {
             $request->merge(['region_id' => Region::karawangTimur()->id]);
         }
@@ -437,6 +441,7 @@ class GenerusController extends Controller
             'school_grade_id' => ['nullable', Rule::exists('class_grades', 'id')->where('is_active', true)],
             'learning_class_id' => ['nullable', Rule::exists('class_grades', 'id')->where('is_active', true)],
             'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'rfid_uid' => ['nullable', 'string', 'max:50', Rule::unique('generus', 'rfid_uid')->ignore($request->route('generus'))],
             'status' => ['required', Rule::in(['active', 'pindah_sambung', 'married'])],
             'transfer_destination' => [
                 Rule::requiredIf(fn (): bool => $request->input('status') === 'pindah_sambung'),

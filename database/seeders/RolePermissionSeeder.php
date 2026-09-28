@@ -35,6 +35,13 @@ class RolePermissionSeeder extends Seeder
         'manage-milestones', 'manage-munaqosah', 'manage-parent-communications',
     ];
 
+    /**
+     * Manage permissions the village representative (Perwakilan PPG Desa) holds within their village.
+     *
+     * @var list<string>
+     */
+    private const VILLAGE_MANAGE = ['manage-learning-attendance'];
+
     public function run(): void
     {
         $this->ensurePermission('manage-master-data', 'Manage Master Data', 'master-data');
@@ -51,7 +58,7 @@ class RolePermissionSeeder extends Seeder
         $forVillage = $viewPermissions->reject(fn (string $slug): bool => $slug === 'view-master-data')->values();
 
         $this->syncRole('ppg', 'PPG', 'Melihat semua data (baca-saja)', $viewPermissions->all());
-        $this->syncRole('perwakilan-ppg-desa', 'Perwakilan PPG Desa', 'Melihat data di desanya (baca-saja)', $forVillage->all());
+        $this->syncRole('perwakilan-ppg-desa', 'Perwakilan PPG Desa', 'Melihat data di desanya dan mengisi daftar hadir KBM tingkat desa', [...$forVillage->all(), ...self::VILLAGE_MANAGE]);
         $this->syncRole('pelaksana-ppg-kelompok', 'Pelaksana PPG Kelompok', 'Mengelola seluruh data di tingkat kelompok', [...$forVillage->all(), ...self::GROUP_MANAGE]);
 
         Role::where('slug', 'super-admin')->first()?->permissions()->syncWithoutDetaching(Permission::pluck('id'));

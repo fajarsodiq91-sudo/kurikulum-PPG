@@ -17,6 +17,8 @@
             </div>
         @endif
 
+        @include('layouts.partials.validation-errors')
+
         <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">
             @if (\App\Support\Access::can('manage-learning-sessions'))
             <div class="lg:col-span-1 rounded-xl bg-white p-6 shadow-sm border border-slate-200">
@@ -38,6 +40,33 @@
                             <option value="">-- Pilih --</option>
                             @foreach($materials as $material)
                                 <option value="{{ $material->id }}">{{ $material->title }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2" for="level">Tingkat Pelaksanaan</label>
+                        <select id="level" name="level" required class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                            <option value="">-- Pilih --</option>
+                            <option value="village" @selected(old('level') === 'village')>Desa</option>
+                            <option value="group" @selected(old('level') === 'group')>Kelompok</option>
+                        </select>
+                        <p class="mt-1 text-xs text-slate-500">Daftar hadir sesi desa diisi Perwakilan PPG Desa, sesi kelompok diisi Pelaksana PPG Kelompok.</p>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2" for="village_id">Desa</label>
+                        <select id="village_id" name="village_id" class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                            <option value="">-- Pilih (untuk tingkat desa) --</option>
+                            @foreach($villages as $village)
+                                <option value="{{ $village->id }}" @selected(old('village_id') == $village->id)>{{ $village->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2" for="group_id">Kelompok</label>
+                        <select id="group_id" name="group_id" class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                            <option value="">-- Pilih (untuk tingkat kelompok) --</option>
+                            @foreach($groups as $group)
+                                <option value="{{ $group->id }}" @selected(old('group_id') == $group->id)>{{ $group->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -85,7 +114,9 @@
                                 <th class="py-3 pr-4">Tanggal</th>
                                 <th class="py-3 pr-4">Guru</th>
                                 <th class="py-3 pr-4">Materi</th>
+                                <th class="py-3 pr-4">Tingkat</th>
                                 <th class="py-3 pr-4">Status</th>
+                                <th class="py-3"><span class="sr-only">Aksi</span></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -94,11 +125,13 @@
                                     <td class="py-3 pr-4">{{ $session->session_date }}</td>
                                     <td class="py-3 pr-4">{{ $session->teacher?->name ?? '-' }}</td>
                                     <td class="py-3 pr-4">{{ $session->material?->title ?? '-' }}</td>
+                                    <td class="py-3 pr-4">{{ $session->levelLabel() }}</td>
                                     <td class="py-3 pr-4">{{ $session->status }}</td>
+                                    <td class="py-3 text-right">@if (in_array($session->id, $attendableIds, true))<a href="{{ route('learning-sessions.attendance.edit', $session) }}" class="text-xs font-semibold text-amber-600 hover:text-amber-700">Daftar Hadir</a>@endif</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="py-6 text-center text-slate-500">Belum ada sesi KBM.</td>
+                                    <td colspan="6" class="py-6 text-center text-slate-500">Belum ada sesi KBM.</td>
                                 </tr>
                             @endforelse
                         </tbody>

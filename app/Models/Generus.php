@@ -42,6 +42,7 @@ class Generus extends Model
         'school_grade_id',
         'learning_class_id',
         'photo',
+        'rfid_uid',
         'status',
         'transfer_destination',
         'notes',
@@ -110,6 +111,16 @@ class Generus extends Model
                     }
                 });
         });
+    }
+
+    /**
+     * RFID readers report UIDs in varying case and spacing; store and compare one canonical form.
+     */
+    public static function normalizeRfidUid(?string $uid): ?string
+    {
+        $normalized = strtoupper(preg_replace('/\s+/', '', (string) $uid));
+
+        return $normalized === '' ? null : $normalized;
     }
 
     public function assignments(): HasMany

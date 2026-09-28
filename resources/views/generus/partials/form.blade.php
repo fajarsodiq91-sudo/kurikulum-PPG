@@ -53,6 +53,12 @@
             </div>
 
             <div class="md:col-span-2">
+                <label class="mb-2 block text-sm font-medium text-slate-700" for="rfid_uid">UID Kartu RFID</label>
+                <input id="rfid_uid" name="rfid_uid" type="text" value="{{ old('rfid_uid', $generus?->rfid_uid) }}" maxlength="50" autocomplete="off" onkeydown="if (event.key === 'Enter') { event.preventDefault(); }" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm">
+                <p class="mt-1 text-xs text-slate-500">Klik kolom ini lalu tempelkan kartu pada pembaca RFID USB agar UID terisi otomatis. Dipakai untuk absensi.</p>
+            </div>
+
+            <div class="md:col-span-2">
                 <label class="mb-2 block text-sm font-medium text-slate-700" for="photo">Foto</label>
                 <div class="flex items-center gap-4">
                     @if ($photoDataUri = $generus?->photoDataUri())
@@ -60,7 +66,7 @@
                     @endif
                     <div class="min-w-0 flex-1">
                         <input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-slate-700">
-                        <p class="mt-1 text-xs text-slate-500">JPG, PNG, atau WEBP maksimal 2 MB, rasio 3:4. {{ $generus?->photo ? 'Kosongkan jika tidak ingin mengganti foto.' : 'Dipakai pada ID card.' }}</p>
+                        <p class="mt-1 text-xs text-slate-500">JPG, PNG, atau WEBP maksimal 2 MB, rasio 3:4. {{ $generus?->photo ? 'Kosongkan jika tidak ingin mengganti foto.' : 'Dipakai pada ID card dan absensi scan wajah.' }}</p>
                     </div>
                 </div>
             </div>
