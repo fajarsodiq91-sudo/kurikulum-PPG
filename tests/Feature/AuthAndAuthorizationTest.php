@@ -419,9 +419,9 @@ class AuthAndAuthorizationTest extends TestCase
             ->assertViewIs('organization-units.index');
 
         $this->actingAs($user)
-            ->get('/master-data/regions')
+            ->get('/master-data/villages')
             ->assertOk()
-            ->assertViewIs('master-data.regions.index');
+            ->assertViewIs('master-data.villages');
 
         $this->actingAs($user)
             ->get('/generus')

@@ -29,8 +29,12 @@
                 ['label' => 'Penempatan', 'route' => 'assignments.index', 'permission' => 'manage-assignments'],
             ]],
             ['label' => 'Master Data', 'permission' => 'view-master-data', 'icon' => '⌘', 'items' => [
-                ['label' => 'Semua Master Data', 'route' => 'master-data.index'],
-                ['label' => 'Daerah', 'route' => 'master-data.regions.index'],
+                ['label' => 'Desa', 'route' => 'master-data.villages.index'],
+                ['label' => 'Kelompok', 'route' => 'master-data.groups.index'],
+                ['label' => 'Jenjang', 'route' => 'master-data.levels.index'],
+                ['label' => 'Kelas', 'route' => 'master-data.class-grades.index'],
+                ['label' => 'Tahun Akademik', 'route' => 'master-data.academic-years.index'],
+                ['label' => 'Semester', 'route' => 'master-data.semesters.index'],
             ]],
             ['label' => 'Kurikulum', 'permission' => 'manage-curriculum', 'icon' => '▥', 'items' => [
                 ['label' => 'Program Kurikulum', 'route' => 'curriculum-programs.index'],
