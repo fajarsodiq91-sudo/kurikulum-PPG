@@ -18,6 +18,7 @@
     @endif
 
     <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">
+        @if (\App\Support\Access::can('manage-organization-units'))
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 class="text-lg font-bold text-slate-950">Tambah Unit</h2>
             <p class="mt-1 text-sm text-slate-500">Tambahkan unit baru ke struktur organisasi.</p>
@@ -59,6 +60,7 @@
                     <button type="submit" class="mt-6 w-full rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800">Simpan Unit</button>
                 </form>
         </section>
+        @endif
 
         <section class="min-w-0 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex items-center justify-between gap-4">

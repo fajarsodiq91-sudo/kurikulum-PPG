@@ -3,9 +3,12 @@
 namespace App\Support\Sheets;
 
 use App\Models\Guardian;
+use App\Models\User;
 
 class GuardianSheet extends Sheet
 {
+    public function __construct(private ?User $user = null) {}
+
     public function filename(): string
     {
         return 'orang-tua-wali.xlsx';
@@ -21,7 +24,7 @@ class GuardianSheet extends Sheet
 
     public function rows(): iterable
     {
-        foreach (Guardian::with('generus:id,full_name')->orderBy('full_name')->cursor() as $guardian) {
+        foreach (Guardian::visibleTo($this->user)->with('generus:id,full_name')->orderBy('full_name')->cursor() as $guardian) {
             yield [
                 $guardian->full_name,
                 $guardian->relationship,

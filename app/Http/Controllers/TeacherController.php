@@ -32,7 +32,7 @@ class TeacherController extends Controller
     public function index(Request $request): View
     {
         return view('teachers.index', [
-            'teachers' => Teacher::latest()->paginate(25),
+            'teachers' => Teacher::visibleTo($request->user())->latest()->paginate(25),
             ...$this->placementOptions($request->user()),
         ]);
     }
@@ -63,6 +63,8 @@ class TeacherController extends Controller
 
     public function edit(Request $request, Teacher $teacher): View
     {
+        $this->ensureVisible($request, $teacher);
+
         return view('teachers.edit', [
             'teacher' => $teacher,
             ...$this->placementOptions($request->user()),
@@ -71,6 +73,8 @@ class TeacherController extends Controller
 
     public function update(Request $request, Teacher $teacher): RedirectResponse
     {
+        $this->ensureVisible($request, $teacher);
+
         $validated = $this->validateTeacher($request, $teacher);
         $oldPhotoPath = $teacher->photo;
         $newPhotoPath = $this->storePhoto($validated['photo'] ?? null);
@@ -87,8 +91,10 @@ class TeacherController extends Controller
         return redirect()->route('teachers.index')->with('success', 'Data guru berhasil diperbarui.');
     }
 
-    public function destroy(Teacher $teacher): RedirectResponse
+    public function destroy(Request $request, Teacher $teacher): RedirectResponse
     {
+        $this->ensureVisible($request, $teacher);
+
         if ($teacher->hasActivityHistory()) {
             return back()->withErrors([
                 'teacher' => 'Guru ini masih tercatat di sesi KBM, evaluasi, tindak lanjut, atau penugasan sehingga tidak dapat dihapus. Ubah statusnya menjadi Nonaktif.',
@@ -104,8 +110,10 @@ class TeacherController extends Controller
         return redirect()->route('teachers.index')->with('success', 'Data guru berhasil dihapus.');
     }
 
-    public function idCard(Teacher $teacher): View
+    public function idCard(Request $request, Teacher $teacher): View
     {
+        $this->ensureVisible($request, $teacher);
+
         return view('id-cards.show', [
             'cardTitle' => 'Kartu Identitas Guru',
             'name' => $teacher->name,
@@ -230,6 +238,11 @@ class TeacherController extends Controller
             'groups' => $groups,
             'lockedPlacement' => $this->lockedPlacement($user),
         ];
+    }
+
+    private function ensureVisible(Request $request, Teacher $teacher): void
+    {
+        abort_unless(Teacher::visibleTo($request->user())->whereKey($teacher->id)->exists(), 404);
     }
 
     private function storePhoto(?UploadedFile $photo): ?string

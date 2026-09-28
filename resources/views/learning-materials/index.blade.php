@@ -18,6 +18,7 @@
         @endif
 
         <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">
+            @if (\App\Support\Access::can('manage-learning-materials'))
             <div class="lg:col-span-1 rounded-xl bg-white p-6 shadow-sm border border-slate-200">
                 <h2 class="text-xl font-semibold mb-4">Tambah Materi</h2>
                 <form method="POST" action="{{ route('learning-materials.store') }}">
@@ -81,6 +82,7 @@
                     </button>
                 </form>
             </div>
+            @endif
 
             <div class="lg:col-span-2 rounded-xl bg-white p-6 shadow-sm border border-slate-200">
                 <h2 class="text-xl font-semibold mb-4">Daftar Materi</h2>

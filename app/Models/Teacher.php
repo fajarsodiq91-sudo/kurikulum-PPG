@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Support\MemberAccounts;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -73,6 +75,29 @@ class Teacher extends Model
     public function group(): BelongsTo
     {
         return $this->belongsTo(Group::class);
+    }
+
+    /**
+     * Limit to teachers placed in the user's role scopes; guests and global roles see all.
+     */
+    #[Scope]
+    protected function visibleTo(Builder $query, ?User $user): void
+    {
+        $permissions = ['view-teachers', 'manage-teachers'];
+
+        if ($user === null || $user->hasGlobalAccessAny($permissions)) {
+            return;
+        }
+
+        $placementIds = $user->scopedPlacementIdsAny($permissions);
+
+        $query->where(function (Builder $scoped) use ($placementIds): void {
+            $scoped->whereRaw('1 = 0');
+
+            foreach ($placementIds as $column => $ids) {
+                $scoped->orWhereIn($column, $ids);
+            }
+        });
     }
 
     public function students(): BelongsToMany

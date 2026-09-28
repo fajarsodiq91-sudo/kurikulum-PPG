@@ -104,8 +104,9 @@ class MasterDataTest extends TestCase
     private function createMasterDataUser(): array
     {
         $role = Role::create(['name' => 'Master Data Admin', 'slug' => 'master-data-admin', 'is_active' => true]);
-        $permission = Permission::create(['name' => 'View Master Data', 'slug' => 'view-master-data', 'module' => 'master-data', 'is_active' => true]);
-        $role->permissions()->attach($permission->id);
+        foreach (['view-master-data', 'manage-master-data'] as $slug) {
+            $role->permissions()->attach(Permission::create(['name' => $slug, 'slug' => $slug, 'module' => 'master-data', 'is_active' => true])->id);
+        }
 
         $user = User::create([
             'name' => 'Master Data Admin',

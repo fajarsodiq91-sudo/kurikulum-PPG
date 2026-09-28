@@ -20,6 +20,7 @@
         @include('layouts.partials.validation-errors')
 
         <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">
+            @if (\App\Support\Access::can('manage-learning-attendance'))
             <div class="lg:col-span-1 rounded-xl bg-white p-6 shadow-sm border border-slate-200">
                 <h2 class="text-xl font-semibold mb-4">Tambah Presensi</h2>
                 <form method="POST" action="{{ route('session-attendances.store') }}">
@@ -29,6 +30,7 @@
                     <button type="submit" class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Simpan</button>
                 </form>
             </div>
+            @endif
 
             <div class="lg:col-span-2 rounded-xl bg-white p-6 shadow-sm border border-slate-200">
                 <h2 class="text-xl font-semibold mb-4">Daftar Presensi</h2>
@@ -48,7 +50,7 @@
                                     <td class="py-3 pr-4">{{ $attendance->learningSession?->session_date ?? '-' }}</td>
                                     <td class="py-3 pr-4">{{ $attendance->generus?->full_name ?? '-' }}</td>
                                     <td class="py-3 pr-4">{{ $attendance->status }}</td>
-                                    <td class="py-3 text-right"><a href="{{ route('session-attendances.edit', $attendance) }}" class="text-xs font-semibold text-amber-600 hover:text-amber-700">Edit</a></td>
+                                    <td class="py-3 text-right">@if (\App\Support\Access::can('manage-learning-attendance'))<a href="{{ route('session-attendances.edit', $attendance) }}" class="text-xs font-semibold text-amber-600 hover:text-amber-700">Edit</a>@endif</td>
                                 </tr>
                             @empty
                                 <tr>

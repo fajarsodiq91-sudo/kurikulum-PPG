@@ -22,6 +22,7 @@
         @endif
 
         <div class="grid gap-6 lg:grid-cols-3">
+            @if (\App\Support\Access::can('manage-annual-audit'))
             <div class="lg:col-span-1 rounded-xl bg-white p-6 shadow-sm border border-slate-200">
                 <h2 class="text-xl font-semibold mb-4">Tambah Audit</h2>
                 <form method="POST" action="{{ route('annual-audits.store') }}">
@@ -79,6 +80,7 @@
                     <button type="submit" class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Simpan</button>
                 </form>
             </div>
+            @endif
 
             <div class="lg:col-span-2 rounded-xl bg-white p-6 shadow-sm border border-slate-200">
                 <h2 class="text-xl font-semibold mb-4">Riwayat Audit</h2>

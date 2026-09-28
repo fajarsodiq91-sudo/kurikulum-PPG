@@ -18,14 +18,14 @@ class FollowUpController extends Controller
             'followUps' => StudentScope::limit(FollowUp::with(['generus', 'teacher'])->latest(), $this->studentIds())->paginate(25),
             'generus' => StudentScope::limit(Generus::query(), $this->studentIds(), 'id')->get(),
             'teachers' => Teacher::where('status', 'active')
-                ->when($this->studentIds() !== null, fn ($query) => $query->whereKey(request()->user()->teacher_id))
+                ->when($this->isTeacherRestricted(), fn ($query) => $query->whereKey(request()->user()->teacher_id))
                 ->get(),
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
-        if ($this->studentIds() !== null) {
+        if ($this->isTeacherRestricted()) {
             $request->merge(['teacher_id' => $request->user()->teacher_id]);
         }
 
@@ -48,5 +48,10 @@ class FollowUpController extends Controller
     private function studentIds(): ?array
     {
         return StudentScope::ids(request()->user(), 'manage-follow-ups');
+    }
+
+    private function isTeacherRestricted(): bool
+    {
+        return request()->user()?->teacher_id !== null && $this->studentIds() !== null;
     }
 }

@@ -18,6 +18,7 @@
         @endif
 
         <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">
+            @if (\App\Support\Access::can('manage-milestones'))
             <div class="lg:col-span-1 rounded-xl bg-white p-6 shadow-sm border border-slate-200">
                 <h2 class="text-xl font-semibold mb-4">Tambah Milestone</h2>
                 <form method="POST" action="{{ route('milestones.store') }}">
@@ -76,6 +77,7 @@
                     <button type="submit" class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Simpan</button>
                 </form>
             </div>
+            @endif
 
             <div class="lg:col-span-2 rounded-xl bg-white p-6 shadow-sm border border-slate-200">
                 <h2 class="text-xl font-semibold mb-4">Daftar Milestone</h2>

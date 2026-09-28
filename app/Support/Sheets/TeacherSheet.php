@@ -25,7 +25,7 @@ class TeacherSheet extends Sheet
 
     public function rows(): iterable
     {
-        foreach (Teacher::with(['village', 'group'])->orderBy('id')->cursor() as $teacher) {
+        foreach (Teacher::visibleTo($this->user)->with(['village', 'group'])->orderBy('id')->cursor() as $teacher) {
             yield [
                 $teacher->registration_number,
                 $teacher->name,

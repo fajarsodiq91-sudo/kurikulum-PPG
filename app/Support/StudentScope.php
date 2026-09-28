@@ -2,14 +2,16 @@
 
 namespace App\Support;
 
+use App\Models\Generus;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Exists;
 
 /**
- * A logged-in teacher who lacks global access to a module only works with the generus they
- * ticked as their students. Everyone else (admins, non-teacher roles) is unrestricted.
+ * Restricts generus-linked modules to the generus a user may work with: a logged-in teacher
+ * only sees the students they ticked, and village/group roles only see generus placed in
+ * their area. Users with global access (admins, PPG) are unrestricted.
  */
 class StudentScope
 {
@@ -18,11 +20,19 @@ class StudentScope
      */
     public static function ids(?User $user, string $permission): ?array
     {
-        if ($user === null || $user->teacher_id === null || $user->hasGlobalAccess($permission)) {
+        $permissions = [$permission, str_replace('manage-', 'view-', $permission)];
+
+        if ($user === null || $user->hasGlobalAccessAny($permissions)) {
             return null;
         }
 
-        return $user->teacher?->students()->pluck('generus.id')->map(fn (mixed $id): int => (int) $id)->all() ?? [];
+        if ($user->teacher_id !== null) {
+            return $user->teacher?->students()->pluck('generus.id')->map(fn (mixed $id): int => (int) $id)->all() ?? [];
+        }
+
+        $placementIds = $user->scopedPlacementIdsAny($permissions);
+
+        return $placementIds === [] ? null : Generus::query()->inPlacement($placementIds)->pluck('id')->map(fn (mixed $id): int => (int) $id)->all();
     }
 
     /**

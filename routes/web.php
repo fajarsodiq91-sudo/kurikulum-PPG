@@ -88,46 +88,49 @@ Route::middleware(['auth', 'permission:view-reports'])->group(function () {
 });
 
 Route::middleware(['auth', 'permission:view-master-data'])->group(function () {
+    Route::get('/master-data', [MasterDataController::class, 'index'])
+        ->name('master-data.index');
+    Route::get('/master-data/villages', [MasterDataController::class, 'villages'])
+        ->name('master-data.villages.index');
+    Route::get('/master-data/groups', [MasterDataController::class, 'groups'])
+        ->name('master-data.groups.index');
+    Route::get('/master-data/levels', [MasterDataController::class, 'levels'])
+        ->name('master-data.levels.index');
+    Route::get('/master-data/class-grades', [MasterDataController::class, 'classGrades'])
+        ->name('master-data.class-grades.index');
+    Route::get('/master-data/academic-years', [MasterDataController::class, 'academicYears'])
+        ->name('master-data.academic-years.index');
+    Route::get('/master-data/semesters', [MasterDataController::class, 'semesters'])
+        ->name('master-data.semesters.index');
+});
+
+Route::middleware(['auth', 'permission:manage-master-data'])->group(function () {
     Route::get('/master-data/{page}/export', [MasterDataController::class, 'export'])
         ->whereIn('page', ['villages', 'groups', 'levels', 'class-grades', 'academic-years', 'semesters'])
         ->name('master-data.export');
     Route::post('/master-data/{page}/import', [MasterDataController::class, 'import'])
         ->whereIn('page', ['villages', 'groups', 'levels', 'class-grades', 'academic-years', 'semesters'])
         ->name('master-data.import');
-    Route::get('/master-data', [MasterDataController::class, 'index'])
-        ->name('master-data.index');
-    Route::get('/master-data/villages', [MasterDataController::class, 'villages'])
-        ->name('master-data.villages.index');
     Route::post('/master-data/villages', [MasterDataController::class, 'storeVillage'])
         ->name('master-data.villages.store');
     Route::put('/master-data/villages/{village}', [MasterDataController::class, 'updateVillage'])
         ->name('master-data.villages.update');
-    Route::get('/master-data/groups', [MasterDataController::class, 'groups'])
-        ->name('master-data.groups.index');
     Route::post('/master-data/groups', [MasterDataController::class, 'storeGroup'])
         ->name('master-data.groups.store');
     Route::put('/master-data/groups/{group}', [MasterDataController::class, 'updateGroup'])
         ->name('master-data.groups.update');
-    Route::get('/master-data/levels', [MasterDataController::class, 'levels'])
-        ->name('master-data.levels.index');
     Route::post('/master-data/levels', [MasterDataController::class, 'storeLevel'])
         ->name('master-data.levels.store');
     Route::put('/master-data/levels/{level}', [MasterDataController::class, 'updateLevel'])
         ->name('master-data.levels.update');
-    Route::get('/master-data/class-grades', [MasterDataController::class, 'classGrades'])
-        ->name('master-data.class-grades.index');
     Route::post('/master-data/class-grades', [MasterDataController::class, 'storeClassGrade'])
         ->name('master-data.class-grades.store');
     Route::put('/master-data/class-grades/{classGrade}', [MasterDataController::class, 'updateClassGrade'])
         ->name('master-data.class-grades.update');
-    Route::get('/master-data/academic-years', [MasterDataController::class, 'academicYears'])
-        ->name('master-data.academic-years.index');
     Route::post('/master-data/academic-years', [MasterDataController::class, 'storeAcademicYear'])
         ->name('master-data.academic-years.store');
     Route::put('/master-data/academic-years/{academicYear}', [MasterDataController::class, 'updateAcademicYear'])
         ->name('master-data.academic-years.update');
-    Route::get('/master-data/semesters', [MasterDataController::class, 'semesters'])
-        ->name('master-data.semesters.index');
     Route::post('/master-data/semesters', [MasterDataController::class, 'storeSemester'])
         ->name('master-data.semesters.store');
     Route::put('/master-data/semesters/{semester}', [MasterDataController::class, 'updateSemester'])
@@ -229,30 +232,42 @@ Route::middleware(['auth', 'permission:manage-guardians'])->group(function () {
         ->name('guardians.destroy');
 });
 
-Route::middleware(['auth', 'permission:manage-curriculum'])->group(function () {
+Route::middleware(['auth', 'permission:view-curriculum,manage-curriculum'])->group(function () {
     Route::get('/curriculum-programs', [CurriculumProgramController::class, 'index'])
         ->name('curriculum-programs.index');
+});
+
+Route::middleware(['auth', 'permission:manage-curriculum'])->group(function () {
     Route::post('/curriculum-programs', [CurriculumProgramController::class, 'store'])
         ->name('curriculum-programs.store');
 });
 
-Route::middleware(['auth', 'permission:manage-learning-materials'])->group(function () {
+Route::middleware(['auth', 'permission:view-learning-materials,manage-learning-materials'])->group(function () {
     Route::get('/learning-materials', [LearningMaterialController::class, 'index'])
         ->name('learning-materials.index');
+});
+
+Route::middleware(['auth', 'permission:manage-learning-materials'])->group(function () {
     Route::post('/learning-materials', [LearningMaterialController::class, 'store'])
         ->name('learning-materials.store');
 });
 
-Route::middleware(['auth', 'permission:manage-learning-sessions'])->group(function () {
+Route::middleware(['auth', 'permission:view-learning-sessions,manage-learning-sessions'])->group(function () {
     Route::get('/learning-sessions', [LearningSessionController::class, 'index'])
         ->name('learning-sessions.index');
+});
+
+Route::middleware(['auth', 'permission:manage-learning-sessions'])->group(function () {
     Route::post('/learning-sessions', [LearningSessionController::class, 'store'])
         ->name('learning-sessions.store');
 });
 
-Route::middleware(['auth', 'permission:manage-learning-attendance'])->group(function () {
+Route::middleware(['auth', 'permission:view-learning-attendance,manage-learning-attendance'])->group(function () {
     Route::get('/session-attendances', [SessionAttendanceController::class, 'index'])
         ->name('session-attendances.index');
+});
+
+Route::middleware(['auth', 'permission:manage-learning-attendance'])->group(function () {
     Route::post('/session-attendances', [SessionAttendanceController::class, 'store'])
         ->name('session-attendances.store');
     Route::get('/session-attendances/{sessionAttendance}/edit', [SessionAttendanceController::class, 'edit'])
@@ -266,14 +281,16 @@ Route::middleware(['auth', 'permission:manage-learning-attendance'])->group(func
         ->name('session-attendances.destroy');
 });
 
-Route::middleware(['auth', 'permission:manage-evaluations'])->group(function () {
+Route::middleware(['auth', 'permission:view-evaluations,manage-evaluations'])->group(function () {
     Route::get('/evaluations', [EvaluationController::class, 'index'])
         ->name('evaluations.index');
-    Route::post('/evaluations', [EvaluationController::class, 'store'])
-        ->name('evaluations.store');
-
     Route::get('/evaluation-scores', [EvaluationScoreController::class, 'index'])
         ->name('evaluation-scores.index');
+});
+
+Route::middleware(['auth', 'permission:manage-evaluations'])->group(function () {
+    Route::post('/evaluations', [EvaluationController::class, 'store'])
+        ->name('evaluations.store');
     Route::post('/evaluation-scores', [EvaluationScoreController::class, 'store'])
         ->name('evaluation-scores.store');
     Route::get('/evaluation-scores/{evaluationScore}/edit', [EvaluationScoreController::class, 'edit'])
@@ -287,30 +304,42 @@ Route::middleware(['auth', 'permission:manage-evaluations'])->group(function () 
         ->name('evaluation-scores.destroy');
 });
 
-Route::middleware(['auth', 'permission:manage-training'])->group(function () {
+Route::middleware(['auth', 'permission:view-training,manage-training'])->group(function () {
     Route::get('/trainings', [TrainingController::class, 'index'])
         ->name('trainings.index');
+});
+
+Route::middleware(['auth', 'permission:manage-training'])->group(function () {
     Route::post('/trainings', [TrainingController::class, 'store'])
         ->name('trainings.store');
 });
 
-Route::middleware(['auth', 'permission:manage-communication'])->group(function () {
+Route::middleware(['auth', 'permission:view-communication,manage-communication'])->group(function () {
     Route::get('/communications', [CommunicationController::class, 'index'])
         ->name('communications.index');
+});
+
+Route::middleware(['auth', 'permission:manage-communication'])->group(function () {
     Route::post('/communications', [CommunicationController::class, 'store'])
         ->name('communications.store');
 });
 
-Route::middleware(['auth', 'permission:manage-munaqosah'])->group(function () {
+Route::middleware(['auth', 'permission:view-munaqosah,manage-munaqosah'])->group(function () {
     Route::get('/munaqosahs', [MunaqosahController::class, 'index'])
         ->name('munaqosahs.index');
+});
+
+Route::middleware(['auth', 'permission:manage-munaqosah'])->group(function () {
     Route::post('/munaqosahs', [MunaqosahController::class, 'store'])
         ->name('munaqosahs.store');
 });
 
-Route::middleware(['auth', 'permission:manage-report-cards'])->group(function () {
+Route::middleware(['auth', 'permission:view-report-cards,manage-report-cards'])->group(function () {
     Route::get('/report-cards', [ReportCardController::class, 'index'])
         ->name('report-cards.index');
+});
+
+Route::middleware(['auth', 'permission:manage-report-cards'])->group(function () {
     Route::post('/report-cards', [ReportCardController::class, 'store'])
         ->name('report-cards.store');
     Route::get('/report-cards/{reportCard}/edit', [ReportCardController::class, 'edit'])
@@ -324,58 +353,82 @@ Route::middleware(['auth', 'permission:manage-report-cards'])->group(function ()
         ->name('report-cards.destroy');
 });
 
-Route::middleware(['auth', 'permission:manage-follow-ups'])->group(function () {
+Route::middleware(['auth', 'permission:view-follow-ups,manage-follow-ups'])->group(function () {
     Route::get('/follow-ups', [FollowUpController::class, 'index'])
         ->name('follow-ups.index');
+});
+
+Route::middleware(['auth', 'permission:manage-follow-ups'])->group(function () {
     Route::post('/follow-ups', [FollowUpController::class, 'store'])
         ->name('follow-ups.store');
 });
 
-Route::middleware(['auth', 'permission:manage-progress-tracking'])->group(function () {
+Route::middleware(['auth', 'permission:view-progress-tracking,manage-progress-tracking'])->group(function () {
     Route::get('/progress-tracks', [ProgressTrackController::class, 'index'])
         ->name('progress-tracks.index');
+});
+
+Route::middleware(['auth', 'permission:manage-progress-tracking'])->group(function () {
     Route::post('/progress-tracks', [ProgressTrackController::class, 'store'])
         ->name('progress-tracks.store');
 });
 
-Route::middleware(['auth', 'permission:manage-milestones'])->group(function () {
+Route::middleware(['auth', 'permission:view-milestones,manage-milestones'])->group(function () {
     Route::get('/milestones', [MilestoneController::class, 'index'])
         ->name('milestones.index');
+});
+
+Route::middleware(['auth', 'permission:manage-milestones'])->group(function () {
     Route::post('/milestones', [MilestoneController::class, 'store'])
         ->name('milestones.store');
 });
 
-Route::middleware(['auth', 'permission:manage-annual-audit'])->group(function () {
+Route::middleware(['auth', 'permission:view-annual-audit,manage-annual-audit'])->group(function () {
     Route::get('/annual-audits', [AnnualAuditController::class, 'index'])
         ->name('annual-audits.index');
+});
+
+Route::middleware(['auth', 'permission:manage-annual-audit'])->group(function () {
     Route::post('/annual-audits', [AnnualAuditController::class, 'store'])
         ->name('annual-audits.store');
 });
 
-Route::middleware(['auth', 'permission:manage-organization-units'])->group(function () {
+Route::middleware(['auth', 'permission:view-organization-units,manage-organization-units'])->group(function () {
     Route::get('/organization-units', [OrganizationUnitController::class, 'index'])
         ->name('organization-units.index');
+});
+
+Route::middleware(['auth', 'permission:manage-organization-units'])->group(function () {
     Route::post('/organization-units', [OrganizationUnitController::class, 'store'])
         ->name('organization-units.store');
 });
 
-Route::middleware(['auth', 'permission:manage-assignments'])->group(function () {
+Route::middleware(['auth', 'permission:view-assignments,manage-assignments'])->group(function () {
     Route::get('/assignments', [AssignmentController::class, 'index'])
         ->name('assignments.index');
+});
+
+Route::middleware(['auth', 'permission:manage-assignments'])->group(function () {
     Route::post('/assignments', [AssignmentController::class, 'store'])
         ->name('assignments.store');
 });
 
-Route::middleware(['auth', 'permission:manage-activity-schedules'])->group(function () {
+Route::middleware(['auth', 'permission:view-activity-schedules,manage-activity-schedules'])->group(function () {
     Route::get('/activity-schedules', [ActivityScheduleController::class, 'index'])
         ->name('activity-schedules.index');
+});
+
+Route::middleware(['auth', 'permission:manage-activity-schedules'])->group(function () {
     Route::post('/activity-schedules', [ActivityScheduleController::class, 'store'])
         ->name('activity-schedules.store');
 });
 
-Route::middleware(['auth', 'permission:manage-activity-executions'])->group(function () {
+Route::middleware(['auth', 'permission:view-activity-executions,manage-activity-executions'])->group(function () {
     Route::get('/activity-executions', [ActivityExecutionController::class, 'index'])
         ->name('activity-executions.index');
+});
+
+Route::middleware(['auth', 'permission:manage-activity-executions'])->group(function () {
     Route::post('/activity-executions', [ActivityExecutionController::class, 'store'])
         ->name('activity-executions.store');
 });
@@ -387,9 +440,12 @@ Route::middleware(['auth', 'permission:manage-my-students'])->group(function () 
         ->name('my-students.update');
 });
 
-Route::middleware(['auth', 'permission:manage-parent-communications'])->group(function () {
+Route::middleware(['auth', 'permission:view-parent-communications,manage-parent-communications'])->group(function () {
     Route::get('/parent-communications', [ParentCommunicationController::class, 'index'])
         ->name('parent-communications.index');
+});
+
+Route::middleware(['auth', 'permission:manage-parent-communications'])->group(function () {
     Route::post('/parent-communications', [ParentCommunicationController::class, 'store'])
         ->name('parent-communications.store');
 });

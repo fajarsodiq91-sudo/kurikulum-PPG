@@ -22,6 +22,7 @@
         @endif
 
         <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">
+            @if (\App\Support\Access::can('manage-curriculum'))
             <div class="lg:col-span-1 rounded-xl bg-white p-6 shadow-sm border border-slate-200">
                 <h2 class="text-xl font-semibold mb-4">Tambah Program</h2>
                 <form method="POST" action="{{ route('curriculum-programs.store') }}">
@@ -49,6 +50,7 @@
                     </button>
                 </form>
             </div>
+            @endif
 
             <div class="lg:col-span-2 rounded-xl bg-white p-6 shadow-sm border border-slate-200">
                 <h2 class="text-xl font-semibold mb-4">Daftar Program</h2>

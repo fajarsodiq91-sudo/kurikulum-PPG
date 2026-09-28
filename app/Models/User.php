@@ -100,7 +100,15 @@ class User extends Authenticatable
 
     public function hasGlobalAccess(string $permissionSlug): bool
     {
-        return $this->permissionScopes($permissionSlug)->contains('type', 'global');
+        return $this->hasGlobalAccessAny([$permissionSlug]);
+    }
+
+    /**
+     * @param  list<string>  $permissionSlugs
+     */
+    public function hasGlobalAccessAny(array $permissionSlugs): bool
+    {
+        return collect($permissionSlugs)->contains(fn (string $slug): bool => $this->permissionScopes($slug)->contains('type', 'global'));
     }
 
     /**
@@ -110,10 +118,22 @@ class User extends Authenticatable
      */
     public function scopedPlacementIds(string $permissionSlug): array
     {
-        return $this->permissionScopes($permissionSlug)
+        return $this->scopedPlacementIdsAny([$permissionSlug]);
+    }
+
+    /**
+     * Same as scopedPlacementIds() across several permissions (e.g. a module's view and manage).
+     *
+     * @param  list<string>  $permissionSlugs
+     * @return array<string, list<int>>
+     */
+    public function scopedPlacementIdsAny(array $permissionSlugs): array
+    {
+        return collect($permissionSlugs)
+            ->flatMap(fn (string $slug): Collection => $this->permissionScopes($slug))
             ->filter(fn (array $scope): bool => isset(self::SCOPE_COLUMNS[$scope['type']]) && $scope['id'] !== null)
             ->groupBy(fn (array $scope): string => self::SCOPE_COLUMNS[$scope['type']])
-            ->map(fn (Collection $scopes): array => $scopes->pluck('id')->map(fn (mixed $id): int => (int) $id)->all())
+            ->map(fn (Collection $scopes): array => $scopes->pluck('id')->map(fn (mixed $id): int => (int) $id)->unique()->values()->all())
             ->all();
     }
 

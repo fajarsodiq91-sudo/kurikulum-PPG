@@ -22,6 +22,7 @@
     @include('layouts.partials.validation-errors')
 
     <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">
+        @if (\App\Support\Access::can('manage-parent-communications'))
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 class="text-lg font-bold text-slate-950">Catat Komunikasi</h2>
 
@@ -68,6 +69,7 @@
                 <button type="submit" class="w-full rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800">Simpan</button>
             </form>
         </section>
+        @endif
 
         <section class="min-w-0 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 class="text-lg font-bold text-slate-950">Riwayat Komunikasi</h2>

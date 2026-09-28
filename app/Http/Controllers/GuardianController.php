@@ -14,10 +14,10 @@ class GuardianController extends Controller
 {
     use HandlesSheets;
 
-    public function index(): View
+    public function index(Request $request): View
     {
         return view('guardians.index', [
-            'guardians' => Guardian::with('generus:id,full_name')->latest()->paginate(25),
+            'guardians' => Guardian::visibleTo($request->user())->with('generus:id,full_name')->latest()->paginate(25),
         ]);
     }
 
@@ -28,33 +28,44 @@ class GuardianController extends Controller
         return redirect()->route('guardians.index')->with('success', 'Data orang tua/wali berhasil ditambahkan.');
     }
 
-    public function export(): BinaryFileResponse
+    public function export(Request $request): BinaryFileResponse
     {
-        return $this->exportSheet(new GuardianSheet);
+        return $this->exportSheet(new GuardianSheet($request->user()));
     }
 
     public function import(Request $request): RedirectResponse
     {
-        return $this->importSheet($request, new GuardianSheet);
+        return $this->importSheet($request, new GuardianSheet($request->user()));
     }
 
-    public function edit(Guardian $guardian): View
+    public function edit(Request $request, Guardian $guardian): View
     {
+        $this->ensureVisible($request, $guardian);
+
         return view('guardians.edit', ['guardian' => $guardian]);
     }
 
     public function update(Request $request, Guardian $guardian): RedirectResponse
     {
+        $this->ensureVisible($request, $guardian);
+
         $guardian->update($this->validateGuardian($request));
 
         return redirect()->route('guardians.index')->with('success', 'Data orang tua/wali berhasil diperbarui.');
     }
 
-    public function destroy(Guardian $guardian): RedirectResponse
+    public function destroy(Request $request, Guardian $guardian): RedirectResponse
     {
+        $this->ensureVisible($request, $guardian);
+
         $guardian->delete();
 
         return redirect()->route('guardians.index')->with('success', 'Data orang tua/wali berhasil dihapus.');
+    }
+
+    private function ensureVisible(Request $request, Guardian $guardian): void
+    {
+        abort_unless(Guardian::visibleTo($request->user())->whereKey($guardian->id)->exists(), 404);
     }
 
     /**

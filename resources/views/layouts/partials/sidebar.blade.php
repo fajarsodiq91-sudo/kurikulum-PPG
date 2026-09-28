@@ -24,11 +24,11 @@
             ]],
             ['label' => 'Orang Tua / Wali', 'permission' => ['view-guardians', 'manage-guardians'], 'icon' => '⌂', 'items' => [
                 ['label' => 'Data Wali', 'route' => 'guardians.index'],
-                ['label' => 'Komunikasi Orang Tua', 'route' => 'parent-communications.index', 'permission' => 'manage-parent-communications'],
+                ['label' => 'Komunikasi Orang Tua', 'route' => 'parent-communications.index', 'permission' => ['view-parent-communications', 'manage-parent-communications']],
             ]],
-            ['label' => 'Organisasi', 'permission' => 'manage-organization-units', 'icon' => '▣', 'items' => [
+            ['label' => 'Organisasi', 'permission' => ['view-organization-units', 'manage-organization-units'], 'icon' => '▣', 'items' => [
                 ['label' => 'Struktur Organisasi', 'route' => 'organization-units.index'],
-                ['label' => 'Penempatan', 'route' => 'assignments.index', 'permission' => 'manage-assignments'],
+                ['label' => 'Penempatan', 'route' => 'assignments.index', 'permission' => ['view-assignments', 'manage-assignments']],
             ]],
             ['label' => 'Master Data', 'permission' => 'view-master-data', 'icon' => '⌘', 'items' => [
                 ['label' => 'Desa', 'route' => 'master-data.villages.index'],
@@ -38,34 +38,34 @@
                 ['label' => 'Tahun Akademik', 'route' => 'master-data.academic-years.index'],
                 ['label' => 'Semester', 'route' => 'master-data.semesters.index'],
             ]],
-            ['label' => 'Kurikulum', 'permission' => 'manage-curriculum', 'icon' => '▥', 'items' => [
+            ['label' => 'Kurikulum', 'permission' => ['view-curriculum', 'manage-curriculum'], 'icon' => '▥', 'items' => [
                 ['label' => 'Program Kurikulum', 'route' => 'curriculum-programs.index'],
-                ['label' => 'Materi', 'route' => 'learning-materials.index', 'permission' => 'manage-learning-materials'],
-                ['label' => 'Progress Tracking', 'route' => 'progress-tracks.index', 'permission' => 'manage-progress-tracking'],
+                ['label' => 'Materi', 'route' => 'learning-materials.index', 'permission' => ['view-learning-materials', 'manage-learning-materials']],
+                ['label' => 'Progress Tracking', 'route' => 'progress-tracks.index', 'permission' => ['view-progress-tracking', 'manage-progress-tracking']],
             ]],
-            ['label' => 'Program Pembinaan', 'permission' => 'manage-activity-schedules', 'icon' => '◷', 'items' => [
+            ['label' => 'Program Pembinaan', 'permission' => ['view-activity-schedules', 'manage-activity-schedules'], 'icon' => '◷', 'items' => [
                 ['label' => 'Jadwal Program', 'route' => 'activity-schedules.index'],
-                ['label' => 'Pelaksanaan Program', 'route' => 'activity-executions.index', 'permission' => 'manage-activity-executions'],
-                ['label' => 'Milestone', 'route' => 'milestones.index', 'permission' => 'manage-milestones'],
+                ['label' => 'Pelaksanaan Program', 'route' => 'activity-executions.index', 'permission' => ['view-activity-executions', 'manage-activity-executions']],
+                ['label' => 'Milestone', 'route' => 'milestones.index', 'permission' => ['view-milestones', 'manage-milestones']],
             ]],
-            ['label' => 'KBM', 'permission' => 'manage-learning-sessions', 'icon' => '▦', 'items' => [
+            ['label' => 'KBM', 'permission' => ['view-learning-sessions', 'manage-learning-sessions'], 'icon' => '▦', 'items' => [
                 ['label' => 'Sesi KBM', 'route' => 'learning-sessions.index'],
-                ['label' => 'Absensi Sesi', 'route' => 'session-attendances.index', 'permission' => 'manage-learning-attendance'],
+                ['label' => 'Absensi Sesi', 'route' => 'session-attendances.index', 'permission' => ['view-learning-attendance', 'manage-learning-attendance']],
             ]],
-            ['label' => 'Evaluasi', 'permission' => 'manage-evaluations', 'icon' => '✓', 'items' => [
+            ['label' => 'Evaluasi', 'permission' => ['view-evaluations', 'manage-evaluations'], 'icon' => '✓', 'items' => [
                 ['label' => 'Evaluasi', 'route' => 'evaluations.index'],
                 ['label' => 'Nilai Evaluasi', 'route' => 'evaluation-scores.index'],
             ]],
-            ['label' => 'Munaqosah', 'permission' => 'manage-munaqosah', 'icon' => '✦', 'items' => [
+            ['label' => 'Munaqosah', 'permission' => ['view-munaqosah', 'manage-munaqosah'], 'icon' => '✦', 'items' => [
                 ['label' => 'Daftar Munaqosah', 'route' => 'munaqosahs.index'],
             ]],
-            ['label' => 'Rapor', 'permission' => 'manage-report-cards', 'icon' => '▧', 'items' => [
+            ['label' => 'Rapor', 'permission' => ['view-report-cards', 'manage-report-cards'], 'icon' => '▧', 'items' => [
                 ['label' => 'Rapor Generus', 'route' => 'report-cards.index'],
             ]],
-            ['label' => 'Pelatihan Guru', 'permission' => 'manage-training', 'icon' => '⚡', 'items' => [
+            ['label' => 'Pelatihan Guru', 'permission' => ['view-training', 'manage-training'], 'icon' => '⚡', 'items' => [
                 ['label' => 'Program Pelatihan', 'route' => 'trainings.index'],
             ]],
-            ['label' => 'Komunikasi', 'permission' => 'manage-communication', 'icon' => '✉', 'items' => [
+            ['label' => 'Komunikasi', 'permission' => ['view-communication', 'manage-communication'], 'icon' => '✉', 'items' => [
                 ['label' => 'Pesan dan Riwayat', 'route' => 'communications.index'],
             ]],
             ['label' => 'Laporan', 'permission' => 'view-reports', 'route' => 'reports.index', 'icon' => '▤'],

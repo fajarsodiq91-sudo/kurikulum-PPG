@@ -26,12 +26,15 @@
         </div>
     @endif
 
+    @if (\App\Support\Access::can('manage-master-data'))
     @include('layouts.partials.spreadsheet-tools', ['exportUrl' => route('master-data.export', 'groups'), 'importUrl' => route('master-data.import', 'groups')])
+    @endif
 
     <section class="max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h3 class="text-lg font-bold text-slate-950">Kelompok</h3>
         <p class="mt-1 text-sm text-slate-500">{{ $groups->count() }} data terdaftar.</p>
-        <form method="POST" action="{{ route('master-data.groups.store') }}" class="mt-4">
+        @if (\App\Support\Access::can('manage-master-data'))
+<form method="POST" action="{{ route('master-data.groups.store') }}" class="mt-4">
             @csrf
             <div class="grid gap-3 sm:grid-cols-2">
                 <select class="{{ $inputClass }}" name="village_id" required><option value="">Pilih desa</option>@foreach ($villages->where('is_active', true) as $village)<option value="{{ $village->id }}">{{ $village->name }}</option>@endforeach</select>
@@ -41,14 +44,16 @@
             <input type="hidden" name="is_active" value="1">
             <button class="{{ $buttonClass }}">Tambah Kelompok</button>
         </form>
+@endif
         <div class="mt-5 space-y-2 text-sm">
             @foreach ($groups as $group)
                 <details class="border-t border-slate-100 pt-2">
                     <summary class="flex cursor-pointer list-none justify-between">
                         <span>{{ $group->name }} <span class="text-slate-400">/ {{ $group->village?->name }}</span></span>
-                        <span class="text-amber-600 underline">Edit</span>
+                        @if (\App\Support\Access::can('manage-master-data'))<span class="text-amber-600 underline">Edit</span>@endif
                     </summary>
-                    <form method="POST" action="{{ route('master-data.groups.update', $group) }}" class="mt-3 rounded-lg bg-slate-50 p-3">
+                    @if (\App\Support\Access::can('manage-master-data'))
+<form method="POST" action="{{ route('master-data.groups.update', $group) }}" class="mt-3 rounded-lg bg-slate-50 p-3">
                         @csrf
                         @method('PUT')
                         <div class="grid gap-3 sm:grid-cols-2">
@@ -67,6 +72,7 @@
                         </label>
                         <button class="mt-3 block rounded-lg bg-brand-950 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800">Simpan Perubahan</button>
                     </form>
+@endif
                 </details>
             @endforeach
         </div>

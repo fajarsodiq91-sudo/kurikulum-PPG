@@ -22,14 +22,23 @@ class TeacherStudentController extends Controller
         return $this->save($request, $this->ownTeacher($request), route('my-students.edit'));
     }
 
-    public function edit(Teacher $teacher): View
+    public function edit(Request $request, Teacher $teacher): View
     {
+        $this->ensureVisible($request, $teacher);
+
         return $this->form($teacher, route('teachers.students.update', $teacher));
     }
 
     public function update(Request $request, Teacher $teacher): RedirectResponse
     {
+        $this->ensureVisible($request, $teacher);
+
         return $this->save($request, $teacher, route('teachers.students.edit', $teacher));
+    }
+
+    private function ensureVisible(Request $request, Teacher $teacher): void
+    {
+        abort_unless(Teacher::visibleTo($request->user())->whereKey($teacher->id)->exists(), 404);
     }
 
     private function ownTeacher(Request $request): Teacher

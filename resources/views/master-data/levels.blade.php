@@ -26,12 +26,15 @@
         </div>
     @endif
 
+    @if (\App\Support\Access::can('manage-master-data'))
     @include('layouts.partials.spreadsheet-tools', ['exportUrl' => route('master-data.export', 'levels'), 'importUrl' => route('master-data.import', 'levels')])
+    @endif
 
     <section class="max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h3 class="text-lg font-bold text-slate-950">Jenjang</h3>
         <p class="mt-1 text-sm text-slate-500">{{ $levels->count() }} data terdaftar.</p>
-        <form method="POST" action="{{ route('master-data.levels.store') }}" class="mt-4">
+        @if (\App\Support\Access::can('manage-master-data'))
+<form method="POST" action="{{ route('master-data.levels.store') }}" class="mt-4">
             @csrf
             <div class="grid gap-3 sm:grid-cols-2">
                 <input class="{{ $inputClass }}" name="name" placeholder="Nama jenjang" required>
@@ -41,14 +44,16 @@
             <input type="hidden" name="is_active" value="1">
             <button class="{{ $buttonClass }}">Tambah Jenjang</button>
         </form>
+@endif
         <div class="mt-5 space-y-2 text-sm">
             @foreach ($levels as $level)
                 <details class="border-t border-slate-100 pt-2">
                     <summary class="flex cursor-pointer list-none justify-between">
                         <span>{{ $level->name }} <span class="text-slate-400">({{ $level->code }})</span></span>
-                        <span class="flex items-center gap-3"><span>{{ $level->is_active ? 'Aktif' : 'Nonaktif' }}</span><span class="text-amber-600 underline">Edit</span></span>
+                        <span class="flex items-center gap-3"><span>{{ $level->is_active ? 'Aktif' : 'Nonaktif' }}</span>@if (\App\Support\Access::can('manage-master-data'))<span class="text-amber-600 underline">Edit</span>@endif</span>
                     </summary>
-                    <form method="POST" action="{{ route('master-data.levels.update', $level) }}" class="mt-3 rounded-lg bg-slate-50 p-3">
+                    @if (\App\Support\Access::can('manage-master-data'))
+<form method="POST" action="{{ route('master-data.levels.update', $level) }}" class="mt-3 rounded-lg bg-slate-50 p-3">
                         @csrf
                         @method('PUT')
                         <div class="grid gap-3 sm:grid-cols-2">
@@ -63,6 +68,7 @@
                         </label>
                         <button class="mt-3 block rounded-lg bg-brand-950 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800">Simpan Perubahan</button>
                     </form>
+@endif
                 </details>
             @endforeach
         </div>

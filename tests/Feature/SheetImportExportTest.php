@@ -151,7 +151,7 @@ class SheetImportExportTest extends TestCase
     public function test_export_endpoints_download_for_authorized_users_only(): void
     {
         Excel::fake();
-        $manager = $this->createUser('global', null, 'manage-teachers', 'manage-guardians', 'view-master-data');
+        $manager = $this->createUser('global', null, 'manage-teachers', 'manage-guardians', 'view-master-data', 'manage-master-data');
 
         foreach (['/teachers/export' => 'guru.xlsx', '/guardians/export' => 'orang-tua-wali.xlsx', '/master-data/villages/export' => 'desa.xlsx', '/master-data/semesters/export' => 'semester.xlsx'] as $url => $file) {
             $this->actingAs($manager)->get($url);
@@ -168,7 +168,7 @@ class SheetImportExportTest extends TestCase
 
     public function test_pages_show_the_export_import_bar(): void
     {
-        $manager = $this->createUser('global', null, 'manage-teachers', 'manage-guardians', 'view-master-data');
+        $manager = $this->createUser('global', null, 'manage-teachers', 'manage-guardians', 'view-master-data', 'manage-master-data');
 
         foreach (['/teachers', '/guardians', '/master-data/villages', '/master-data/class-grades'] as $url) {
             $this->actingAs($manager)->get($url)->assertOk()->assertSee('Export XLSX')->assertSee('Import XLSX');

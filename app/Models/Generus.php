@@ -70,18 +70,20 @@ class Generus extends Model
     }
 
     /**
-     * Limit to generus whose active placement falls inside the user's role scopes.
-     * Anonymous guests carry no placement scope, so they see everything the guest role's
-     * view permission already exposes at the route level.
+     * Limit to generus whose active placement falls inside the user's role scopes (any role
+     * granting view or manage access). Anonymous guests carry no placement scope, so they see
+     * everything the guest role's view permission already exposes at the route level.
      */
     #[Scope]
     protected function visibleTo(Builder $query, ?User $user): void
     {
-        if ($user === null || $user->hasGlobalAccess(self::MANAGE_PERMISSION)) {
+        $permissions = ['view-generus', self::MANAGE_PERMISSION];
+
+        if ($user === null || $user->hasGlobalAccessAny($permissions)) {
             return;
         }
 
-        $placementIds = $user->scopedPlacementIds(self::MANAGE_PERMISSION);
+        $placementIds = $user->scopedPlacementIdsAny($permissions);
 
         if ($placementIds === []) {
             $query->whereRaw('1 = 0');
@@ -89,6 +91,17 @@ class Generus extends Model
             return;
         }
 
+        $query->inPlacement($placementIds);
+    }
+
+    /**
+     * Limit to generus currently placed in the given columns, e.g. `['group_id' => [3, 7]]`.
+     *
+     * @param  array<string, list<int>>  $placementIds
+     */
+    #[Scope]
+    protected function inPlacement(Builder $query, array $placementIds): void
+    {
         $query->whereHas('assignments', function (Builder $assignments) use ($placementIds): void {
             $assignments->whereNull('ended_at')
                 ->where(function (Builder $placement) use ($placementIds): void {
