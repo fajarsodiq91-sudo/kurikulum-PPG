@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\MemberAccounts;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -24,6 +25,21 @@ class Teacher extends Model
         'status',
         'notes',
     ];
+
+    protected static function booted(): void
+    {
+        static::created(fn (self $teacher) => MemberAccounts::forTeacher($teacher));
+        static::updated(function (self $teacher): void {
+            if ($teacher->wasChanged('name')) {
+                MemberAccounts::rename('teacher_id', $teacher->id, $teacher->name);
+            }
+
+            if ($teacher->wasChanged('status')) {
+                MemberAccounts::setStatus('teacher_id', $teacher->id, $teacher->status === 'active' ? 'active' : 'inactive');
+            }
+        });
+        static::deleting(fn (self $teacher) => MemberAccounts::setStatus('teacher_id', $teacher->id, 'inactive'));
+    }
 
     public function region(): BelongsTo
     {

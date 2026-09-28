@@ -97,7 +97,7 @@ class AuthAndAuthorizationTest extends TestCase
         $user->assignRole($role->id, 'global', null);
 
         $response = $this->post('/login', [
-            'email' => 'admin@ppg.test',
+            'login' => 'admin@ppg.test',
             'password' => 'password123',
         ]);
 
@@ -118,13 +118,13 @@ class AuthAndAuthorizationTest extends TestCase
 
         for ($attempt = 1; $attempt <= 5; $attempt++) {
             $this->post('/login', [
-                'email' => 'admin@ppg.test',
+                'login' => 'admin@ppg.test',
                 'password' => 'salah',
-            ])->assertSessionHasErrors('email');
+            ])->assertSessionHasErrors('login');
         }
 
         $this->post('/login', [
-            'email' => 'admin@ppg.test',
+            'login' => 'admin@ppg.test',
             'password' => 'password123',
         ])->assertTooManyRequests();
 
@@ -186,7 +186,7 @@ class AuthAndAuthorizationTest extends TestCase
         $user->assignRole($role->id, 'global', null);
 
         $this->post('/login', [
-            'email' => 'guru@ppg.test',
+            'login' => 'guru@ppg.test',
             'password' => 'password123',
         ]);
 
@@ -268,7 +268,7 @@ class AuthAndAuthorizationTest extends TestCase
         $this->assertFalse($user->hasPermission('view-dashboard-inactive'));
 
         $this->post('/login', [
-            'email' => 'guru-inactive@ppg.test',
+            'login' => 'guru-inactive@ppg.test',
             'password' => 'password123',
         ]);
 

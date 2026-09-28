@@ -24,6 +24,7 @@
                 <p class="text-xs text-slate-500">{{ \App\Support\Access::currentRoleLabel() }}</p>
             </div>
             @auth
+                <a href="{{ route('password.edit') }}" class="block w-full rounded-lg px-3 py-2 text-left text-sm text-slate-600 transition hover:bg-slate-100">Ganti password</a>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button type="submit" class="w-full rounded-lg px-3 py-2 text-left text-sm text-slate-600 transition hover:bg-slate-100">Keluar dari sistem</button>

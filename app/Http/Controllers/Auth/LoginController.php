@@ -17,20 +17,22 @@ class LoginController extends Controller
 
     public function login(Request $request): RedirectResponse
     {
-        $credentials = $request->validate([
-            'email' => ['required', 'string', 'email'],
+        $validated = $request->validate([
+            'login' => ['required', 'string'],
             'password' => ['required', 'string'],
         ]);
 
-        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+        $identifier = str_contains($validated['login'], '@') ? 'email' : 'username';
+
+        if (Auth::attempt([$identifier => $validated['login'], 'password' => $validated['password']], $request->boolean('remember'))) {
             $request->session()->regenerate();
 
             return redirect()->intended('/dashboard');
         }
 
         return back()->withErrors([
-            'email' => 'Kredensial yang dimasukkan tidak valid.',
-        ])->onlyInput('email');
+            'login' => 'Kredensial yang dimasukkan tidak valid.',
+        ])->onlyInput('login');
     }
 
     public function logout(Request $request): RedirectResponse

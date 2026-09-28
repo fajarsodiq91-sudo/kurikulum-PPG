@@ -29,8 +29,8 @@
             <form method="POST" action="{{ route('login') }}">
                 @csrf
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-slate-700 mb-2" for="email">Email</label>
-                    <input id="email" name="email" type="email" value="{{ old('email') }}" required class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-brand-500 focus:outline-none">
+                    <label class="block text-sm font-medium text-slate-700 mb-2" for="login">Email atau Nomor Induk</label>
+                    <input id="login" name="login" type="text" value="{{ old('login') }}" required autocomplete="username" class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-brand-500 focus:outline-none">
                 </div>
 
                 <div class="mb-6">

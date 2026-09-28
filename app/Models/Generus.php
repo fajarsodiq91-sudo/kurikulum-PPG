@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\MemberAccounts;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -43,6 +44,18 @@ class Generus extends Model
         'transfer_destination',
         'notes',
     ];
+
+    protected static function booted(): void
+    {
+        static::created(fn (self $generus) => MemberAccounts::forGenerus($generus));
+        static::updated(function (self $generus): void {
+            if ($generus->wasChanged('full_name')) {
+                MemberAccounts::rename('generus_id', $generus->id, $generus->full_name);
+            }
+        });
+        static::deleted(fn (self $generus) => MemberAccounts::setStatus('generus_id', $generus->id, 'inactive'));
+        static::restored(fn (self $generus) => MemberAccounts::setStatus('generus_id', $generus->id, 'active'));
+    }
 
     protected function casts(): array
     {

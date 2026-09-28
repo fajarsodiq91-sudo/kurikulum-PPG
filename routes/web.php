@@ -5,6 +5,7 @@ use App\Http\Controllers\ActivityScheduleController;
 use App\Http\Controllers\AnnualAuditController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\CommunicationController;
 use App\Http\Controllers\CurriculumProgramController;
 use App\Http\Controllers\DashboardController;
@@ -38,6 +39,11 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::post('/logout', [LoginController::class, 'logout'])->middleware('auth')->name('logout');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/password', [PasswordController::class, 'edit'])->name('password.edit');
+    Route::put('/password', [PasswordController::class, 'update'])->name('password.update');
+});
 
 // Publicly reachable, read-only for anonymous visitors covered by the guest role permissions.
 Route::middleware(['permission:view-dashboard'])->group(function () {
