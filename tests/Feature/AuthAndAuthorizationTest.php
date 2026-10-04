@@ -371,7 +371,7 @@ class AuthAndAuthorizationTest extends TestCase
             ->assertOk()
             ->assertSee('Laporan')
             ->assertDontSee('Data Generus')
-            ->assertDontSee('Program Kurikulum');
+            ->assertDontSee('Kategori Materi');
     }
 
     public function test_integrated_module_pages_are_available_to_authorized_users(): void
@@ -444,9 +444,14 @@ class AuthAndAuthorizationTest extends TestCase
             ->assertViewIs('guardians.index');
 
         $this->actingAs($user)
-            ->get('/curriculum-programs')
+            ->get('/material-categories')
             ->assertOk()
-            ->assertViewIs('curriculum-programs.index');
+            ->assertViewIs('material-categories.index');
+
+        $this->actingAs($user)
+            ->get('/material-chapters')
+            ->assertOk()
+            ->assertViewIs('material-chapters.index');
 
         $this->actingAs($user)
             ->get('/learning-materials')

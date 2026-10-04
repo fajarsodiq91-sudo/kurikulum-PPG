@@ -39,9 +39,10 @@
                 ['label' => 'Tahun Akademik', 'route' => 'master-data.academic-years.index'],
                 ['label' => 'Semester', 'route' => 'master-data.semesters.index'],
             ]],
-            ['label' => 'Kurikulum', 'permission' => ['view-curriculum', 'manage-curriculum'], 'icon' => '▥', 'items' => [
-                ['label' => 'Program Kurikulum', 'route' => 'curriculum-programs.index'],
-                ['label' => 'Materi', 'route' => 'learning-materials.index', 'permission' => ['view-learning-materials', 'manage-learning-materials']],
+            ['label' => 'Kurikulum', 'permission' => ['view-learning-materials', 'manage-learning-materials'], 'icon' => '▥', 'items' => [
+                ['label' => 'Kategori Materi', 'route' => 'material-categories.index'],
+                ['label' => 'Bab Materi', 'route' => 'material-chapters.index'],
+                ['label' => 'Materi', 'route' => 'learning-materials.index'],
                 ['label' => 'Progress Tracking', 'route' => 'progress-tracks.index', 'permission' => ['view-progress-tracking', 'manage-progress-tracking']],
             ]],
             ['label' => 'Program Pembinaan', 'permission' => ['view-activity-schedules', 'manage-activity-schedules'], 'icon' => '◷', 'items' => [

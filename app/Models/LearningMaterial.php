@@ -10,29 +10,18 @@ class LearningMaterial extends Model
     protected $table = 'learning_materials';
 
     protected $fillable = [
-        'curriculum_program_id',
+        'material_chapter_id',
         'title',
         'code',
-        'level_id',
-        'semester_id',
+        'sort_order',
         'academic_year_id',
         'description',
         'is_active',
     ];
 
-    public function curriculumProgram(): BelongsTo
+    public function materialChapter(): BelongsTo
     {
-        return $this->belongsTo(CurriculumProgram::class);
-    }
-
-    public function level(): BelongsTo
-    {
-        return $this->belongsTo(Level::class);
-    }
-
-    public function semester(): BelongsTo
-    {
-        return $this->belongsTo(Semester::class);
+        return $this->belongsTo(MaterialChapter::class);
     }
 
     public function academicYear(): BelongsTo

@@ -3,18 +3,24 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class CurriculumProgram extends Model
+class MaterialChapter extends Model
 {
-    protected $table = 'curriculum_programs';
-
     protected $fillable = [
+        'material_category_id',
         'name',
         'code',
-        'description',
+        'sort_order',
         'is_active',
+        'description',
     ];
+
+    public function materialCategory(): BelongsTo
+    {
+        return $this->belongsTo(MaterialCategory::class);
+    }
 
     public function learningMaterials(): HasMany
     {

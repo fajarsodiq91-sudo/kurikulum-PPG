@@ -8,7 +8,6 @@ use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\CommunicationController;
-use App\Http\Controllers\CurriculumProgramController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EvaluationController;
 use App\Http\Controllers\EvaluationScoreController;
@@ -19,6 +18,8 @@ use App\Http\Controllers\GuardianController;
 use App\Http\Controllers\LearningMaterialController;
 use App\Http\Controllers\LearningSessionController;
 use App\Http\Controllers\MasterData\MasterDataController;
+use App\Http\Controllers\MaterialCategoryController;
+use App\Http\Controllers\MaterialChapterController;
 use App\Http\Controllers\MilestoneController;
 use App\Http\Controllers\MunaqosahController;
 use App\Http\Controllers\OrganizationUnitController;
@@ -273,24 +274,26 @@ Route::middleware(['auth', 'permission:manage-guardians'])->group(function () {
         ->name('guardians.destroy');
 });
 
-Route::middleware(['auth', 'permission:view-curriculum,manage-curriculum'])->group(function () {
-    Route::get('/curriculum-programs', [CurriculumProgramController::class, 'index'])
-        ->name('curriculum-programs.index');
-});
-
-Route::middleware(['auth', 'permission:manage-curriculum'])->group(function () {
-    Route::post('/curriculum-programs', [CurriculumProgramController::class, 'store'])
-        ->name('curriculum-programs.store');
-});
-
 Route::middleware(['auth', 'permission:view-learning-materials,manage-learning-materials'])->group(function () {
+    Route::get('/material-categories', [MaterialCategoryController::class, 'index'])
+        ->name('material-categories.index');
+    Route::get('/material-chapters', [MaterialChapterController::class, 'index'])
+        ->name('material-chapters.index');
     Route::get('/learning-materials', [LearningMaterialController::class, 'index'])
         ->name('learning-materials.index');
+    Route::get('/learning-materials/export', [LearningMaterialController::class, 'export'])
+        ->name('learning-materials.export');
 });
 
 Route::middleware(['auth', 'permission:manage-learning-materials'])->group(function () {
+    Route::post('/material-categories', [MaterialCategoryController::class, 'store'])
+        ->name('material-categories.store');
+    Route::post('/material-chapters', [MaterialChapterController::class, 'store'])
+        ->name('material-chapters.store');
     Route::post('/learning-materials', [LearningMaterialController::class, 'store'])
         ->name('learning-materials.store');
+    Route::post('/learning-materials/import', [LearningMaterialController::class, 'import'])
+        ->name('learning-materials.import');
 });
 
 Route::middleware(['auth', 'permission:view-learning-sessions,manage-learning-sessions'])->group(function () {

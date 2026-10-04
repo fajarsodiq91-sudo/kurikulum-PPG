@@ -3,12 +3,14 @@
 namespace Tests\Feature;
 
 use App\Models\AcademicYear;
-use App\Models\CurriculumProgram;
+use App\Models\ClassGrade;
 use App\Models\Generus;
 use App\Models\Group;
 use App\Models\LearningMaterial;
 use App\Models\LearningSession;
 use App\Models\Level;
+use App\Models\MaterialCategory;
+use App\Models\MaterialChapter;
 use App\Models\Permission;
 use App\Models\Region;
 use App\Models\Role;
@@ -92,19 +94,33 @@ class LearningSessionAndAttendanceTest extends TestCase
             'is_active' => true,
         ]);
 
-        $program = CurriculumProgram::create([
+        $classGrade = ClassGrade::create([
+            'level_id' => $level->id,
+            'name' => 'Kelas 1',
+            'code' => 'KELAS-1',
+            'sort_order' => 1,
+            'is_active' => true,
+        ]);
+
+        $category = MaterialCategory::create([
+            'class_grade_id' => $classGrade->id,
+            'semester_id' => $semester->id,
             'name' => 'Pendidikan Karakter',
             'code' => 'PK-01',
-            'description' => 'Program pembinaan karakter',
+            'is_active' => true,
+        ]);
+
+        $chapter = MaterialChapter::create([
+            'material_category_id' => $category->id,
+            'name' => 'Bab Etika',
+            'code' => 'BAB-ETIKA',
             'is_active' => true,
         ]);
 
         $material = LearningMaterial::create([
-            'curriculum_program_id' => $program->id,
+            'material_chapter_id' => $chapter->id,
             'title' => 'Modul Etika',
             'code' => 'MAT-ETIKA',
-            'level_id' => $level->id,
-            'semester_id' => $semester->id,
             'academic_year_id' => $academicYear->id,
             'description' => 'Materi pembinaan sikap',
             'is_active' => true,
@@ -249,18 +265,33 @@ class LearningSessionAndAttendanceTest extends TestCase
             'is_active' => true,
         ]);
 
-        $program = CurriculumProgram::create([
+        $classGrade = ClassGrade::create([
+            'level_id' => $level->id,
+            'name' => 'Kelas 1',
+            'code' => 'KELAS-1',
+            'sort_order' => 1,
+            'is_active' => true,
+        ]);
+
+        $category = MaterialCategory::create([
+            'class_grade_id' => $classGrade->id,
+            'semester_id' => $semester->id,
             'name' => 'Pendidikan Karakter',
             'code' => 'PK-01',
             'is_active' => true,
         ]);
 
+        $chapter = MaterialChapter::create([
+            'material_category_id' => $category->id,
+            'name' => 'Bab Etika',
+            'code' => 'BAB-ETIKA',
+            'is_active' => true,
+        ]);
+
         $material = LearningMaterial::create([
-            'curriculum_program_id' => $program->id,
+            'material_chapter_id' => $chapter->id,
             'title' => 'Modul Etika',
             'code' => 'MAT-ETIKA',
-            'level_id' => $level->id,
-            'semester_id' => $semester->id,
             'academic_year_id' => $academicYear->id,
             'is_active' => true,
         ]);

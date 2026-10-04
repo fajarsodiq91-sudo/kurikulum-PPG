@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\AcademicYear;
+use App\Models\ClassGrade;
 use App\Models\Level;
+use App\Models\MaterialCategory;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Semester;
@@ -16,18 +18,11 @@ class CurriculumAndMaterialsTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_admin_can_create_curriculum_program_and_material(): void
+    public function test_admin_can_create_material_category_chapter_and_material(): void
     {
         $role = Role::create([
             'name' => 'Super Admin',
             'slug' => 'super-admin',
-            'is_active' => true,
-        ]);
-
-        $programPermission = Permission::create([
-            'name' => 'Manage Curriculum',
-            'slug' => 'manage-curriculum',
-            'module' => 'curriculum',
             'is_active' => true,
         ]);
 
@@ -38,7 +33,7 @@ class CurriculumAndMaterialsTest extends TestCase
             'is_active' => true,
         ]);
 
-        $role->permissions()->attach([$programPermission->id, $materialPermission->id]);
+        $role->permissions()->attach([$materialPermission->id]);
 
         $user = User::create([
             'name' => 'Admin PPG',
@@ -58,6 +53,14 @@ class CurriculumAndMaterialsTest extends TestCase
         ]);
 
         $level = Level::create([
+            'name' => 'Jenjang Dasar',
+            'code' => 'JD',
+            'sort_order' => 1,
+            'is_active' => true,
+        ]);
+
+        $classGrade = ClassGrade::create([
+            'level_id' => $level->id,
             'name' => 'Kelas 1',
             'code' => 'KELAS-1',
             'sort_order' => 1,
@@ -73,26 +76,43 @@ class CurriculumAndMaterialsTest extends TestCase
         ]);
 
         $this->actingAs($user)
-            ->post('/curriculum-programs', [
-                'name' => 'Pendidikan Karakter',
-                'code' => 'PK-01',
-                'description' => 'Program pembinaan karakter generus',
+            ->post('/material-categories', [
+                'class_grade_id' => $classGrade->id,
+                'semester_id' => $semester->id,
+                'name' => 'Akhlak',
+                'code' => 'AKHLAK',
                 'is_active' => true,
             ])
-            ->assertRedirect('/curriculum-programs');
+            ->assertRedirect('/material-categories');
 
-        $this->assertDatabaseHas('curriculum_programs', [
-            'name' => 'Pendidikan Karakter',
-            'code' => 'PK-01',
+        $this->assertDatabaseHas('material_categories', [
+            'name' => 'Akhlak',
+            'code' => 'AKHLAK',
         ]);
+
+        $category = MaterialCategory::query()->where('code', 'AKHLAK')->firstOrFail();
+
+        $this->actingAs($user)
+            ->post('/material-chapters', [
+                'material_category_id' => $category->id,
+                'name' => 'Bab Etika dan Budaya',
+                'code' => 'BAB-01',
+                'is_active' => true,
+            ])
+            ->assertRedirect('/material-chapters');
+
+        $this->assertDatabaseHas('material_chapters', [
+            'name' => 'Bab Etika dan Budaya',
+            'code' => 'BAB-01',
+        ]);
+
+        $chapter = $category->materialChapters()->where('code', 'BAB-01')->firstOrFail();
 
         $this->actingAs($user)
             ->post('/learning-materials', [
-                'curriculum_program_id' => 1,
+                'material_chapter_id' => $chapter->id,
                 'title' => 'Modul Etika dan Budaya',
                 'code' => 'MAT-001',
-                'level_id' => $level->id,
-                'semester_id' => $semester->id,
                 'academic_year_id' => $academicYear->id,
                 'description' => 'Materi pembinaan karakter',
                 'is_active' => true,

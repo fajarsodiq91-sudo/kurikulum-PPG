@@ -193,7 +193,7 @@
             'features' => [
                 ['title' => 'Cara mengisi menu-menu ini', 'steps' => [
                     'Buka menunya dari sidebar. Isi formulir di kiri lalu klik simpan; data langsung muncul di daftar.',
-                    'Urutan yang disarankan: Program Kurikulum, lalu Materi, lalu Sesi KBM, lalu Absensi dan Evaluasi. Pastikan Master Data (jenjang, tahun akademik, semester) sudah terisi lebih dulu.',
+                    'Urutan yang disarankan: Kategori Materi, lalu Bab Materi, lalu Materi, lalu Sesi KBM, lalu Absensi dan Evaluasi. Pastikan Master Data (jenjang, kelas, tahun akademik, semester) sudah terisi lebih dulu.',
                     'Jadwal Program dicatat di "Program Pembinaan", lalu realisasinya dicatat di "Pelaksanaan Program".',
                     'Menu "Komunikasi" dipakai untuk pesan terkait pelatihan; komunikasi dengan orang tua ada di menu "Orang Tua / Wali".',
                     'Struktur Organisasi dan Penempatan dipakai untuk mencatat unit dan penugasan pengurus.',
