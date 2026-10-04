@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\AcademicYear;
+use App\Models\ClassGrade;
 use App\Models\FollowUp;
 use App\Models\Generus;
 use App\Models\GenerusAssignment;
@@ -91,6 +92,25 @@ class TeacherStudentsTest extends TestCase
 
         $this->actingAs($this->teacherUser())->put('/my-students', ['student_ids' => [$second->id]]);
         $this->assertSame([$second->id], $this->teacher->students()->pluck('generus.id')->all());
+    }
+
+    public function test_teacher_assigned_to_class_grades_only_sees_those_classes_in_own_group(): void
+    {
+        $kelas2 = ClassGrade::create(['name' => 'Kelas 2', 'code' => 'K2', 'is_active' => true]);
+        $kelas3 = ClassGrade::create(['name' => 'Kelas 3', 'code' => 'K3', 'is_active' => true]);
+        $kelas4 = ClassGrade::create(['name' => 'Kelas 4', 'code' => 'K4', 'is_active' => true]);
+        $this->teacher->classGrades()->sync([$kelas2->id, $kelas3->id]);
+
+        $inClass2 = $this->placedGenerus('Murid Kelas 2', $this->group);
+        $inClass2->update(['learning_class_id' => $kelas2->id]);
+        $inClass4 = $this->placedGenerus('Murid Kelas 4', $this->group);
+        $inClass4->update(['learning_class_id' => $kelas4->id]);
+
+        $this->actingAs($this->teacherUser())
+            ->get('/my-students')
+            ->assertOk()
+            ->assertSee('Murid Kelas 2')
+            ->assertDontSee('Murid Kelas 4');
     }
 
     public function test_admin_can_manage_a_teachers_students(): void

@@ -85,6 +85,14 @@ class Teacher extends Model
     }
 
     /**
+     * Kelas KBM the teacher is assigned to teach; an empty set means every class in the group.
+     */
+    public function classGrades(): BelongsToMany
+    {
+        return $this->belongsToMany(ClassGrade::class, 'teacher_class_grades')->withTimestamps();
+    }
+
+    /**
      * Limit to teachers placed in the user's role scopes; guests and global roles see all.
      */
     #[Scope]

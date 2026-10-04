@@ -77,17 +77,23 @@ class TeacherStudentController extends Controller
     private function candidates(Teacher $teacher): Collection
     {
         $linkedIds = $teacher->students()->pluck('generus.id');
+        $classGradeIds = $teacher->classGrades()->pluck('class_grades.id');
 
         return Generus::query()
-            ->where(function (Builder $query) use ($teacher, $linkedIds): void {
+            ->where(function (Builder $query) use ($teacher, $linkedIds, $classGradeIds): void {
                 $query->whereIn('id', $linkedIds);
 
                 if ($teacher->group_id !== null) {
-                    $query->orWhere(fn (Builder $inGroup) => $inGroup
-                        ->where('status', 'active')
-                        ->whereHas('assignments', fn (Builder $assignments) => $assignments
-                            ->whereNull('ended_at')
-                            ->where('group_id', $teacher->group_id)));
+                    $query->orWhere(function (Builder $inGroup) use ($teacher, $classGradeIds): void {
+                        $inGroup->where('status', 'active')
+                            ->whereHas('assignments', fn (Builder $assignments) => $assignments
+                                ->whereNull('ended_at')
+                                ->where('group_id', $teacher->group_id));
+
+                        if ($classGradeIds->isNotEmpty()) {
+                            $inGroup->whereIn('learning_class_id', $classGradeIds);
+                        }
+                    });
                 }
             })
             ->orderBy('full_name')

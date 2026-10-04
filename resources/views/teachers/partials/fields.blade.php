@@ -40,6 +40,19 @@
         @endif
     </div>
     <div>
+        <span class="mb-2 block text-sm font-medium text-slate-700">Kelas KBM</span>
+        <div class="flex flex-wrap gap-3 rounded-lg border border-slate-200 p-3">
+            @php $selectedClassGradeIds = old('class_grade_ids', $teacher?->classGrades->pluck('id')->all() ?? []); @endphp
+            @foreach($classGrades as $classGrade)
+                <label class="inline-flex items-center gap-1.5 text-sm text-slate-700">
+                    <input type="checkbox" name="class_grade_ids[]" value="{{ $classGrade->id }}" @checked(in_array($classGrade->id, $selectedClassGradeIds))>
+                    {{ $classGrade->name }}
+                </label>
+            @endforeach
+        </div>
+        <p class="mt-1 text-xs text-slate-500">Murid dari kelas yang dicentang di kelompok guru ini otomatis masuk ke "Murid Saya". Kosongkan untuk mencakup semua kelas di kelompok.</p>
+    </div>
+    <div>
         <label class="mb-2 block text-sm font-medium text-slate-700" for="phone">Telepon</label>
         <input id="phone" name="phone" type="text" value="{{ old('phone', $teacher?->phone) }}" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
     </div>

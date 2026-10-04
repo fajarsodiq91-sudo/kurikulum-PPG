@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\HandlesSheets;
+use App\Models\ClassGrade;
 use App\Models\Generus;
 use App\Models\Group;
 use App\Models\Region;
@@ -35,6 +36,7 @@ class TeacherController extends Controller
     {
         return view('teachers.index', [
             'teachers' => Teacher::visibleTo($request->user())->with(['village', 'group'])->latest()->paginate(25),
+            'classGrades' => ClassGrade::where('is_active', true)->orderBy('sort_order')->get(),
             ...$this->placementOptions($request->user()),
         ]);
     }
@@ -44,12 +46,14 @@ class TeacherController extends Controller
         $validated = $this->validateTeacher($request);
         $photoPath = $this->storePhoto($validated['photo'] ?? null);
 
-        retry(3, fn () => Teacher::create([
-            ...Arr::except($validated, ['photo', 'face_descriptor']),
+        $teacher = retry(3, fn () => Teacher::create([
+            ...Arr::except($validated, ['photo', 'face_descriptor', 'class_grade_ids']),
             'registration_number' => Teacher::nextRegistrationNumber(),
             'photo' => $photoPath,
             'face_descriptor' => $photoPath !== null ? FaceDescriptors::parse($validated['face_descriptor'] ?? null) : null,
         ]), when: fn (Throwable $exception): bool => $exception instanceof UniqueConstraintViolationException);
+
+        $teacher->classGrades()->sync($validated['class_grade_ids'] ?? []);
 
         return redirect()->route('teachers.index')->with('success', 'Data guru berhasil ditambahkan.');
     }
@@ -69,7 +73,8 @@ class TeacherController extends Controller
         $this->ensureVisible($request, $teacher);
 
         return view('teachers.edit', [
-            'teacher' => $teacher,
+            'teacher' => $teacher->load('classGrades'),
+            'classGrades' => ClassGrade::where('is_active', true)->orderBy('sort_order')->get(),
             ...$this->placementOptions($request->user()),
         ]);
     }
@@ -83,9 +88,11 @@ class TeacherController extends Controller
         $newPhotoPath = $this->storePhoto($validated['photo'] ?? null);
 
         $teacher->update([
-            ...Arr::except($validated, ['photo', 'face_descriptor']),
+            ...Arr::except($validated, ['photo', 'face_descriptor', 'class_grade_ids']),
             ...($newPhotoPath !== null ? ['photo' => $newPhotoPath, 'face_descriptor' => FaceDescriptors::parse($validated['face_descriptor'] ?? null)] : []),
         ]);
+
+        $teacher->classGrades()->sync($validated['class_grade_ids'] ?? []);
 
         if ($newPhotoPath !== null && $oldPhotoPath !== null) {
             Storage::delete($oldPhotoPath);
@@ -158,6 +165,8 @@ class TeacherController extends Controller
             ],
             'status' => ['required', 'string', 'max:50'],
             'notes' => ['nullable', 'string'],
+            'class_grade_ids' => ['nullable', 'array'],
+            'class_grade_ids.*' => ['integer', Rule::exists('class_grades', 'id')->where('is_active', true)],
         ]);
 
         if (! $user->coversPlacement(self::MANAGE_PERMISSION, (int) $validated['region_id'], (int) $validated['village_id'], (int) $validated['group_id'])) {
