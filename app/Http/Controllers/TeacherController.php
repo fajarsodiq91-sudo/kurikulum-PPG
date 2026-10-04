@@ -34,7 +34,7 @@ class TeacherController extends Controller
     public function index(Request $request): View
     {
         return view('teachers.index', [
-            'teachers' => Teacher::visibleTo($request->user())->latest()->paginate(25),
+            'teachers' => Teacher::visibleTo($request->user())->with(['village', 'group'])->latest()->paginate(25),
             ...$this->placementOptions($request->user()),
         ]);
     }
