@@ -5,10 +5,17 @@
 @section('breadcrumb', 'Munaqosah / Daftar Munaqosah')
 
 @section('content')
-    <div class="mb-6">
-        <p class="text-sm font-semibold text-amber-600">Munaqosah</p>
-        <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Munaqosah</h2>
-        <p class="mt-2 text-sm text-slate-500">Kelola evaluasi dan ujian akhir semester generus.</p>
+    <div class="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        <div>
+            <p class="text-sm font-semibold text-amber-600">Munaqosah</p>
+            <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Munaqosah</h2>
+            <p class="mt-2 text-sm text-slate-500">Kelola evaluasi dan ujian akhir semester generus.</p>
+        </div>
+        @if (\App\Support\Access::can('manage-munaqosah'))
+            <div class="flex flex-wrap gap-3">
+                <a href="{{ route('munaqosahs.batch') }}" class="inline-flex items-center justify-center rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800">Input Nilai per Kelompok</a>
+            </div>
+        @endif
     </div>
 
         @if (session('success'))
@@ -17,71 +24,15 @@
             </div>
         @endif
 
+        @include('layouts.partials.validation-errors')
+
         <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">
             @if (\App\Support\Access::can('manage-munaqosah'))
             <div class="lg:col-span-1 rounded-xl bg-white p-6 shadow-sm border border-slate-200">
                 <h2 class="text-xl font-semibold mb-4">Tambah Munaqosah</h2>
                 <form method="POST" action="{{ route('munaqosahs.store') }}">
                     @csrf
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="generus_id">Generus</label>
-                        <select id="generus_id" name="generus_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                            <option value="">-- Pilih --</option>
-                            @foreach($generus as $item)
-                                <option value="{{ $item->id }}">{{ $item->full_name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="academic_year_id">Tahun</label>
-                        <select id="academic_year_id" name="academic_year_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                            <option value="">-- Pilih --</option>
-                            @foreach($academicYears as $year)
-                                <option value="{{ $year->id }}">{{ $year->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="semester_id">Semester</label>
-                        <select id="semester_id" name="semester_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                            <option value="">-- Pilih --</option>
-                            @foreach($semesters as $semester)
-                                <option value="{{ $semester->id }}">{{ $semester->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="title">Judul</label>
-                        <input id="title" name="title" type="text" required class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="type">Tipe</label>
-                        <select id="type" name="type" class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                            <option value="semester-final">Semester Final</option>
-                            <option value="remedial">Remedial</option>
-                        </select>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="score">Nilai</label>
-                        <input id="score" name="score" type="number" step="0.01" class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="result">Hasil (huruf)</label>
-                        <input id="result" name="result" type="text" placeholder="Kosongkan untuk konversi otomatis dari nilai" class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                        <p class="mt-1 text-xs text-slate-500">Jika dikosongkan, huruf dan keterangan diambil otomatis dari <a href="{{ route('master-data.grade-scales.index') }}" class="text-amber-600 underline">master data Konversi Nilai</a> sesuai nilai di atas.</p>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="status">Status</label>
-                        <select id="status" name="status" class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                            <option value="scheduled">Terjadwal</option>
-                            <option value="completed">Selesai</option>
-                            <option value="failed">Gagal</option>
-                        </select>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="notes">Catatan</label>
-                        <textarea id="notes" name="notes" rows="3" class="w-full rounded-lg border border-slate-300 px-3 py-2"></textarea>
-                    </div>
+                    @include('munaqosahs.partials.fields', ['munaqosah' => null])
                     <button type="submit" class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Simpan</button>
                 </form>
             </div>
@@ -98,6 +49,7 @@
                                 <th class="py-3 pr-4">Nilai</th>
                                 <th class="py-3 pr-4">Hasil</th>
                                 <th class="py-3 pr-4">Keterangan</th>
+                                <th class="py-3"><span class="sr-only">Aksi</span></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -108,10 +60,11 @@
                                     <td class="py-3 pr-4">{{ $munaqosah->score ?? '-' }}</td>
                                     <td class="py-3 pr-4">{{ $munaqosah->result ?? '-' }}</td>
                                     <td class="py-3 pr-4 text-slate-500">{{ $munaqosah->grade_description ?? '-' }}</td>
+                                    <td class="py-3 text-right">@if (\App\Support\Access::can('manage-munaqosah'))<a href="{{ route('munaqosahs.edit', $munaqosah) }}" class="text-xs font-semibold text-amber-600 hover:text-amber-700">Edit</a>@endif</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="py-6 text-center text-slate-500">Belum ada munaqosah.</td>
+                                    <td colspan="6" class="py-6 text-center text-slate-500">Belum ada munaqosah.</td>
                                 </tr>
                             @endforelse
                         </tbody>

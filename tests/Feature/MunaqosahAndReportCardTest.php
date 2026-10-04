@@ -4,13 +4,17 @@ namespace Tests\Feature;
 
 use App\Models\AcademicYear;
 use App\Models\Generus;
+use App\Models\GenerusAssignment;
 use App\Models\GradeScale;
+use App\Models\Group;
 use App\Models\Munaqosah;
 use App\Models\Permission;
+use App\Models\Region;
 use App\Models\ReportCard;
 use App\Models\Role;
 use App\Models\Semester;
 use App\Models\User;
+use App\Models\Village;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -159,6 +163,190 @@ class MunaqosahAndReportCardTest extends TestCase
 
         $this->assertSame('A', $munaqosah->result);
         $this->assertSame('Generus memahami materi dan mampu mempraktikkannya dengan sempurna.', $munaqosah->grade_description);
+    }
+
+    public function test_duplicate_munaqosah_for_same_generus_semester_and_type_is_rejected(): void
+    {
+        $user = $this->createAdminWithPermission('manage-munaqosah');
+        $academicYear = AcademicYear::create([
+            'name' => '2025/2026',
+            'code' => '2025-2026',
+            'start_year' => 2025,
+            'end_year' => 2026,
+            'is_active' => true,
+        ]);
+        $semester = Semester::create([
+            'academic_year_id' => $academicYear->id,
+            'name' => 'Semester Ganjil',
+            'code' => 'G',
+            'sort_order' => 1,
+            'is_active' => true,
+        ]);
+        $generus = $this->createGenerus();
+
+        Munaqosah::create([
+            'generus_id' => $generus->id,
+            'academic_year_id' => $academicYear->id,
+            'semester_id' => $semester->id,
+            'title' => 'Munaqosah Semester Ganjil',
+            'type' => 'semester-final',
+            'status' => 'completed',
+        ]);
+
+        $this->actingAs($user)
+            ->from('/munaqosahs')
+            ->post('/munaqosahs', [
+                'generus_id' => $generus->id,
+                'academic_year_id' => $academicYear->id,
+                'semester_id' => $semester->id,
+                'title' => 'Munaqosah Susulan',
+                'type' => 'semester-final',
+                'status' => 'completed',
+            ])
+            ->assertRedirect('/munaqosahs')
+            ->assertSessionHasErrors(['generus_id' => 'Generus ini sudah memiliki munaqosah untuk tahun ajaran, semester, dan tipe tersebut.']);
+
+        $this->assertDatabaseCount('munaqosahs', 1);
+    }
+
+    public function test_munaqosah_can_be_updated_and_deleted(): void
+    {
+        $user = $this->createAdminWithPermission('manage-munaqosah');
+        $academicYear = AcademicYear::create([
+            'name' => '2025/2026',
+            'code' => '2025-2026',
+            'start_year' => 2025,
+            'end_year' => 2026,
+            'is_active' => true,
+        ]);
+        $semester = Semester::create([
+            'academic_year_id' => $academicYear->id,
+            'name' => 'Semester Ganjil',
+            'code' => 'G',
+            'sort_order' => 1,
+            'is_active' => true,
+        ]);
+        $generus = $this->createGenerus();
+        $munaqosah = Munaqosah::create([
+            'generus_id' => $generus->id,
+            'academic_year_id' => $academicYear->id,
+            'semester_id' => $semester->id,
+            'title' => 'Munaqosah Semester Ganjil',
+            'type' => 'semester-final',
+            'status' => 'scheduled',
+        ]);
+
+        $this->actingAs($user)->get("/munaqosahs/{$munaqosah->id}/edit")->assertOk();
+
+        $this->actingAs($user)
+            ->put("/munaqosahs/{$munaqosah->id}", [
+                'generus_id' => $generus->id,
+                'academic_year_id' => $academicYear->id,
+                'semester_id' => $semester->id,
+                'title' => 'Munaqosah Semester Ganjil',
+                'type' => 'semester-final',
+                'status' => 'completed',
+                'score' => 70,
+            ])
+            ->assertRedirect('/munaqosahs')
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('munaqosahs', ['id' => $munaqosah->id, 'status' => 'completed', 'score' => 70]);
+
+        $this->actingAs($user)
+            ->delete("/munaqosahs/{$munaqosah->id}")
+            ->assertRedirect('/munaqosahs');
+
+        $this->assertModelMissing($munaqosah);
+    }
+
+    public function test_group_scoped_user_can_fill_munaqosah_batch_for_their_own_group_only(): void
+    {
+        $role = Role::create(['name' => 'Pelaksana Kelompok', 'slug' => 'pelaksana-kelompok', 'is_active' => true]);
+        $role->permissions()->attach(Permission::create([
+            'name' => 'Manage Munaqosah',
+            'slug' => 'manage-munaqosah',
+            'module' => 'munaqosah',
+            'is_active' => true,
+        ])->id);
+
+        $region = Region::create(['name' => 'Daerah Test', 'code' => 'RT', 'slug' => 'daerah-test', 'is_active' => true]);
+        $village = Village::create(['region_id' => $region->id, 'name' => 'Desa A', 'code' => 'DA', 'slug' => 'desa-a', 'is_active' => true]);
+        $ownGroup = Group::create(['village_id' => $village->id, 'name' => 'Kelompok 1', 'code' => 'K1', 'slug' => 'kelompok-1', 'is_active' => true]);
+        $otherGroup = Group::create(['village_id' => $village->id, 'name' => 'Kelompok 2', 'code' => 'K2', 'slug' => 'kelompok-2', 'is_active' => true]);
+
+        $user = User::create(['name' => 'Pelaksana', 'email' => 'pelaksana@ppg.test', 'password' => Hash::make('password123'), 'status' => 'active']);
+        $user->assignRole($role->id, 'group', $ownGroup->id);
+
+        GradeScale::create([
+            'grade' => 'A',
+            'min_score' => 90,
+            'max_score' => 100,
+            'description' => 'Sangat baik.',
+            'sort_order' => 1,
+            'is_active' => true,
+        ]);
+
+        $academicYear = AcademicYear::create([
+            'name' => '2025/2026',
+            'code' => '2025-2026',
+            'start_year' => 2025,
+            'end_year' => 2026,
+            'is_active' => true,
+        ]);
+        $semester = Semester::create([
+            'academic_year_id' => $academicYear->id,
+            'name' => 'Semester Ganjil',
+            'code' => 'G',
+            'sort_order' => 1,
+            'is_active' => true,
+        ]);
+
+        $ownGenerus = Generus::create(['registration_number' => 'PPG-OWN-001', 'full_name' => 'Generus Kelompok Sendiri', 'status' => 'active']);
+        GenerusAssignment::create(['generus_id' => $ownGenerus->id, 'region_id' => $region->id, 'village_id' => $village->id, 'group_id' => $ownGroup->id]);
+
+        $otherGenerus = Generus::create(['registration_number' => 'PPG-OTHER-001', 'full_name' => 'Generus Kelompok Lain', 'status' => 'active']);
+        GenerusAssignment::create(['generus_id' => $otherGenerus->id, 'region_id' => $region->id, 'village_id' => $village->id, 'group_id' => $otherGroup->id]);
+
+        $batchResponse = $this->actingAs($user)->get('/munaqosahs/batch?group_id='.$ownGroup->id.'&academic_year_id='.$academicYear->id.'&semester_id='.$semester->id.'&type=semester-final');
+        $batchResponse->assertOk();
+        $batchResponse->assertSee('Generus Kelompok Sendiri');
+        $batchResponse->assertDontSee('Generus Kelompok Lain');
+
+        $this->actingAs($user)
+            ->post('/munaqosahs/batch', [
+                'group_id' => $ownGroup->id,
+                'academic_year_id' => $academicYear->id,
+                'semester_id' => $semester->id,
+                'type' => 'semester-final',
+                'title' => 'Munaqosah Semester Ganjil',
+                'scores' => [
+                    $ownGenerus->id => ['score' => 95, 'status' => 'completed'],
+                ],
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('munaqosahs', [
+            'generus_id' => $ownGenerus->id,
+            'score' => 95,
+            'result' => 'A',
+            'grade_description' => 'Sangat baik.',
+        ]);
+
+        $this->actingAs($user)
+            ->post('/munaqosahs/batch', [
+                'group_id' => $otherGroup->id,
+                'academic_year_id' => $academicYear->id,
+                'semester_id' => $semester->id,
+                'type' => 'semester-final',
+                'title' => 'Munaqosah Semester Ganjil',
+                'scores' => [
+                    $otherGenerus->id => ['score' => 80, 'status' => 'completed'],
+                ],
+            ])
+            ->assertSessionHasErrors(['group_id']);
+
+        $this->assertDatabaseMissing('munaqosahs', ['generus_id' => $otherGenerus->id]);
     }
 
     public function test_second_report_card_for_same_generus_and_semester_is_rejected(): void

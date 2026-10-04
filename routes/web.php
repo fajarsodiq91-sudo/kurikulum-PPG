@@ -395,8 +395,18 @@ Route::middleware(['auth', 'permission:view-munaqosah,manage-munaqosah'])->group
 });
 
 Route::middleware(['auth', 'permission:manage-munaqosah'])->group(function () {
+    Route::get('/munaqosahs/batch', [MunaqosahController::class, 'batch'])
+        ->name('munaqosahs.batch');
+    Route::post('/munaqosahs/batch', [MunaqosahController::class, 'saveBatch'])
+        ->name('munaqosahs.batch.save');
     Route::post('/munaqosahs', [MunaqosahController::class, 'store'])
         ->name('munaqosahs.store');
+    Route::get('/munaqosahs/{munaqosah}/edit', [MunaqosahController::class, 'edit'])
+        ->name('munaqosahs.edit');
+    Route::put('/munaqosahs/{munaqosah}', [MunaqosahController::class, 'update'])
+        ->name('munaqosahs.update');
+    Route::delete('/munaqosahs/{munaqosah}', [MunaqosahController::class, 'destroy'])
+        ->name('munaqosahs.destroy');
 });
 
 Route::middleware(['auth', 'permission:view-report-cards,manage-report-cards'])->group(function () {

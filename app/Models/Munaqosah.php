@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Munaqosah extends Model
 {
+    public const MANAGE_PERMISSION = 'manage-munaqosah';
+
     protected $table = 'munaqosahs';
 
     protected $fillable = [
