@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AcademicYear;
 use App\Models\Group;
+use App\Models\Level;
 use App\Models\Permission;
 use App\Models\Region;
 use App\Models\Role;
@@ -45,7 +46,10 @@ class MasterDataTest extends TestCase
             'is_active' => true,
         ])->assertRedirect('/master-data/levels');
 
+        $level = Level::firstOrFail();
+
         $this->actingAs($user)->post('/master-data/class-grades', [
+            'level_id' => $level->id,
             'name' => 'Kelas 4',
             'code' => 'SD-4',
             'sort_order' => 4,

@@ -61,7 +61,8 @@ class MasterDataController extends Controller
     public function classGrades(): View
     {
         return view('master-data.class-grades', [
-            'classGrades' => ClassGrade::query()->orderBy('sort_order')->latest()->get(),
+            'classGrades' => ClassGrade::query()->with('level')->orderBy('sort_order')->latest()->get(),
+            'levels' => Level::query()->where('is_active', true)->orderBy('sort_order')->get(),
         ]);
     }
 
@@ -165,6 +166,7 @@ class MasterDataController extends Controller
     public function storeClassGrade(Request $request): RedirectResponse
     {
         $validated = $request->validate([
+            'level_id' => ['required', Rule::exists('levels', 'id')->where('is_active', true)],
             'name' => ['required', 'string', 'max:255'],
             'code' => ['required', 'string', 'max:50', 'unique:class_grades,code'],
             'sort_order' => ['required', 'integer', 'min:0'],
@@ -179,6 +181,7 @@ class MasterDataController extends Controller
     public function updateClassGrade(Request $request, ClassGrade $classGrade): RedirectResponse
     {
         $validated = $request->validate([
+            'level_id' => ['required', Rule::exists('levels', 'id')->where('is_active', true)],
             'name' => ['required', 'string', 'max:255'],
             'code' => ['required', 'string', 'max:50', Rule::unique('class_grades', 'code')->ignore($classGrade->id)],
             'sort_order' => ['required', 'integer', 'min:0'],

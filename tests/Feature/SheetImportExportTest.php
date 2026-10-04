@@ -76,13 +76,16 @@ class SheetImportExportTest extends TestCase
     {
         $this->importRows(new LevelSheet, [['name' => 'PAUD', 'code' => 'PD', 'sort_order' => '1']]);
         $this->importRows(new LevelSheet, [['name' => 'PAUD Baru', 'code' => 'PD', 'sort_order' => '2']]);
-        $this->importRows(new ClassGradeSheet, [['name' => 'Kelas 4', 'code' => 'SD-4']]);
+        $this->importRows(new ClassGradeSheet, [['name' => 'Kelas 4', 'code' => 'SD-4', 'level_code' => 'PD']]);
         $this->importRows(new AcademicYearSheet, [['name' => '2025/2026', 'code' => 'TA1', 'start_year' => '2025', 'end_year' => '2026']]);
 
         $this->assertSame(1, Level::count());
         $this->assertDatabaseHas('levels', ['code' => 'PD', 'name' => 'PAUD Baru', 'sort_order' => 2]);
-        $this->assertDatabaseHas('class_grades', ['code' => 'SD-4']);
+        $this->assertDatabaseHas('class_grades', ['code' => 'SD-4', 'level_id' => Level::firstOrFail()->id]);
         $this->assertDatabaseHas('academic_years', ['code' => 'TA1', 'start_year' => 2025]);
+
+        $errors = $this->importRows(new ClassGradeSheet, [['name' => 'Kelas 5', 'code' => 'SD-5', 'level_code' => 'TIDAK-ADA']]);
+        $this->assertSame(['row_2'], array_keys($errors));
 
         $errors = $this->importRows(new AcademicYearSheet, [['name' => 'Salah', 'code' => 'TA2', 'start_year' => '2026', 'end_year' => '2025']]);
         $this->assertSame(['row_2'], array_keys($errors));

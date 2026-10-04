@@ -13,7 +13,7 @@
     <div class="mb-6">
         <p class="text-sm font-semibold text-amber-600">Master Data</p>
         <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Kelas</h2>
-        <p class="mt-2 text-sm text-slate-500">Kelola daftar kelas untuk pilihan Kelas Sekolah dan Kelas KBM pada data generus.</p>
+        <p class="mt-2 text-sm text-slate-500">Kelola daftar kelas untuk pilihan Kelas Sekolah dan Kelas KBM pada data generus. Setiap kelas harus dikaitkan dengan satu jenjang.</p>
     </div>
 
     @if (session('success'))
@@ -23,6 +23,12 @@
         <div class="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
             <p class="font-semibold">Data belum dapat disimpan.</p>
             <ul class="mt-2 list-inside list-disc">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
+        </div>
+    @endif
+
+    @if ($levels->isEmpty() && \App\Support\Access::can('manage-master-data'))
+        <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+            Belum ada jenjang aktif. <a href="{{ route('master-data.levels.index') }}" class="font-semibold underline">Tambahkan jenjang</a> terlebih dahulu sebelum membuat kelas.
         </div>
     @endif
 
@@ -37,6 +43,12 @@
 <form method="POST" action="{{ route('master-data.class-grades.store') }}" class="mt-4">
             @csrf
             <div class="grid gap-3 sm:grid-cols-2">
+                <select class="{{ $inputClass }} sm:col-span-2" name="level_id" required>
+                    <option value="">-- Pilih Jenjang --</option>
+                    @foreach ($levels as $level)
+                        <option value="{{ $level->id }}">{{ $level->name }}</option>
+                    @endforeach
+                </select>
                 <input class="{{ $inputClass }}" name="name" placeholder="Nama kelas, contoh Kelas 4" required>
                 <input class="{{ $inputClass }}" name="code" placeholder="Kode kelas" required>
                 <input class="{{ $inputClass }}" name="sort_order" type="number" min="0" value="0" placeholder="Urutan" required>
@@ -49,7 +61,7 @@
             @foreach ($classGrades as $classGrade)
                 <details class="border-t border-slate-100 pt-2">
                     <summary class="flex cursor-pointer list-none justify-between">
-                        <span>{{ $classGrade->name }} <span class="text-slate-400">({{ $classGrade->code }})</span></span>
+                        <span>{{ $classGrade->name }} <span class="text-slate-400">({{ $classGrade->code }})</span> <span class="text-slate-400">· {{ $classGrade->level?->name ?? 'Belum ada jenjang' }}</span></span>
                         <span class="flex items-center gap-3"><span>{{ $classGrade->is_active ? 'Aktif' : 'Nonaktif' }}</span>@if (\App\Support\Access::can('manage-master-data'))<span class="text-amber-600 underline">Edit</span>@endif</span>
                     </summary>
                     @if (\App\Support\Access::can('manage-master-data'))
@@ -57,6 +69,12 @@
                         @csrf
                         @method('PUT')
                         <div class="grid gap-3 sm:grid-cols-2">
+                            <select class="{{ $inputClass }} sm:col-span-2" name="level_id" required>
+                                <option value="">-- Pilih Jenjang --</option>
+                                @foreach ($levels as $level)
+                                    <option value="{{ $level->id }}" @selected($classGrade->level_id === $level->id)>{{ $level->name }}</option>
+                                @endforeach
+                            </select>
                             <input class="{{ $inputClass }}" name="name" value="{{ $classGrade->name }}" required>
                             <input class="{{ $inputClass }}" name="code" value="{{ $classGrade->code }}" required>
                             <input class="{{ $inputClass }}" name="sort_order" type="number" min="0" value="{{ $classGrade->sort_order }}" required>
