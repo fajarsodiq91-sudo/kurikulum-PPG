@@ -54,7 +54,7 @@
                 <details class="border-t border-slate-100 pt-2">
                     <summary class="flex cursor-pointer list-none justify-between">
                         <span>{{ $gradeScale->grade }} <span class="text-slate-400">({{ $gradeScale->min_score }}-{{ $gradeScale->max_score }})</span></span>
-                        <span class="flex items-center gap-3"><span>{{ $gradeScale->is_active ? 'Aktif' : 'Nonaktif' }}</span>@if (\App\Support\Access::can('manage-master-data'))<span class="text-amber-600 underline">Edit</span>@endif</span>
+                        <span class="flex items-center gap-3"><span>{{ $gradeScale->is_active ? 'Aktif' : 'Nonaktif' }}</span>@if (\App\Support\Access::can('manage-master-data'))<span class="text-amber-600" title="Edit" aria-label="Edit"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg></span>@endif</span>
                     </summary>
                     <p class="mt-2 text-slate-500">{{ $gradeScale->description ?? '-' }}</p>
                     @if (\App\Support\Access::can('manage-master-data'))
