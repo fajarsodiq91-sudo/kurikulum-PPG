@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\AcademicYear;
 use App\Models\Generus;
+use App\Models\GradeScale;
+use App\Models\Munaqosah;
 use App\Models\Permission;
 use App\Models\ReportCard;
 use App\Models\Role;
@@ -110,6 +112,53 @@ class MunaqosahAndReportCardTest extends TestCase
             'predicate' => 'A',
             'remarks' => 'Sangat baik',
         ]);
+    }
+
+    public function test_munaqosah_score_is_converted_to_grade_using_master_data_scale(): void
+    {
+        $user = $this->createAdminWithPermission('manage-munaqosah');
+
+        GradeScale::create([
+            'grade' => 'A',
+            'min_score' => 96,
+            'max_score' => 100,
+            'description' => 'Generus memahami materi dan mampu mempraktikkannya dengan sempurna.',
+            'sort_order' => 1,
+            'is_active' => true,
+        ]);
+
+        $academicYear = AcademicYear::create([
+            'name' => '2025/2026',
+            'code' => '2025-2026',
+            'start_year' => 2025,
+            'end_year' => 2026,
+            'is_active' => true,
+        ]);
+        $semester = Semester::create([
+            'academic_year_id' => $academicYear->id,
+            'name' => 'Semester Ganjil',
+            'code' => 'G',
+            'sort_order' => 1,
+            'is_active' => true,
+        ]);
+        $generus = $this->createGenerus();
+
+        $this->actingAs($user)
+            ->post('/munaqosahs', [
+                'generus_id' => $generus->id,
+                'academic_year_id' => $academicYear->id,
+                'semester_id' => $semester->id,
+                'title' => 'Munaqosah Semester Ganjil',
+                'type' => 'semester-final',
+                'score' => 98,
+                'status' => 'completed',
+            ])
+            ->assertRedirect('/munaqosahs');
+
+        $munaqosah = Munaqosah::firstOrFail();
+
+        $this->assertSame('A', $munaqosah->result);
+        $this->assertSame('Generus memahami materi dan mampu mempraktikkannya dengan sempurna.', $munaqosah->grade_description);
     }
 
     public function test_second_report_card_for_same_generus_and_semester_is_rejected(): void

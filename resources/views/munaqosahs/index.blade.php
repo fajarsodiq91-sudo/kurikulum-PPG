@@ -66,8 +66,9 @@
                         <input id="score" name="score" type="number" step="0.01" class="w-full rounded-lg border border-slate-300 px-3 py-2">
                     </div>
                     <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="result">Hasil</label>
-                        <input id="result" name="result" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                        <label class="block text-sm font-medium mb-2" for="result">Hasil (huruf)</label>
+                        <input id="result" name="result" type="text" placeholder="Kosongkan untuk konversi otomatis dari nilai" class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                        <p class="mt-1 text-xs text-slate-500">Jika dikosongkan, huruf dan keterangan diambil otomatis dari <a href="{{ route('master-data.grade-scales.index') }}" class="text-amber-600 underline">master data Konversi Nilai</a> sesuai nilai di atas.</p>
                     </div>
                     <div class="mb-4">
                         <label class="block text-sm font-medium mb-2" for="status">Status</label>
@@ -94,7 +95,9 @@
                             <tr class="border-b border-slate-200">
                                 <th class="py-3 pr-4">Generus</th>
                                 <th class="py-3 pr-4">Judul</th>
+                                <th class="py-3 pr-4">Nilai</th>
                                 <th class="py-3 pr-4">Hasil</th>
+                                <th class="py-3 pr-4">Keterangan</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -102,11 +105,13 @@
                                 <tr class="border-b border-slate-100">
                                     <td class="py-3 pr-4">{{ $munaqosah->generus?->full_name ?? '-' }}</td>
                                     <td class="py-3 pr-4">{{ $munaqosah->title }}</td>
+                                    <td class="py-3 pr-4">{{ $munaqosah->score ?? '-' }}</td>
                                     <td class="py-3 pr-4">{{ $munaqosah->result ?? '-' }}</td>
+                                    <td class="py-3 pr-4 text-slate-500">{{ $munaqosah->grade_description ?? '-' }}</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="3" class="py-6 text-center text-slate-500">Belum ada munaqosah.</td>
+                                    <td colspan="5" class="py-6 text-center text-slate-500">Belum ada munaqosah.</td>
                                 </tr>
                             @endforelse
                         </tbody>

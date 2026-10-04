@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AcademicYear;
 use App\Models\Generus;
+use App\Models\GradeScale;
 use App\Models\Munaqosah;
 use App\Models\Semester;
 use App\Support\StudentScope;
@@ -37,9 +38,30 @@ class MunaqosahController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
-        Munaqosah::create($validated);
+        Munaqosah::create($this->applyGradeScale($validated));
 
         return redirect()->route('munaqosahs.index')->with('success', 'Munaqosah berhasil ditambahkan.');
+    }
+
+    /**
+     * Fills in the letter grade and its description from the score when the result was left blank.
+     *
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    private function applyGradeScale(array $validated): array
+    {
+        if (blank($validated['result'] ?? null) && filled($validated['score'] ?? null)) {
+            $scale = GradeScale::resolve((float) $validated['score']);
+
+            if ($scale) {
+                $validated['result'] = $scale->grade;
+                $validated['grade_scale_id'] = $scale->id;
+                $validated['grade_description'] = $scale->description;
+            }
+        }
+
+        return $validated;
     }
 
     private function studentIds(): ?array

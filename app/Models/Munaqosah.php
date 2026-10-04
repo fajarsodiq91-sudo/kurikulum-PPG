@@ -17,6 +17,8 @@ class Munaqosah extends Model
         'type',
         'score',
         'result',
+        'grade_scale_id',
+        'grade_description',
         'status',
         'notes',
     ];
@@ -24,6 +26,11 @@ class Munaqosah extends Model
     public function generus(): BelongsTo
     {
         return $this->belongsTo(Generus::class);
+    }
+
+    public function gradeScale(): BelongsTo
+    {
+        return $this->belongsTo(GradeScale::class);
     }
 
     public function academicYear(): BelongsTo

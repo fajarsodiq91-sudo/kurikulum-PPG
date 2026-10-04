@@ -144,14 +144,16 @@ Route::middleware(['auth', 'permission:view-master-data'])->group(function () {
         ->name('master-data.academic-years.index');
     Route::get('/master-data/semesters', [MasterDataController::class, 'semesters'])
         ->name('master-data.semesters.index');
+    Route::get('/master-data/grade-scales', [MasterDataController::class, 'gradeScales'])
+        ->name('master-data.grade-scales.index');
 });
 
 Route::middleware(['auth', 'permission:manage-master-data'])->group(function () {
     Route::get('/master-data/{page}/export', [MasterDataController::class, 'export'])
-        ->whereIn('page', ['villages', 'groups', 'levels', 'class-grades', 'academic-years', 'semesters'])
+        ->whereIn('page', ['villages', 'groups', 'levels', 'class-grades', 'academic-years', 'semesters', 'grade-scales'])
         ->name('master-data.export');
     Route::post('/master-data/{page}/import', [MasterDataController::class, 'import'])
-        ->whereIn('page', ['villages', 'groups', 'levels', 'class-grades', 'academic-years', 'semesters'])
+        ->whereIn('page', ['villages', 'groups', 'levels', 'class-grades', 'academic-years', 'semesters', 'grade-scales'])
         ->name('master-data.import');
     Route::post('/master-data/villages', [MasterDataController::class, 'storeVillage'])
         ->name('master-data.villages.store');
@@ -177,6 +179,10 @@ Route::middleware(['auth', 'permission:manage-master-data'])->group(function () 
         ->name('master-data.semesters.store');
     Route::put('/master-data/semesters/{semester}', [MasterDataController::class, 'updateSemester'])
         ->name('master-data.semesters.update');
+    Route::post('/master-data/grade-scales', [MasterDataController::class, 'storeGradeScale'])
+        ->name('master-data.grade-scales.store');
+    Route::put('/master-data/grade-scales/{gradeScale}', [MasterDataController::class, 'updateGradeScale'])
+        ->name('master-data.grade-scales.update');
 });
 
 // Publicly reachable, read-only for anonymous visitors covered by the guest role permissions.

@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\HandlesSheets;
 use App\Http\Controllers\Controller;
 use App\Models\AcademicYear;
 use App\Models\ClassGrade;
+use App\Models\GradeScale;
 use App\Models\Group;
 use App\Models\Level;
 use App\Models\Region;
@@ -13,6 +14,7 @@ use App\Models\Semester;
 use App\Models\Village;
 use App\Support\Sheets\AcademicYearSheet;
 use App\Support\Sheets\ClassGradeSheet;
+use App\Support\Sheets\GradeScaleSheet;
 use App\Support\Sheets\GroupSheet;
 use App\Support\Sheets\LevelSheet;
 use App\Support\Sheets\SemesterSheet;
@@ -78,6 +80,13 @@ class MasterDataController extends Controller
         return view('master-data.semesters', [
             'academicYears' => AcademicYear::query()->latest()->get(),
             'semesters' => Semester::query()->with('academicYear')->orderBy('sort_order')->latest()->get(),
+        ]);
+    }
+
+    public function gradeScales(): View
+    {
+        return view('master-data.grade-scales', [
+            'gradeScales' => GradeScale::query()->orderBy('sort_order')->orderByDesc('min_score')->get(),
         ]);
     }
 
@@ -249,6 +258,36 @@ class MasterDataController extends Controller
         return $this->success('Semester berhasil diperbarui.', 'semesters');
     }
 
+    public function storeGradeScale(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'grade' => ['required', 'string', 'max:10', 'unique:grade_scales,grade'],
+            'min_score' => ['required', 'integer', 'min:0', 'max:100'],
+            'max_score' => ['required', 'integer', 'min:0', 'max:100', 'gte:min_score'],
+            'description' => ['nullable', 'string'],
+            'sort_order' => ['required', 'integer', 'min:0'],
+            'is_active' => ['required', 'boolean'],
+        ]);
+        GradeScale::create($validated);
+
+        return $this->success('Konversi nilai berhasil ditambahkan.', 'grade-scales');
+    }
+
+    public function updateGradeScale(Request $request, GradeScale $gradeScale): RedirectResponse
+    {
+        $validated = $request->validate([
+            'grade' => ['required', 'string', 'max:10', Rule::unique('grade_scales', 'grade')->ignore($gradeScale->id)],
+            'min_score' => ['required', 'integer', 'min:0', 'max:100'],
+            'max_score' => ['required', 'integer', 'min:0', 'max:100', 'gte:min_score'],
+            'description' => ['nullable', 'string'],
+            'sort_order' => ['required', 'integer', 'min:0'],
+            'is_active' => ['required', 'boolean'],
+        ]);
+        $gradeScale->update($validated);
+
+        return $this->success('Konversi nilai berhasil diperbarui.', 'grade-scales');
+    }
+
     public function export(string $page): BinaryFileResponse
     {
         return $this->exportSheet($this->sheetFor($page));
@@ -268,6 +307,7 @@ class MasterDataController extends Controller
             'class-grades' => new ClassGradeSheet,
             'academic-years' => new AcademicYearSheet,
             'semesters' => new SemesterSheet,
+            'grade-scales' => new GradeScaleSheet,
             default => abort(404),
         };
     }
