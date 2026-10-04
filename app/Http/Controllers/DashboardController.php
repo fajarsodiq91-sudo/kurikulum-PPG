@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Announcement;
 use App\Models\Generus;
 use App\Models\Group;
 use App\Models\LearningSession;
@@ -27,6 +28,7 @@ class DashboardController extends Controller
             'learningSessionCount' => LearningSession::count(),
             'munaqosahCount' => Munaqosah::count(),
             'trainingCount' => Training::query()->where('status', 'active')->count(),
+            'announcements' => Announcement::published()->with('author')->latest('published_at')->take(5)->get(),
         ]);
     }
 

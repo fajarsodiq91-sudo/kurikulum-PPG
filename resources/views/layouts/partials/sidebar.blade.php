@@ -69,6 +69,7 @@
             ['label' => 'Komunikasi', 'permission' => ['view-communication', 'manage-communication'], 'icon' => '✉', 'items' => [
                 ['label' => 'Pesan dan Riwayat', 'route' => 'communications.index'],
             ]],
+            ['label' => 'Berita', 'permission' => ['view-announcements', 'manage-announcements'], 'route' => 'announcements.index', 'icon' => '❖'],
             ['label' => 'Laporan', 'permission' => 'view-reports', 'route' => 'reports.index', 'icon' => '▤'],
             ['label' => 'Tutorial', 'route' => 'tutorial', 'icon' => '?'],
         ];

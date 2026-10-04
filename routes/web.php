@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ActivityExecutionController;
 use App\Http\Controllers\ActivityScheduleController;
+use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\AnnualAuditController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\Auth\LoginController;
@@ -57,6 +58,26 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['permission:view-dashboard'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
+});
+
+// Publicly reachable, read-only for anonymous visitors covered by the guest role permissions.
+Route::middleware(['permission:view-announcements,manage-announcements'])->group(function () {
+    Route::get('/announcements', [AnnouncementController::class, 'index'])
+        ->name('announcements.index');
+});
+
+Route::middleware(['auth', 'permission:manage-announcements'])->group(function () {
+    Route::post('/announcements', [AnnouncementController::class, 'store'])
+        ->name('announcements.store');
+    Route::get('/announcements/{announcement}/edit', [AnnouncementController::class, 'edit'])
+        ->whereNumber('announcement')
+        ->name('announcements.edit');
+    Route::put('/announcements/{announcement}', [AnnouncementController::class, 'update'])
+        ->whereNumber('announcement')
+        ->name('announcements.update');
+    Route::delete('/announcements/{announcement}', [AnnouncementController::class, 'destroy'])
+        ->whereNumber('announcement')
+        ->name('announcements.destroy');
 });
 
 Route::middleware(['auth', 'permission:manage-users'])->group(function () {

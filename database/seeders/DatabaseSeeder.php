@@ -57,6 +57,7 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Manage Activity Executions', 'slug' => 'manage-activity-executions', 'module' => 'activity'],
             ['name' => 'Manage My Students', 'slug' => 'manage-my-students', 'module' => 'teachers'],
             ['name' => 'Manage Parent Communications', 'slug' => 'manage-parent-communications', 'module' => 'parent-communications'],
+            ['name' => 'Manage Announcements', 'slug' => 'manage-announcements', 'module' => 'announcements'],
         ])->map(fn (array $permission) => Permission::updateOrCreate(
             ['slug' => $permission['slug']],
             [...$permission, 'is_active' => true],
@@ -82,6 +83,13 @@ class DatabaseSeeder extends Seeder
             $permissions->firstWhere('slug', 'view-teachers')->id,
             $permissions->firstWhere('slug', 'view-guardians')->id,
         ]);
+
+        $viewAnnouncements = Permission::firstOrCreate(
+            ['slug' => 'view-announcements'],
+            ['name' => 'View Announcements', 'module' => 'announcements', 'is_active' => true],
+        );
+
+        $guestRole->permissions()->syncWithoutDetaching([$viewAnnouncements->id]);
 
         $admin = User::updateOrCreate(
             ['email' => 'admin@ppg.test'],

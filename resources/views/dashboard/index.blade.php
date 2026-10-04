@@ -5,6 +5,36 @@
 @section('breadcrumb', 'Dashboard Utama')
 
 @section('content')
+    @if ($announcements->isNotEmpty())
+        <section class="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="flex items-center justify-between gap-4">
+                <h2 class="font-bold text-slate-950">Berita &amp; Pengumuman</h2>
+                @if (\App\Support\Access::can('manage-announcements'))
+                    <a href="{{ route('announcements.index') }}" class="text-sm font-semibold text-brand-700 hover:text-brand-900">Kelola berita</a>
+                @endif
+            </div>
+            <div class="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                @foreach ($announcements as $announcement)
+                    <article class="rounded-xl border border-slate-200 p-4 {{ $announcement->template === 'highlight' ? 'bg-amber-50 border-amber-200' : '' }}">
+                        @if ($announcement->image && $announcement->template !== 'image-left')
+                            <img src="{{ $announcement->imageUrl() }}" alt="{{ $announcement->title }}" class="mb-3 h-32 w-full rounded-lg object-cover">
+                        @endif
+                        <div class="flex gap-3">
+                            @if ($announcement->image && $announcement->template === 'image-left')
+                                <img src="{{ $announcement->imageUrl() }}" alt="{{ $announcement->title }}" class="h-16 w-16 shrink-0 rounded-lg object-cover">
+                            @endif
+                            <div>
+                                <p class="font-semibold text-slate-900">{{ $announcement->title }}</p>
+                                <p class="mt-1 text-xs text-slate-400">{{ $announcement->published_at?->translatedFormat('d M Y') }} · {{ $announcement->author?->name ?? 'Sistem' }}</p>
+                            </div>
+                        </div>
+                        <p class="mt-3 whitespace-pre-line text-sm text-slate-600">{{ \Illuminate\Support\Str::limit($announcement->body, 160) }}</p>
+                    </article>
+                @endforeach
+            </div>
+        </section>
+    @endif
+
     @guest
         <div class="mb-6 flex flex-col justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:flex-row sm:items-center">
             <p class="text-sm text-amber-800">Anda melihat dashboard sebagai <strong>Tamu</strong> dengan akses baca-saja. Masuk untuk mengelola data sesuai peran Anda.</p>

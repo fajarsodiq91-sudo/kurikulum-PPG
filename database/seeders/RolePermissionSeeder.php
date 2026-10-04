@@ -21,7 +21,7 @@ class RolePermissionSeeder extends Seeder
         'curriculum', 'learning-materials', 'learning-sessions', 'learning-attendance', 'evaluations',
         'training', 'communication', 'munaqosah', 'report-cards', 'follow-ups', 'progress-tracking',
         'milestones', 'annual-audit', 'organization-units', 'assignments', 'activity-schedules',
-        'activity-executions',
+        'activity-executions', 'announcements',
     ];
 
     /**
@@ -57,7 +57,7 @@ class RolePermissionSeeder extends Seeder
         $viewPermissions = Permission::where('slug', 'like', 'view-%')->pluck('slug');
         $forVillage = $viewPermissions->reject(fn (string $slug): bool => $slug === 'view-master-data')->values();
 
-        $this->syncRole('ppg', 'PPG', 'Melihat semua data (baca-saja)', $viewPermissions->all());
+        $this->syncRole('ppg', 'PPG', 'Melihat semua data (baca-saja)', [...$viewPermissions->all(), 'manage-announcements']);
         $this->syncRole('perwakilan-ppg-desa', 'Perwakilan PPG Desa', 'Melihat data di desanya dan mengisi daftar hadir KBM tingkat desa', [...$forVillage->all(), ...self::VILLAGE_MANAGE]);
         $this->syncRole('pelaksana-ppg-kelompok', 'Pelaksana PPG Kelompok', 'Mengelola seluruh data di tingkat kelompok', [...$forVillage->all(), ...self::GROUP_MANAGE]);
 
