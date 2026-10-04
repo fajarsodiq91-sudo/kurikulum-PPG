@@ -37,18 +37,18 @@
                     <span class="flex-1 bg-[#2f7dc0]"></span>
                 </div>
 
-                <div class="flex flex-1 flex-col items-center px-[3mm] pt-[3mm] text-center">
-                    <div class="h-[30mm] w-[22.5mm] overflow-hidden rounded-[1.5mm] bg-slate-100 ring-[0.6mm] ring-[#0b6fae]">
+                <div class="flex flex-1 flex-col items-center justify-center gap-[3mm] px-[4mm] text-center">
+                    <div class="h-[32mm] w-[24mm] overflow-hidden rounded-[1.5mm] bg-slate-100 ring-[0.6mm] ring-[#0b6fae]">
                         @if ($photoDataUri)
                             <img src="{{ $photoDataUri }}" alt="Foto {{ $name }}" class="size-full object-cover">
                         @else
                             <div class="flex size-full items-center justify-center text-[8mm] font-bold text-slate-300">{{ \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($name, 0, 1)) }}</div>
                         @endif
                     </div>
-                    <p class="mt-[2mm] line-clamp-2 text-[2.9mm] font-bold uppercase leading-tight text-slate-900">{{ $name }}</p>
 
-                    <img src="{{ $qrCode }}" alt="QR Code nomor induk {{ $registrationNumber }}" class="mt-auto size-[20mm]">
-                    <p class="mb-[2.5mm] font-mono text-[2.4mm] font-semibold tracking-wider text-slate-700">{{ $registrationNumber }}</p>
+                    <p class="font-mono text-[3.2mm] font-bold tracking-wider text-slate-800">{{ $registrationNumber }}</p>
+
+                    <p class="line-clamp-2 text-[2.9mm] font-bold uppercase leading-tight text-slate-900">{{ $name }}</p>
                 </div>
             </article>
             <figcaption class="text-xs font-medium text-slate-500 print:hidden">Depan</figcaption>
@@ -56,8 +56,9 @@
 
         <figure class="flex flex-col items-center gap-2">
             <article class="id-card relative flex flex-col overflow-hidden rounded-[3mm] bg-white shadow-lg ring-1 ring-slate-200 print:shadow-none">
-                <div class="flex flex-1 items-center justify-center p-[5mm]">
-                    <img src="{{ asset('images/logo-ppg-karawang-timur.png') }}" alt="Logo PPG Karawang Timur" class="w-full">
+                <div class="flex flex-1 flex-col items-center justify-center gap-[2mm] p-[5mm]">
+                    <img src="{{ $qrCode }}" alt="QR Code nomor induk {{ $registrationNumber }}" class="size-[36mm]">
+                    <p class="font-mono text-[2.8mm] font-semibold tracking-wider text-slate-700">{{ $registrationNumber }}</p>
                 </div>
                 <div class="flex h-[2.5mm]">
                     <span class="flex-1 bg-[#1e9a4a]"></span>
