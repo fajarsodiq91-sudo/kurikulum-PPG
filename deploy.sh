@@ -10,6 +10,12 @@ php artisan package:discover --ansi
 npm ci
 npm run build
 
+if ! grep -q "^APP_KEY=.\+" .env; then
+    php artisan key:generate --force
+fi
+
+mkdir -p public/storage
+
 php artisan migrate --force
 php artisan config:cache
 php artisan route:cache
