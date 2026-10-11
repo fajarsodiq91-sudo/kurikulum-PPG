@@ -6,6 +6,7 @@ echo "PHP binary: $(which php)"
 php -m | grep -i gd || echo "gd extension NOT loaded for this PHP binary"
 
 composer install --no-dev --optimize-autoloader --no-interaction
+php artisan package:discover --ansi
 npm ci
 npm run build
 
