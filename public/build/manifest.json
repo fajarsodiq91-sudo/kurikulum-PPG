@@ -1,0 +1,116 @@
+{
+  "_face-L80xeAKS.js": {
+    "file": "assets/face-L80xeAKS.js",
+    "name": "face",
+    "dynamicImports": [
+      "node_modules/@vladmandic/face-api/dist/face-api.esm.js"
+    ]
+  },
+  "_fonts-C9MNnjVw.css": {
+    "file": "assets/fonts-C9MNnjVw.css",
+    "src": "_fonts-C9MNnjVw.css"
+  },
+  "_instrument-sans-400-normal-D1W7dsQl.woff": {
+    "file": "assets/instrument-sans-400-normal-D1W7dsQl.woff",
+    "src": "_instrument-sans-400-normal-D1W7dsQl.woff"
+  },
+  "_instrument-sans-400-normal-DRC__1Mx.woff2": {
+    "file": "assets/instrument-sans-400-normal-DRC__1Mx.woff2",
+    "src": "_instrument-sans-400-normal-DRC__1Mx.woff2"
+  },
+  "_instrument-sans-500-normal-Dk9ku72i.woff2": {
+    "file": "assets/instrument-sans-500-normal-Dk9ku72i.woff2",
+    "src": "_instrument-sans-500-normal-Dk9ku72i.woff2"
+  },
+  "_instrument-sans-500-normal-Z6ESRlEs.woff": {
+    "file": "assets/instrument-sans-500-normal-Z6ESRlEs.woff",
+    "src": "_instrument-sans-500-normal-Z6ESRlEs.woff"
+  },
+  "_instrument-sans-600-normal-B7fBEWYG.woff2": {
+    "file": "assets/instrument-sans-600-normal-B7fBEWYG.woff2",
+    "src": "_instrument-sans-600-normal-B7fBEWYG.woff2"
+  },
+  "_instrument-sans-600-normal-B9e8oLYv.woff": {
+    "file": "assets/instrument-sans-600-normal-B9e8oLYv.woff",
+    "src": "_instrument-sans-600-normal-B9e8oLYv.woff"
+  },
+  "_rolldown-runtime-W7wSyTde.js": {
+    "file": "assets/rolldown-runtime-W7wSyTde.js",
+    "name": "rolldown-runtime"
+  },
+  "node_modules/@vladmandic/face-api/dist/face-api.esm.js": {
+    "file": "assets/face-api.esm-BfeRxDpJ.js",
+    "name": "face-api.esm",
+    "src": "node_modules/@vladmandic/face-api/dist/face-api.esm.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_rolldown-runtime-W7wSyTde.js"
+    ]
+  },
+  "node_modules/html5-qrcode/esm/index.js": {
+    "file": "assets/esm-Czk3mucb.js",
+    "name": "esm",
+    "src": "node_modules/html5-qrcode/esm/index.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_rolldown-runtime-W7wSyTde.js"
+    ]
+  },
+  "resources/css/app.css": {
+    "file": "assets/app-DdfPfMO5.css",
+    "name": "app",
+    "names": [
+      "app.css"
+    ],
+    "src": "resources/css/app.css",
+    "isEntry": true
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-C3pzVE_Y.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true
+  },
+  "resources/js/attendance-scanner.js": {
+    "file": "assets/attendance-scanner-o_PjZa4s.js",
+    "name": "attendance-scanner",
+    "src": "resources/js/attendance-scanner.js",
+    "isEntry": true,
+    "imports": [
+      "_face-L80xeAKS.js"
+    ],
+    "dynamicImports": [
+      "node_modules/html5-qrcode/esm/index.js"
+    ]
+  },
+  "resources/js/face-backfill.js": {
+    "file": "assets/face-backfill-CnLeO0QA.js",
+    "name": "face-backfill",
+    "src": "resources/js/face-backfill.js",
+    "isEntry": true,
+    "imports": [
+      "_face-L80xeAKS.js"
+    ]
+  },
+  "resources/js/face-enroll.js": {
+    "file": "assets/face-enroll-K0E7zP0R.js",
+    "name": "face-enroll",
+    "src": "resources/js/face-enroll.js",
+    "isEntry": true,
+    "imports": [
+      "_face-L80xeAKS.js"
+    ]
+  },
+  "resources/js/login-scanner.js": {
+    "file": "assets/login-scanner-CyYz1RQl.js",
+    "name": "login-scanner",
+    "src": "resources/js/login-scanner.js",
+    "isEntry": true,
+    "imports": [
+      "_face-L80xeAKS.js"
+    ],
+    "dynamicImports": [
+      "node_modules/html5-qrcode/esm/index.js"
+    ]
+  }
+}
