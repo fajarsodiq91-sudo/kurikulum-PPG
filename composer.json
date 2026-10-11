@@ -83,9 +83,9 @@
             "php-http/discovery": true
         },
         "platform": {
-            "php": "8.4.26",
-            "ext-gd": "8.4",
-            "ext-zip": "8.4"
+            "php": "8.3.35",
+            "ext-gd": "8.3",
+            "ext-zip": "8.3"
         }
     },
     "minimum-stability": "stable",
