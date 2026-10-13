@@ -2,14 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\HandlesSheets;
 use App\Models\Communication;
 use App\Models\Training;
+use App\Support\Sheets\CommunicationSheet;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class CommunicationController extends Controller
 {
+    use HandlesSheets;
+
     public function index(): View
     {
         return view('communications.index', [
@@ -31,5 +36,15 @@ class CommunicationController extends Controller
         Communication::create($validated);
 
         return redirect()->route('communications.index')->with('success', 'Pesan komunikasi berhasil dikirim.');
+    }
+
+    public function export(): BinaryFileResponse
+    {
+        return $this->exportSheet(new CommunicationSheet);
+    }
+
+    public function import(Request $request): RedirectResponse
+    {
+        return $this->importSheet($request, new CommunicationSheet);
     }
 }

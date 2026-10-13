@@ -14,6 +14,7 @@ class LearningMaterial extends Model
         'title',
         'code',
         'sort_order',
+        'week_number',
         'academic_year_id',
         'description',
         'is_active',

@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\HandlesSheets;
 use App\Models\Announcement;
+use App\Support\Sheets\AnnouncementSheet;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -10,9 +12,12 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class AnnouncementController extends Controller
 {
+    use HandlesSheets;
+
     public function index(): View
     {
         return view('announcements.index', [
@@ -92,5 +97,15 @@ class AnnouncementController extends Controller
     private function storeImage(?UploadedFile $image): ?string
     {
         return $image?->store(Announcement::IMAGE_DIRECTORY, 'public');
+    }
+
+    public function export(): BinaryFileResponse
+    {
+        return $this->exportSheet(new AnnouncementSheet);
+    }
+
+    public function import(Request $request): RedirectResponse
+    {
+        return $this->importSheet($request, new AnnouncementSheet($request->user()));
     }
 }

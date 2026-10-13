@@ -2,15 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\HandlesSheets;
 use App\Models\MaterialCategory;
 use App\Models\MaterialChapter;
+use App\Support\Sheets\MaterialChapterSheet;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class MaterialChapterController extends Controller
 {
+    use HandlesSheets;
+
     public function index(): View
     {
         return view('material-chapters.index', [
@@ -47,5 +52,15 @@ class MaterialChapterController extends Controller
         MaterialChapter::create($validated);
 
         return redirect()->route('material-chapters.index')->with('success', 'Bab materi berhasil ditambahkan.');
+    }
+
+    public function export(): BinaryFileResponse
+    {
+        return $this->exportSheet(new MaterialChapterSheet);
+    }
+
+    public function import(Request $request): RedirectResponse
+    {
+        return $this->importSheet($request, new MaterialChapterSheet);
     }
 }

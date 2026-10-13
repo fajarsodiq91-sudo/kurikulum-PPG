@@ -17,6 +17,10 @@
         </div>
     @endif
 
+    @include('layouts.partials.validation-errors')
+
+    @include('layouts.partials.spreadsheet-tools', ['exportUrl' => route('organization-units.export'), 'importUrl' => \App\Support\Access::can('manage-organization-units') ? route('organization-units.import') : null])
+
     <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">
         @if (\App\Support\Access::can('manage-organization-units'))
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

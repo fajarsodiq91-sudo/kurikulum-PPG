@@ -2,17 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\HandlesSheets;
 use App\Models\Generus;
 use App\Models\Guardian;
 use App\Models\ParentCommunication;
+use App\Support\Sheets\ParentCommunicationSheet;
 use App\Support\StudentScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ParentCommunicationController extends Controller
 {
+    use HandlesSheets;
+
     private const PERMISSION = 'manage-parent-communications';
 
     public function index(Request $request): View
@@ -52,5 +57,15 @@ class ParentCommunicationController extends Controller
         ParentCommunication::create([...$validated, 'teacher_id' => $request->user()->teacher_id]);
 
         return redirect()->route('parent-communications.index')->with('success', 'Catatan komunikasi berhasil ditambahkan.');
+    }
+
+    public function export(Request $request): BinaryFileResponse
+    {
+        return $this->exportSheet(new ParentCommunicationSheet($request->user()));
+    }
+
+    public function import(Request $request): RedirectResponse
+    {
+        return $this->importSheet($request, new ParentCommunicationSheet($request->user()));
     }
 }

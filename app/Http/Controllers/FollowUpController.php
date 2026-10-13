@@ -2,16 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\HandlesSheets;
 use App\Models\FollowUp;
 use App\Models\Generus;
 use App\Models\Teacher;
+use App\Support\Sheets\FollowUpSheet;
 use App\Support\StudentScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class FollowUpController extends Controller
 {
+    use HandlesSheets;
+
     public function index(): View
     {
         return view('follow-ups.index', [
@@ -53,5 +58,15 @@ class FollowUpController extends Controller
     private function isTeacherRestricted(): bool
     {
         return request()->user()?->teacher_id !== null && $this->studentIds() !== null;
+    }
+
+    public function export(Request $request): BinaryFileResponse
+    {
+        return $this->exportSheet(new FollowUpSheet($request->user()));
+    }
+
+    public function import(Request $request): RedirectResponse
+    {
+        return $this->importSheet($request, new FollowUpSheet($request->user()));
     }
 }

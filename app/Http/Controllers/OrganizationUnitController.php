@@ -2,13 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\HandlesSheets;
 use App\Models\OrganizationUnit;
+use App\Support\Sheets\OrganizationUnitSheet;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class OrganizationUnitController extends Controller
 {
+    use HandlesSheets;
+
     public function index(): View
     {
         return view('organization-units.index', [
@@ -30,5 +35,15 @@ class OrganizationUnitController extends Controller
         OrganizationUnit::create($validated);
 
         return redirect()->route('organization-units.index')->with('success', 'Unit organisasi berhasil ditambahkan.');
+    }
+
+    public function export(): BinaryFileResponse
+    {
+        return $this->exportSheet(new OrganizationUnitSheet);
+    }
+
+    public function import(Request $request): RedirectResponse
+    {
+        return $this->importSheet($request, new OrganizationUnitSheet);
     }
 }

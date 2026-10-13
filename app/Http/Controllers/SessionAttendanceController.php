@@ -2,18 +2,23 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\HandlesSheets;
 use App\Models\Generus;
 use App\Models\LearningSession;
 use App\Models\SessionAttendance;
+use App\Support\Sheets\SessionAttendanceSheet;
 use App\Support\StudentScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class SessionAttendanceController extends Controller
 {
+    use HandlesSheets;
+
     /**
      * @var array<string, string>
      */
@@ -162,5 +167,15 @@ class SessionAttendanceController extends Controller
     {
         $this->authorizeSession($attendance->learningSession);
         StudentScope::authorize(request()->user(), 'manage-learning-attendance', $attendance->generus_id);
+    }
+
+    public function export(Request $request): BinaryFileResponse
+    {
+        return $this->exportSheet(new SessionAttendanceSheet($request->user()));
+    }
+
+    public function import(Request $request): RedirectResponse
+    {
+        return $this->importSheet($request, new SessionAttendanceSheet($request->user()));
     }
 }

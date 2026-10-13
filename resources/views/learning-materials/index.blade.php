@@ -79,6 +79,11 @@
                         <input id="code" name="code" type="text" required class="w-full rounded-lg border border-slate-300 px-3 py-2">
                     </div>
                     <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2" for="week_number">Minggu ke- (dalam semester)</label>
+                        <input id="week_number" name="week_number" type="number" min="1" max="52" class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                        <p class="mt-1 text-xs text-slate-500">Dipakai untuk membuat jadwal KBM mingguan yang sama di seluruh kelompok.</p>
+                    </div>
+                    <div class="mb-4">
                         <label class="block text-sm font-medium mb-2" for="academic_year_id">Tahun (opsional)</label>
                         <select id="academic_year_id" name="academic_year_id" class="w-full rounded-lg border border-slate-300 px-3 py-2">
                             <option value="">-- Semua Tahun --</option>
@@ -115,6 +120,7 @@
                             <th class="py-3 pr-4">Kategori</th>
                             <th class="py-3 pr-4">Bab</th>
                             <th class="py-3 pr-4">Materi</th>
+                            <th class="py-3 pr-4">Minggu</th>
                             <th class="py-3 pr-4">Kode</th>
                             <th class="py-3 pr-4">Tahun</th>
                             <th class="py-3 pr-4">Status</th>
@@ -128,6 +134,7 @@
                                 <td class="py-3 pr-4">{{ $material->materialChapter->materialCategory->name }}</td>
                                 <td class="py-3 pr-4">{{ $material->materialChapter->name }}</td>
                                 <td class="py-3 pr-4">{{ $material->title }}</td>
+                                <td class="py-3 pr-4">{{ $material->week_number ?? '-' }}</td>
                                 <td class="py-3 pr-4">{{ $material->code }}</td>
                                 <td class="py-3 pr-4">{{ $material->academicYear?->name ?? '-' }}</td>
                                 <td class="py-3 pr-4">
@@ -140,7 +147,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="py-6 text-center text-slate-500">Belum ada materi pembelajaran.</td>
+                                <td colspan="9" class="py-6 text-center text-slate-500">Belum ada materi pembelajaran.</td>
                             </tr>
                         @endforelse
                     </tbody>

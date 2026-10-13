@@ -2,20 +2,25 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\HandlesSheets;
 use App\Models\AcademicYear;
 use App\Models\Generus;
 use App\Models\GradeScale;
 use App\Models\Group;
 use App\Models\Munaqosah;
 use App\Models\Semester;
+use App\Support\Sheets\MunaqosahSheet;
 use App\Support\StudentScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class MunaqosahController extends Controller
 {
+    use HandlesSheets;
+
     public function index(): View
     {
         return view('munaqosahs.index', [
@@ -223,5 +228,15 @@ class MunaqosahController extends Controller
     private function authorizeRecord(Munaqosah $munaqosah): void
     {
         StudentScope::authorize(request()->user(), Munaqosah::MANAGE_PERMISSION, $munaqosah->generus_id);
+    }
+
+    public function export(Request $request): BinaryFileResponse
+    {
+        return $this->exportSheet(new MunaqosahSheet($request->user()));
+    }
+
+    public function import(Request $request): RedirectResponse
+    {
+        return $this->importSheet($request, new MunaqosahSheet($request->user()));
     }
 }

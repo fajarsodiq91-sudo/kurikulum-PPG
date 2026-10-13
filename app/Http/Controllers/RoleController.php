@@ -2,15 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\HandlesSheets;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Support\Sheets\RoleSheet;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class RoleController extends Controller
 {
+    use HandlesSheets;
+
     public function index(): View
     {
         return view('roles.index', [
@@ -86,5 +91,15 @@ class RoleController extends Controller
             'permissions' => ['nullable', 'array'],
             'permissions.*' => ['nullable', 'integer', 'exists:permissions,id'],
         ]);
+    }
+
+    public function export(): BinaryFileResponse
+    {
+        return $this->exportSheet(new RoleSheet);
+    }
+
+    public function import(Request $request): RedirectResponse
+    {
+        return $this->importSheet($request, new RoleSheet);
     }
 }

@@ -2,14 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\HandlesSheets;
 use App\Models\ActivityExecution;
 use App\Models\ActivitySchedule;
+use App\Support\Sheets\ActivityExecutionSheet;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ActivityExecutionController extends Controller
 {
+    use HandlesSheets;
+
     public function index(): View
     {
         return view('activity-executions.index', [
@@ -32,5 +37,15 @@ class ActivityExecutionController extends Controller
         ActivityExecution::create($validated);
 
         return redirect()->route('activity-executions.index')->with('success', 'Pelaksanaan kegiatan berhasil dicatat.');
+    }
+
+    public function export(): BinaryFileResponse
+    {
+        return $this->exportSheet(new ActivityExecutionSheet);
+    }
+
+    public function import(Request $request): RedirectResponse
+    {
+        return $this->importSheet($request, new ActivityExecutionSheet);
     }
 }

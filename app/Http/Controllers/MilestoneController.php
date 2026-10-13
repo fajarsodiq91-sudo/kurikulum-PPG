@@ -2,17 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\HandlesSheets;
 use App\Models\AcademicYear;
 use App\Models\Generus;
 use App\Models\Milestone;
 use App\Models\Semester;
+use App\Support\Sheets\MilestoneSheet;
 use App\Support\StudentScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class MilestoneController extends Controller
 {
+    use HandlesSheets;
+
     public function index(): View
     {
         return view('milestones.index', [
@@ -44,5 +49,15 @@ class MilestoneController extends Controller
     private function studentIds(): ?array
     {
         return StudentScope::ids(request()->user(), 'manage-milestones');
+    }
+
+    public function export(Request $request): BinaryFileResponse
+    {
+        return $this->exportSheet(new MilestoneSheet($request->user()));
+    }
+
+    public function import(Request $request): RedirectResponse
+    {
+        return $this->importSheet($request, new MilestoneSheet($request->user()));
     }
 }

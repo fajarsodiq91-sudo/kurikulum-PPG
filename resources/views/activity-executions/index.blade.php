@@ -17,6 +17,10 @@
             <div class="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">{{ session('success') }}</div>
         @endif
 
+        @include('layouts.partials.validation-errors')
+
+        @include('layouts.partials.spreadsheet-tools', ['exportUrl' => route('activity-executions.export'), 'importUrl' => \App\Support\Access::can('manage-activity-executions') ? route('activity-executions.import') : null])
+
         <div class="grid gap-6 lg:grid-cols-3">
             @if (\App\Support\Access::can('manage-activity-executions'))
             <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">

@@ -46,6 +46,8 @@
 
     @include('layouts.partials.validation-errors')
 
+    @include('layouts.partials.spreadsheet-tools', ['exportUrl' => route('roles.export'), 'importUrl' => route('roles.import')])
+
     <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 class="text-lg font-bold text-slate-950">Tambah Peran</h2>

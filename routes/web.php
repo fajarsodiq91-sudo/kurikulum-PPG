@@ -66,11 +66,15 @@ Route::middleware(['permission:view-dashboard'])->group(function () {
 Route::middleware(['permission:view-announcements,manage-announcements'])->group(function () {
     Route::get('/announcements', [AnnouncementController::class, 'index'])
         ->name('announcements.index');
+    Route::get('/announcements/export', [AnnouncementController::class, 'export'])
+        ->name('announcements.export');
 });
 
 Route::middleware(['auth', 'permission:manage-announcements'])->group(function () {
     Route::post('/announcements', [AnnouncementController::class, 'store'])
         ->name('announcements.store');
+    Route::post('/announcements/import', [AnnouncementController::class, 'import'])
+        ->name('announcements.import');
     Route::get('/announcements/{announcement}/edit', [AnnouncementController::class, 'edit'])
         ->whereNumber('announcement')
         ->name('announcements.edit');
@@ -96,6 +100,10 @@ Route::middleware(['auth', 'permission:manage-users'])->group(function () {
     Route::delete('/users/{user}', [UserController::class, 'destroy'])
         ->whereNumber('user')
         ->name('users.destroy');
+    Route::get('/users/export', [UserController::class, 'export'])
+        ->name('users.export');
+    Route::post('/users/import', [UserController::class, 'import'])
+        ->name('users.import');
 
     Route::get('/roles', [RoleController::class, 'index'])
         ->name('roles.index');
@@ -110,6 +118,10 @@ Route::middleware(['auth', 'permission:manage-users'])->group(function () {
     Route::delete('/roles/{role}', [RoleController::class, 'destroy'])
         ->whereNumber('role')
         ->name('roles.destroy');
+    Route::get('/roles/export', [RoleController::class, 'export'])
+        ->name('roles.export');
+    Route::post('/roles/import', [RoleController::class, 'import'])
+        ->name('roles.import');
 });
 
 Route::middleware(['auth', 'permission:manage-users'])->group(function () {
@@ -284,8 +296,12 @@ Route::middleware(['auth', 'permission:manage-guardians'])->group(function () {
 Route::middleware(['auth', 'permission:view-learning-materials,manage-learning-materials'])->group(function () {
     Route::get('/material-categories', [MaterialCategoryController::class, 'index'])
         ->name('material-categories.index');
+    Route::get('/material-categories/export', [MaterialCategoryController::class, 'export'])
+        ->name('material-categories.export');
     Route::get('/material-chapters', [MaterialChapterController::class, 'index'])
         ->name('material-chapters.index');
+    Route::get('/material-chapters/export', [MaterialChapterController::class, 'export'])
+        ->name('material-chapters.export');
     Route::get('/learning-materials', [LearningMaterialController::class, 'index'])
         ->name('learning-materials.index');
     Route::get('/learning-materials/export', [LearningMaterialController::class, 'export'])
@@ -295,8 +311,12 @@ Route::middleware(['auth', 'permission:view-learning-materials,manage-learning-m
 Route::middleware(['auth', 'permission:manage-learning-materials'])->group(function () {
     Route::post('/material-categories', [MaterialCategoryController::class, 'store'])
         ->name('material-categories.store');
+    Route::post('/material-categories/import', [MaterialCategoryController::class, 'import'])
+        ->name('material-categories.import');
     Route::post('/material-chapters', [MaterialChapterController::class, 'store'])
         ->name('material-chapters.store');
+    Route::post('/material-chapters/import', [MaterialChapterController::class, 'import'])
+        ->name('material-chapters.import');
     Route::post('/learning-materials', [LearningMaterialController::class, 'store'])
         ->name('learning-materials.store');
     Route::post('/learning-materials/import', [LearningMaterialController::class, 'import'])
@@ -306,19 +326,41 @@ Route::middleware(['auth', 'permission:manage-learning-materials'])->group(funct
 Route::middleware(['auth', 'permission:view-learning-sessions,manage-learning-sessions'])->group(function () {
     Route::get('/learning-sessions', [LearningSessionController::class, 'index'])
         ->name('learning-sessions.index');
+    Route::get('/learning-sessions/export', [LearningSessionController::class, 'export'])
+        ->name('learning-sessions.export');
 });
 
 Route::middleware(['auth', 'permission:manage-learning-sessions'])->group(function () {
+    Route::get('/learning-sessions/generate', [LearningSessionController::class, 'generate'])
+        ->name('learning-sessions.generate');
+    Route::post('/learning-sessions/generate', [LearningSessionController::class, 'generateStore'])
+        ->name('learning-sessions.generate.store');
     Route::post('/learning-sessions', [LearningSessionController::class, 'store'])
         ->name('learning-sessions.store');
+    Route::delete('/learning-sessions/{learningSession}', [LearningSessionController::class, 'destroy'])
+        ->whereNumber('learningSession')
+        ->name('learning-sessions.destroy');
+});
+
+Route::middleware(['auth', 'permission:manage-learning-sessions,manage-learning-attendance'])->group(function () {
+    Route::get('/learning-sessions/{learningSession}/edit', [LearningSessionController::class, 'edit'])
+        ->whereNumber('learningSession')
+        ->name('learning-sessions.edit');
+    Route::put('/learning-sessions/{learningSession}', [LearningSessionController::class, 'update'])
+        ->whereNumber('learningSession')
+        ->name('learning-sessions.update');
 });
 
 Route::middleware(['auth', 'permission:view-learning-attendance,manage-learning-attendance'])->group(function () {
     Route::get('/session-attendances', [SessionAttendanceController::class, 'index'])
         ->name('session-attendances.index');
+    Route::get('/session-attendances/export', [SessionAttendanceController::class, 'export'])
+        ->name('session-attendances.export');
 });
 
 Route::middleware(['auth', 'permission:manage-learning-attendance'])->group(function () {
+    Route::post('/session-attendances/import', [SessionAttendanceController::class, 'import'])
+        ->name('session-attendances.import');
     Route::get('/learning-sessions/{learningSession}/attendance', [SessionAttendanceController::class, 'sheet'])
         ->whereNumber('learningSession')
         ->name('learning-sessions.attendance.edit');
@@ -350,15 +392,23 @@ Route::middleware(['auth', 'permission:manage-learning-attendance'])->group(func
 Route::middleware(['auth', 'permission:view-evaluations,manage-evaluations'])->group(function () {
     Route::get('/evaluations', [EvaluationController::class, 'index'])
         ->name('evaluations.index');
+    Route::get('/evaluations/export', [EvaluationController::class, 'export'])
+        ->name('evaluations.export');
     Route::get('/evaluation-scores', [EvaluationScoreController::class, 'index'])
         ->name('evaluation-scores.index');
+    Route::get('/evaluation-scores/export', [EvaluationScoreController::class, 'export'])
+        ->name('evaluation-scores.export');
 });
 
 Route::middleware(['auth', 'permission:manage-evaluations'])->group(function () {
     Route::post('/evaluations', [EvaluationController::class, 'store'])
         ->name('evaluations.store');
+    Route::post('/evaluations/import', [EvaluationController::class, 'import'])
+        ->name('evaluations.import');
     Route::post('/evaluation-scores', [EvaluationScoreController::class, 'store'])
         ->name('evaluation-scores.store');
+    Route::post('/evaluation-scores/import', [EvaluationScoreController::class, 'import'])
+        ->name('evaluation-scores.import');
     Route::get('/evaluation-scores/{evaluationScore}/edit', [EvaluationScoreController::class, 'edit'])
         ->whereNumber('evaluationScore')
         ->name('evaluation-scores.edit');
@@ -373,26 +423,36 @@ Route::middleware(['auth', 'permission:manage-evaluations'])->group(function () 
 Route::middleware(['auth', 'permission:view-training,manage-training'])->group(function () {
     Route::get('/trainings', [TrainingController::class, 'index'])
         ->name('trainings.index');
+    Route::get('/trainings/export', [TrainingController::class, 'export'])
+        ->name('trainings.export');
 });
 
 Route::middleware(['auth', 'permission:manage-training'])->group(function () {
     Route::post('/trainings', [TrainingController::class, 'store'])
         ->name('trainings.store');
+    Route::post('/trainings/import', [TrainingController::class, 'import'])
+        ->name('trainings.import');
 });
 
 Route::middleware(['auth', 'permission:view-communication,manage-communication'])->group(function () {
     Route::get('/communications', [CommunicationController::class, 'index'])
         ->name('communications.index');
+    Route::get('/communications/export', [CommunicationController::class, 'export'])
+        ->name('communications.export');
 });
 
 Route::middleware(['auth', 'permission:manage-communication'])->group(function () {
     Route::post('/communications', [CommunicationController::class, 'store'])
         ->name('communications.store');
+    Route::post('/communications/import', [CommunicationController::class, 'import'])
+        ->name('communications.import');
 });
 
 Route::middleware(['auth', 'permission:view-munaqosah,manage-munaqosah'])->group(function () {
     Route::get('/munaqosahs', [MunaqosahController::class, 'index'])
         ->name('munaqosahs.index');
+    Route::get('/munaqosahs/export', [MunaqosahController::class, 'export'])
+        ->name('munaqosahs.export');
 });
 
 Route::middleware(['auth', 'permission:manage-munaqosah'])->group(function () {
@@ -402,6 +462,8 @@ Route::middleware(['auth', 'permission:manage-munaqosah'])->group(function () {
         ->name('munaqosahs.batch.save');
     Route::post('/munaqosahs', [MunaqosahController::class, 'store'])
         ->name('munaqosahs.store');
+    Route::post('/munaqosahs/import', [MunaqosahController::class, 'import'])
+        ->name('munaqosahs.import');
     Route::get('/munaqosahs/{munaqosah}/edit', [MunaqosahController::class, 'edit'])
         ->name('munaqosahs.edit');
     Route::put('/munaqosahs/{munaqosah}', [MunaqosahController::class, 'update'])
@@ -413,6 +475,8 @@ Route::middleware(['auth', 'permission:manage-munaqosah'])->group(function () {
 Route::middleware(['auth', 'permission:view-ujian,manage-ujian'])->group(function () {
     Route::get('/ujians', [UjianController::class, 'index'])
         ->name('ujians.index');
+    Route::get('/ujians/export', [UjianController::class, 'export'])
+        ->name('ujians.export');
 });
 
 Route::middleware(['auth', 'permission:manage-ujian'])->group(function () {
@@ -422,6 +486,8 @@ Route::middleware(['auth', 'permission:manage-ujian'])->group(function () {
         ->name('ujians.batch.save');
     Route::post('/ujians', [UjianController::class, 'store'])
         ->name('ujians.store');
+    Route::post('/ujians/import', [UjianController::class, 'import'])
+        ->name('ujians.import');
     Route::get('/ujians/{ujian}/edit', [UjianController::class, 'edit'])
         ->name('ujians.edit');
     Route::put('/ujians/{ujian}', [UjianController::class, 'update'])
@@ -433,6 +499,8 @@ Route::middleware(['auth', 'permission:manage-ujian'])->group(function () {
 Route::middleware(['auth', 'permission:view-report-cards,manage-report-cards'])->group(function () {
     Route::get('/report-cards', [ReportCardController::class, 'index'])
         ->name('report-cards.index');
+    Route::get('/report-cards/export', [ReportCardController::class, 'export'])
+        ->name('report-cards.export');
 });
 
 Route::middleware(['auth', 'permission:manage-report-cards'])->group(function () {
@@ -452,81 +520,113 @@ Route::middleware(['auth', 'permission:manage-report-cards'])->group(function ()
 Route::middleware(['auth', 'permission:view-follow-ups,manage-follow-ups'])->group(function () {
     Route::get('/follow-ups', [FollowUpController::class, 'index'])
         ->name('follow-ups.index');
+    Route::get('/follow-ups/export', [FollowUpController::class, 'export'])
+        ->name('follow-ups.export');
 });
 
 Route::middleware(['auth', 'permission:manage-follow-ups'])->group(function () {
     Route::post('/follow-ups', [FollowUpController::class, 'store'])
         ->name('follow-ups.store');
+    Route::post('/follow-ups/import', [FollowUpController::class, 'import'])
+        ->name('follow-ups.import');
 });
 
 Route::middleware(['auth', 'permission:view-progress-tracking,manage-progress-tracking'])->group(function () {
     Route::get('/progress-tracks', [ProgressTrackController::class, 'index'])
         ->name('progress-tracks.index');
+    Route::get('/progress-tracks/export', [ProgressTrackController::class, 'export'])
+        ->name('progress-tracks.export');
 });
 
 Route::middleware(['auth', 'permission:manage-progress-tracking'])->group(function () {
     Route::post('/progress-tracks', [ProgressTrackController::class, 'store'])
         ->name('progress-tracks.store');
+    Route::post('/progress-tracks/import', [ProgressTrackController::class, 'import'])
+        ->name('progress-tracks.import');
 });
 
 Route::middleware(['auth', 'permission:view-milestones,manage-milestones'])->group(function () {
     Route::get('/milestones', [MilestoneController::class, 'index'])
         ->name('milestones.index');
+    Route::get('/milestones/export', [MilestoneController::class, 'export'])
+        ->name('milestones.export');
 });
 
 Route::middleware(['auth', 'permission:manage-milestones'])->group(function () {
     Route::post('/milestones', [MilestoneController::class, 'store'])
         ->name('milestones.store');
+    Route::post('/milestones/import', [MilestoneController::class, 'import'])
+        ->name('milestones.import');
 });
 
 Route::middleware(['auth', 'permission:view-annual-audit,manage-annual-audit'])->group(function () {
     Route::get('/annual-audits', [AnnualAuditController::class, 'index'])
         ->name('annual-audits.index');
+    Route::get('/annual-audits/export', [AnnualAuditController::class, 'export'])
+        ->name('annual-audits.export');
 });
 
 Route::middleware(['auth', 'permission:manage-annual-audit'])->group(function () {
     Route::post('/annual-audits', [AnnualAuditController::class, 'store'])
         ->name('annual-audits.store');
+    Route::post('/annual-audits/import', [AnnualAuditController::class, 'import'])
+        ->name('annual-audits.import');
 });
 
 Route::middleware(['auth', 'permission:view-organization-units,manage-organization-units'])->group(function () {
     Route::get('/organization-units', [OrganizationUnitController::class, 'index'])
         ->name('organization-units.index');
+    Route::get('/organization-units/export', [OrganizationUnitController::class, 'export'])
+        ->name('organization-units.export');
 });
 
 Route::middleware(['auth', 'permission:manage-organization-units'])->group(function () {
     Route::post('/organization-units', [OrganizationUnitController::class, 'store'])
         ->name('organization-units.store');
+    Route::post('/organization-units/import', [OrganizationUnitController::class, 'import'])
+        ->name('organization-units.import');
 });
 
 Route::middleware(['auth', 'permission:view-assignments,manage-assignments'])->group(function () {
     Route::get('/assignments', [AssignmentController::class, 'index'])
         ->name('assignments.index');
+    Route::get('/assignments/export', [AssignmentController::class, 'export'])
+        ->name('assignments.export');
 });
 
 Route::middleware(['auth', 'permission:manage-assignments'])->group(function () {
     Route::post('/assignments', [AssignmentController::class, 'store'])
         ->name('assignments.store');
+    Route::post('/assignments/import', [AssignmentController::class, 'import'])
+        ->name('assignments.import');
 });
 
 Route::middleware(['auth', 'permission:view-activity-schedules,manage-activity-schedules'])->group(function () {
     Route::get('/activity-schedules', [ActivityScheduleController::class, 'index'])
         ->name('activity-schedules.index');
+    Route::get('/activity-schedules/export', [ActivityScheduleController::class, 'export'])
+        ->name('activity-schedules.export');
 });
 
 Route::middleware(['auth', 'permission:manage-activity-schedules'])->group(function () {
     Route::post('/activity-schedules', [ActivityScheduleController::class, 'store'])
         ->name('activity-schedules.store');
+    Route::post('/activity-schedules/import', [ActivityScheduleController::class, 'import'])
+        ->name('activity-schedules.import');
 });
 
 Route::middleware(['auth', 'permission:view-activity-executions,manage-activity-executions'])->group(function () {
     Route::get('/activity-executions', [ActivityExecutionController::class, 'index'])
         ->name('activity-executions.index');
+    Route::get('/activity-executions/export', [ActivityExecutionController::class, 'export'])
+        ->name('activity-executions.export');
 });
 
 Route::middleware(['auth', 'permission:manage-activity-executions'])->group(function () {
     Route::post('/activity-executions', [ActivityExecutionController::class, 'store'])
         ->name('activity-executions.store');
+    Route::post('/activity-executions/import', [ActivityExecutionController::class, 'import'])
+        ->name('activity-executions.import');
 });
 
 Route::middleware(['auth', 'permission:manage-my-students'])->group(function () {
@@ -539,9 +639,13 @@ Route::middleware(['auth', 'permission:manage-my-students'])->group(function () 
 Route::middleware(['auth', 'permission:view-parent-communications,manage-parent-communications'])->group(function () {
     Route::get('/parent-communications', [ParentCommunicationController::class, 'index'])
         ->name('parent-communications.index');
+    Route::get('/parent-communications/export', [ParentCommunicationController::class, 'export'])
+        ->name('parent-communications.export');
 });
 
 Route::middleware(['auth', 'permission:manage-parent-communications'])->group(function () {
     Route::post('/parent-communications', [ParentCommunicationController::class, 'store'])
         ->name('parent-communications.store');
+    Route::post('/parent-communications/import', [ParentCommunicationController::class, 'import'])
+        ->name('parent-communications.import');
 });

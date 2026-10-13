@@ -2,20 +2,25 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\HandlesSheets;
 use App\Models\AcademicYear;
 use App\Models\Generus;
 use App\Models\GradeScale;
 use App\Models\Group;
 use App\Models\Semester;
 use App\Models\Ujian;
+use App\Support\Sheets\UjianSheet;
 use App\Support\StudentScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class UjianController extends Controller
 {
+    use HandlesSheets;
+
     public function index(): View
     {
         return view('ujians.index', [
@@ -214,5 +219,15 @@ class UjianController extends Controller
     private function authorizeRecord(Ujian $ujian): void
     {
         StudentScope::authorize(request()->user(), Ujian::MANAGE_PERMISSION, $ujian->generus_id);
+    }
+
+    public function export(Request $request): BinaryFileResponse
+    {
+        return $this->exportSheet(new UjianSheet($request->user()));
+    }
+
+    public function import(Request $request): RedirectResponse
+    {
+        return $this->importSheet($request, new UjianSheet($request->user()));
     }
 }

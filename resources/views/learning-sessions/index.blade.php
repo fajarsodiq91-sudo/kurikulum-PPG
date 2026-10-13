@@ -5,10 +5,17 @@
 @section('breadcrumb', 'KBM / Sesi KBM')
 
 @section('content')
-    <div class="mb-6">
-        <p class="text-sm font-semibold text-amber-600">KBM</p>
-        <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Jadwal KBM</h2>
-        <p class="mt-2 text-sm text-slate-500">Kelola sesi pembelajaran, pengajar, dan waktu pelaksanaan.</p>
+    <div class="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        <div>
+            <p class="text-sm font-semibold text-amber-600">KBM</p>
+            <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Jadwal KBM</h2>
+            <p class="mt-2 text-sm text-slate-500">Kelola sesi pembelajaran, pengajar, dan waktu pelaksanaan.</p>
+        </div>
+        @if (\App\Support\Access::can('manage-learning-sessions'))
+            <div class="flex flex-wrap gap-3">
+                <a href="{{ route('learning-sessions.generate') }}" class="inline-flex items-center justify-center rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800">Generate Jadwal Mingguan</a>
+            </div>
+        @endif
     </div>
 
         @if (session('success'))
@@ -18,6 +25,8 @@
         @endif
 
         @include('layouts.partials.validation-errors')
+
+        @include('layouts.partials.spreadsheet-tools', ['exportUrl' => route('learning-sessions.export')])
 
         <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">
             @if (\App\Support\Access::can('manage-learning-sessions'))
@@ -121,13 +130,26 @@
                         </thead>
                         <tbody>
                             @forelse($sessions as $session)
+                                @php($isCompletable = $canManageAllSessions || in_array($session->id, $completableIds ?? [], true))
                                 <tr class="border-b border-slate-100">
                                     <td class="py-3 pr-4">{{ $session->session_date }}</td>
-                                    <td class="py-3 pr-4">{{ $session->teacher?->name ?? '-' }}</td>
+                                    <td class="py-3 pr-4">
+                                        {{ $session->teacher?->name ?? '-' }}
+                                        @if (! $session->teacher_id)
+                                            <span class="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">Belum dilengkapi</span>
+                                        @endif
+                                    </td>
                                     <td class="py-3 pr-4">{{ $session->material?->title ?? '-' }}</td>
                                     <td class="py-3 pr-4">{{ $session->levelLabel() }}</td>
                                     <td class="py-3 pr-4">{{ $session->status }}</td>
-                                    <td class="py-3 text-right">@if (in_array($session->id, $attendableIds, true))<a href="{{ route('learning-sessions.attendance.edit', $session) }}" class="text-xs font-semibold text-amber-600 hover:text-amber-700">Daftar Hadir</a>@endif</td>
+                                    <td class="py-3 text-right whitespace-nowrap">
+                                        @if ($isCompletable)
+                                            <a href="{{ route('learning-sessions.edit', $session) }}" class="text-xs font-semibold text-brand-700 hover:text-brand-900">Lengkapi</a>
+                                        @endif
+                                        @if (in_array($session->id, $attendableIds, true))
+                                            <a href="{{ route('learning-sessions.attendance.edit', $session) }}" class="ml-3 text-xs font-semibold text-amber-600 hover:text-amber-700">Daftar Hadir</a>
+                                        @endif
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>

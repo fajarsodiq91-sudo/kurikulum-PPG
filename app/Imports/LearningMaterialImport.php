@@ -45,6 +45,7 @@ class LearningMaterialImport implements OnEachRow, WithChunkReading, WithHeading
             'chapter_code' => ['required', 'string', 'max:50'],
             'material_title' => ['required', 'string', 'max:255'],
             'material_code' => ['required', 'string', 'max:50'],
+            'week_number' => ['nullable', 'integer', 'min:1', 'max:52'],
             'academic_year_code' => ['nullable', 'string', 'max:50'],
             'description' => ['nullable', 'string'],
             'is_active' => ['required', 'boolean'],
@@ -102,6 +103,7 @@ class LearningMaterialImport implements OnEachRow, WithChunkReading, WithHeading
                 [
                     'material_chapter_id' => $chapter->id,
                     'title' => $validated['material_title'],
+                    'week_number' => $validated['week_number'] ?? null,
                     'academic_year_id' => $academicYear?->id,
                     'description' => $validated['description'] ?? null,
                     'is_active' => $validated['is_active'],

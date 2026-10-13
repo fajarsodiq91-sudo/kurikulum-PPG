@@ -2,16 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\HandlesSheets;
 use App\Models\ClassGrade;
 use App\Models\MaterialCategory;
 use App\Models\Semester;
+use App\Support\Sheets\MaterialCategorySheet;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class MaterialCategoryController extends Controller
 {
+    use HandlesSheets;
+
     public function index(): View
     {
         return view('material-categories.index', [
@@ -49,5 +54,15 @@ class MaterialCategoryController extends Controller
         MaterialCategory::create($validated);
 
         return redirect()->route('material-categories.index')->with('success', 'Kategori materi berhasil ditambahkan.');
+    }
+
+    public function export(): BinaryFileResponse
+    {
+        return $this->exportSheet(new MaterialCategorySheet);
+    }
+
+    public function import(Request $request): RedirectResponse
+    {
+        return $this->importSheet($request, new MaterialCategorySheet);
     }
 }

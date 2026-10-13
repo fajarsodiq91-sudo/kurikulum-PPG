@@ -2,18 +2,23 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\HandlesSheets;
 use App\Models\Evaluation;
 use App\Models\EvaluationScore;
 use App\Models\Generus;
+use App\Support\Sheets\EvaluationScoreSheet;
 use App\Support\StudentScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class EvaluationScoreController extends Controller
 {
+    use HandlesSheets;
+
     public function index(): View
     {
         return view('evaluation-scores.index', [
@@ -102,5 +107,15 @@ class EvaluationScoreController extends Controller
     private function authorizeRecord(EvaluationScore $score): void
     {
         StudentScope::authorize(request()->user(), 'manage-evaluations', $score->generus_id);
+    }
+
+    public function export(Request $request): BinaryFileResponse
+    {
+        return $this->exportSheet(new EvaluationScoreSheet($request->user()));
+    }
+
+    public function import(Request $request): RedirectResponse
+    {
+        return $this->importSheet($request, new EvaluationScoreSheet($request->user()));
     }
 }

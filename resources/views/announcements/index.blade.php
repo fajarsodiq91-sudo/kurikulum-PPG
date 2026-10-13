@@ -19,6 +19,8 @@
 
     @include('layouts.partials.validation-errors')
 
+    @include('layouts.partials.spreadsheet-tools', ['exportUrl' => route('announcements.export'), 'importUrl' => \App\Support\Access::can('manage-announcements') ? route('announcements.import') : null])
+
     <div class="grid gap-6 lg:grid-cols-[minmax(20rem,0.9fr)_minmax(0,1.5fr)]">
         @if (\App\Support\Access::can('manage-announcements'))
             <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-1">

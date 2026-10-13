@@ -27,6 +27,8 @@
         </div>
     @endif
 
+    @include('layouts.partials.spreadsheet-tools', ['exportUrl' => route('material-categories.export'), 'importUrl' => \App\Support\Access::can('manage-learning-materials') ? route('material-categories.import') : null])
+
     <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">
         @if (\App\Support\Access::can('manage-learning-materials'))
             <div class="lg:col-span-1 rounded-xl bg-white p-6 shadow-sm border border-slate-200">

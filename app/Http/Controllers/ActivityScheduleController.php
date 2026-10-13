@@ -2,14 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\HandlesSheets;
 use App\Models\ActivitySchedule;
 use App\Models\OrganizationUnit;
+use App\Support\Sheets\ActivityScheduleSheet;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ActivityScheduleController extends Controller
 {
+    use HandlesSheets;
+
     public function index(): View
     {
         return view('activity-schedules.index', [
@@ -34,5 +39,15 @@ class ActivityScheduleController extends Controller
         ActivitySchedule::create($validated);
 
         return redirect()->route('activity-schedules.index')->with('success', 'Jadwal kegiatan berhasil ditambahkan.');
+    }
+
+    public function export(): BinaryFileResponse
+    {
+        return $this->exportSheet(new ActivityScheduleSheet);
+    }
+
+    public function import(Request $request): RedirectResponse
+    {
+        return $this->importSheet($request, new ActivityScheduleSheet);
     }
 }

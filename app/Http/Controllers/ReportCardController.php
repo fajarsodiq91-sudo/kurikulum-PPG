@@ -2,19 +2,24 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\HandlesSheets;
 use App\Models\AcademicYear;
 use App\Models\Generus;
 use App\Models\ReportCard;
 use App\Models\Semester;
 use App\Support\ReportCardScores;
+use App\Support\Sheets\ReportCardSheet;
 use App\Support\StudentScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ReportCardController extends Controller
 {
+    use HandlesSheets;
+
     public function index(): View
     {
         return view('report-cards.index', [
@@ -110,5 +115,10 @@ class ReportCardController extends Controller
     private function authorizeRecord(ReportCard $reportCard): void
     {
         StudentScope::authorize(request()->user(), 'manage-report-cards', $reportCard->generus_id);
+    }
+
+    public function export(Request $request): BinaryFileResponse
+    {
+        return $this->exportSheet(new ReportCardSheet($request->user()));
     }
 }

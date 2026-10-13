@@ -17,6 +17,10 @@
             </div>
         @endif
 
+        @include('layouts.partials.validation-errors')
+
+        @include('layouts.partials.spreadsheet-tools', ['exportUrl' => route('trainings.export'), 'importUrl' => \App\Support\Access::can('manage-training') ? route('trainings.import') : null])
+
         <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">
             @if (\App\Support\Access::can('manage-training'))
             <div class="lg:col-span-1 rounded-xl bg-white p-6 shadow-sm border border-slate-200">

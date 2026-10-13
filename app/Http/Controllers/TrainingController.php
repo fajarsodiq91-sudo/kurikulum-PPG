@@ -2,14 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\HandlesSheets;
 use App\Models\AcademicYear;
 use App\Models\Training;
+use App\Support\Sheets\TrainingSheet;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class TrainingController extends Controller
 {
+    use HandlesSheets;
+
     public function index(): View
     {
         return view('trainings.index', [
@@ -33,5 +38,15 @@ class TrainingController extends Controller
         Training::create($validated);
 
         return redirect()->route('trainings.index')->with('success', 'Pelatihan berhasil ditambahkan.');
+    }
+
+    public function export(): BinaryFileResponse
+    {
+        return $this->exportSheet(new TrainingSheet);
+    }
+
+    public function import(Request $request): RedirectResponse
+    {
+        return $this->importSheet($request, new TrainingSheet);
     }
 }

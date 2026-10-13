@@ -22,6 +22,7 @@ class LearningMaterialController extends Controller
         return view('learning-materials.index', [
             'materials' => LearningMaterial::with(['materialChapter.materialCategory.classGrade', 'materialChapter.materialCategory.semester', 'academicYear'])
                 ->orderBy('material_chapter_id')
+                ->orderBy('week_number')
                 ->orderBy('sort_order')
                 ->paginate(25),
             'chapters' => MaterialChapter::with(['materialCategory.classGrade', 'materialCategory.semester'])
@@ -40,6 +41,7 @@ class LearningMaterialController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'code' => ['required', 'string', 'max:50', 'unique:learning_materials,code'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
+            'week_number' => ['nullable', 'integer', 'min:1', 'max:52'],
             'academic_year_id' => ['nullable', 'exists:academic_years,id'],
             'description' => ['nullable', 'string'],
             'is_active' => ['required', 'boolean'],

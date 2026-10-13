@@ -2,19 +2,24 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\HandlesSheets;
 use App\Models\Group;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Village;
+use App\Support\Sheets\UserSheet;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class UserController extends Controller
 {
+    use HandlesSheets;
+
     public function index(): View
     {
         return view('users.index', [
@@ -146,5 +151,15 @@ class UserController extends Controller
             'roles' => ['nullable', 'array'],
             'roles.*' => ['nullable', 'integer', 'exists:roles,id'],
         ]);
+    }
+
+    public function export(): BinaryFileResponse
+    {
+        return $this->exportSheet(new UserSheet);
+    }
+
+    public function import(Request $request): RedirectResponse
+    {
+        return $this->importSheet($request, new UserSheet);
     }
 }
