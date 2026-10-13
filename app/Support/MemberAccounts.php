@@ -30,6 +30,7 @@ class MemberAccounts
         'manage-report-cards',
         'manage-milestones',
         'manage-munaqosah',
+        'manage-ujian',
         'manage-parent-communications',
     ];
 

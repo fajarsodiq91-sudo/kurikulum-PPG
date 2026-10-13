@@ -46,6 +46,7 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Manage Training', 'slug' => 'manage-training', 'module' => 'training'],
             ['name' => 'Manage Communication', 'slug' => 'manage-communication', 'module' => 'communication'],
             ['name' => 'Manage Munaqosah', 'slug' => 'manage-munaqosah', 'module' => 'munaqosah'],
+            ['name' => 'Manage Ujian', 'slug' => 'manage-ujian', 'module' => 'ujian'],
             ['name' => 'Manage Report Cards', 'slug' => 'manage-report-cards', 'module' => 'report-cards'],
             ['name' => 'Manage Follow-ups', 'slug' => 'manage-follow-ups', 'module' => 'follow-ups'],
             ['name' => 'Manage Progress Tracking', 'slug' => 'manage-progress-tracking', 'module' => 'progress-tracking'],

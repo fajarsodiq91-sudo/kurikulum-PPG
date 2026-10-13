@@ -57,7 +57,7 @@
         @foreach ([
             ['label' => 'Generus Aktif', 'value' => $generusCount, 'dot' => 'bg-amber-400'],
             ['label' => 'Guru Aktif', 'value' => $teacherCount, 'dot' => 'bg-brand-500'],
-            ['label' => 'Desa / Wilayah', 'value' => $regionCount, 'dot' => 'bg-emerald-500'],
+            ['label' => 'Desa', 'value' => $regionCount, 'dot' => 'bg-emerald-500'],
             ['label' => 'Kelompok', 'value' => $groupCount, 'dot' => 'bg-brand-300'],
             ['label' => 'Sesi KBM', 'value' => $learningSessionCount, 'dot' => 'bg-amber-600'],
             ['label' => 'Munaqosah', 'value' => $munaqosahCount, 'dot' => 'bg-emerald-600'],

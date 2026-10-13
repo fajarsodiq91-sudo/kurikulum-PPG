@@ -34,6 +34,7 @@ use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\TeacherStudentController;
 use App\Http\Controllers\TrainingController;
 use App\Http\Controllers\TutorialController;
+use App\Http\Controllers\UjianController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -407,6 +408,26 @@ Route::middleware(['auth', 'permission:manage-munaqosah'])->group(function () {
         ->name('munaqosahs.update');
     Route::delete('/munaqosahs/{munaqosah}', [MunaqosahController::class, 'destroy'])
         ->name('munaqosahs.destroy');
+});
+
+Route::middleware(['auth', 'permission:view-ujian,manage-ujian'])->group(function () {
+    Route::get('/ujians', [UjianController::class, 'index'])
+        ->name('ujians.index');
+});
+
+Route::middleware(['auth', 'permission:manage-ujian'])->group(function () {
+    Route::get('/ujians/batch', [UjianController::class, 'batch'])
+        ->name('ujians.batch');
+    Route::post('/ujians/batch', [UjianController::class, 'saveBatch'])
+        ->name('ujians.batch.save');
+    Route::post('/ujians', [UjianController::class, 'store'])
+        ->name('ujians.store');
+    Route::get('/ujians/{ujian}/edit', [UjianController::class, 'edit'])
+        ->name('ujians.edit');
+    Route::put('/ujians/{ujian}', [UjianController::class, 'update'])
+        ->name('ujians.update');
+    Route::delete('/ujians/{ujian}', [UjianController::class, 'destroy'])
+        ->name('ujians.destroy');
 });
 
 Route::middleware(['auth', 'permission:view-report-cards,manage-report-cards'])->group(function () {

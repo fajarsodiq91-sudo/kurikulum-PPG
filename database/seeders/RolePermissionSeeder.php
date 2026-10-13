@@ -19,7 +19,7 @@ class RolePermissionSeeder extends Seeder
      */
     private const MODULES = [
         'curriculum', 'learning-materials', 'learning-sessions', 'learning-attendance', 'evaluations',
-        'training', 'communication', 'munaqosah', 'report-cards', 'follow-ups', 'progress-tracking',
+        'training', 'communication', 'munaqosah', 'ujian', 'report-cards', 'follow-ups', 'progress-tracking',
         'milestones', 'annual-audit', 'organization-units', 'assignments', 'activity-schedules',
         'activity-executions', 'announcements',
     ];
@@ -32,7 +32,7 @@ class RolePermissionSeeder extends Seeder
     private const GROUP_MANAGE = [
         'manage-generus', 'manage-teachers', 'manage-guardians', 'manage-learning-attendance',
         'manage-evaluations', 'manage-follow-ups', 'manage-progress-tracking', 'manage-report-cards',
-        'manage-milestones', 'manage-munaqosah', 'manage-parent-communications',
+        'manage-milestones', 'manage-munaqosah', 'manage-ujian', 'manage-parent-communications',
     ];
 
     /**

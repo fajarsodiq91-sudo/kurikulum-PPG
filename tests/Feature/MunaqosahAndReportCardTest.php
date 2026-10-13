@@ -99,12 +99,21 @@ class MunaqosahAndReportCardTest extends TestCase
             'result' => 'Lulus',
         ]);
 
+        // Saving the munaqosah automatically creates/updates the matching report card's final score.
+        $this->assertDatabaseHas('report_cards', [
+            'generus_id' => $generus->id,
+            'academic_year_id' => $academicYear->id,
+            'semester_id' => $semester->id,
+            'final_score' => 87.5,
+        ]);
+
+        $reportCard = ReportCard::where('generus_id', $generus->id)->firstOrFail();
+
         $this->actingAs($user)
-            ->post('/report-cards', [
+            ->put("/report-cards/{$reportCard->id}", [
                 'generus_id' => $generus->id,
                 'academic_year_id' => $academicYear->id,
                 'semester_id' => $semester->id,
-                'final_score' => 88.5,
                 'predicate' => 'A',
                 'recommendation' => 'Tetap konsisten dan tingkatkan praktik pembelajaran.',
                 'remarks' => 'Sangat baik',
@@ -115,6 +124,7 @@ class MunaqosahAndReportCardTest extends TestCase
             'generus_id' => $generus->id,
             'predicate' => 'A',
             'remarks' => 'Sangat baik',
+            'final_score' => 87.5,
         ]);
     }
 

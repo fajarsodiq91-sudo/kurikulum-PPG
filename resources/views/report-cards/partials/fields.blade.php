@@ -27,8 +27,9 @@
     </select>
 </div>
 <div class="mb-4">
-    <label class="block text-sm font-medium mb-2" for="final_score">Nilai Akhir</label>
-    <input id="final_score" name="final_score" type="number" step="0.01" value="{{ old('final_score', $reportCard?->final_score) }}" class="w-full rounded-lg border border-slate-300 px-3 py-2">
+    <label class="block text-sm font-medium mb-2">Nilai Akhir</label>
+    <input type="text" value="{{ $reportCard?->final_score ?? 'Belum ada nilai munaqosah/ujian' }}" disabled class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-500">
+    <p class="mt-1 text-xs text-slate-500">Dihitung otomatis dari rata-rata nilai Munaqosah dan Ujian (harian/mingguan/bulanan) generus pada tahun ajaran dan semester ini. Jika belum ada nilai ujian, nilai munaqosah menjadi nilai rapor.</p>
 </div>
 <div class="mb-4">
     <label class="block text-sm font-medium mb-2" for="predicate">Predikat</label>

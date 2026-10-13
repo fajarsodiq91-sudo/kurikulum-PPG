@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\ReportCardScores;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -24,6 +25,12 @@ class Munaqosah extends Model
         'status',
         'notes',
     ];
+
+    protected static function booted(): void
+    {
+        static::saved(fn (self $munaqosah) => ReportCardScores::recalculate($munaqosah->generus_id, $munaqosah->academic_year_id, $munaqosah->semester_id));
+        static::deleted(fn (self $munaqosah) => ReportCardScores::recalculate($munaqosah->generus_id, $munaqosah->academic_year_id, $munaqosah->semester_id));
+    }
 
     public function generus(): BelongsTo
     {

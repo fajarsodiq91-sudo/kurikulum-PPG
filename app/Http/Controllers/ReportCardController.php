@@ -6,6 +6,7 @@ use App\Models\AcademicYear;
 use App\Models\Generus;
 use App\Models\ReportCard;
 use App\Models\Semester;
+use App\Support\ReportCardScores;
 use App\Support\StudentScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,7 +25,11 @@ class ReportCardController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        ReportCard::create($this->validateReportCard($request));
+        $validated = $this->validateReportCard($request);
+
+        ReportCard::create($validated);
+
+        ReportCardScores::recalculate((int) $validated['generus_id'], (int) $validated['academic_year_id'], (int) $validated['semester_id']);
 
         return redirect()->route('report-cards.index')->with('success', 'Rapor berhasil ditambahkan.');
     }
@@ -43,7 +48,11 @@ class ReportCardController extends Controller
     {
         $this->authorizeRecord($reportCard);
 
-        $reportCard->update($this->validateReportCard($request, $reportCard));
+        $validated = $this->validateReportCard($request, $reportCard);
+
+        $reportCard->update($validated);
+
+        ReportCardScores::recalculate((int) $validated['generus_id'], (int) $validated['academic_year_id'], (int) $validated['semester_id']);
 
         return redirect()->route('report-cards.index')->with('success', 'Rapor berhasil diperbarui.');
     }
@@ -85,7 +94,6 @@ class ReportCardController extends Controller
             ],
             'academic_year_id' => ['required', 'exists:academic_years,id'],
             'semester_id' => ['required', 'exists:semesters,id'],
-            'final_score' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'predicate' => ['nullable', 'string', 'max:10'],
             'recommendation' => ['nullable', 'string'],
             'remarks' => ['nullable', 'string'],

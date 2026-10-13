@@ -62,6 +62,9 @@
             ['label' => 'Munaqosah', 'permission' => ['view-munaqosah', 'manage-munaqosah'], 'icon' => '✦', 'items' => [
                 ['label' => 'Daftar Munaqosah', 'route' => 'munaqosahs.index'],
             ]],
+            ['label' => 'Ujian', 'permission' => ['view-ujian', 'manage-ujian'], 'icon' => '✎', 'items' => [
+                ['label' => 'Daftar Ujian', 'route' => 'ujians.index'],
+            ]],
             ['label' => 'Rapor', 'permission' => ['view-report-cards', 'manage-report-cards'], 'icon' => '▧', 'items' => [
                 ['label' => 'Rapor Generus', 'route' => 'report-cards.index'],
             ]],
