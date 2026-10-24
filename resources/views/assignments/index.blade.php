@@ -1,34 +1,22 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Penugasan</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="bg-slate-100 text-slate-800">
-    <div class="max-w-6xl mx-auto py-10 px-4">
-        <div class="flex items-center justify-between mb-6">
-            <div>
-                <h1 class="text-3xl font-bold">Penugasan & Tanggung Jawab</h1>
-                <p class="text-slate-500">Kelola tugas guru dan unit organisasi</p>
-            </div>
-        </div>
+@extends('layouts.app')
 
-        @if (session('success'))
-            <div class="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-                {{ session('success') }}
-            </div>
-        @endif
+@section('title', 'Penugasan')
+@section('page-title', 'Penugasan & Tanggung Jawab')
+@section('breadcrumb', 'Organisasi / Penempatan')
 
-        @include('layouts.partials.validation-errors')
+@section('content')
+    <div class="mb-6">
+        <p class="text-sm font-semibold text-amber-600">Organisasi</p>
+        <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Penugasan & Tanggung Jawab</h2>
+        <p class="mt-2 text-sm text-slate-500">Kelola tugas guru dan unit organisasi.</p>
+    </div>
 
-        @include('layouts.partials.spreadsheet-tools', ['exportUrl' => route('assignments.export'), 'importUrl' => \App\Support\Access::can('manage-assignments') ? route('assignments.import') : null])
+    @include('layouts.partials.spreadsheet-tools', ['exportUrl' => route('assignments.export'), 'importUrl' => \App\Support\Access::can('manage-assignments') ? route('assignments.import') : null])
 
-        <div class="grid gap-6 lg:grid-cols-3">
-            @if (\App\Support\Access::can('manage-assignments'))
-            <div class="lg:col-span-1 rounded-xl bg-white p-6 shadow-sm border border-slate-200">
-                <h2 class="text-xl font-semibold mb-4">Tambah Penugasan</h2>
+    <div class="grid gap-6 lg:grid-cols-3">
+        @if (\App\Support\Access::can('manage-assignments'))
+            <x-card class="lg:col-span-1">
+                <h2 class="mb-4 text-xl font-semibold">Tambah Penugasan</h2>
                 <form method="POST" action="{{ route('assignments.store') }}">
                     @csrf
                     <div class="mb-4">
@@ -83,38 +71,36 @@
                     </div>
                     <button type="submit" class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Simpan</button>
                 </form>
-            </div>
-            @endif
+            </x-card>
+        @endif
 
-            <div class="lg:col-span-2 rounded-xl bg-white p-6 shadow-sm border border-slate-200">
-                <h2 class="text-xl font-semibold mb-4">Daftar Penugasan</h2>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full text-left text-sm">
-                        <thead>
-                            <tr class="border-b border-slate-200">
-                                <th class="py-3 pr-4">Judul</th>
-                                <th class="py-3 pr-4">Unit</th>
-                                <th class="py-3 pr-4">Guru</th>
+        <x-card class="lg:col-span-2">
+            <h2 class="mb-4 text-xl font-semibold">Daftar Penugasan</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-left text-sm">
+                    <thead>
+                        <tr class="border-b border-slate-200">
+                            <th class="py-3 pr-4">Judul</th>
+                            <th class="py-3 pr-4">Unit</th>
+                            <th class="py-3 pr-4">Guru</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($assignments as $assignment)
+                            <tr class="border-b border-slate-100">
+                                <td class="py-3 pr-4">{{ $assignment->assignment_title }}</td>
+                                <td class="py-3 pr-4">{{ $assignment->organizationUnit?->name ?? '-' }}</td>
+                                <td class="py-3 pr-4">{{ $assignment->teacher?->name ?? '-' }}</td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($assignments as $assignment)
-                                <tr class="border-b border-slate-100">
-                                    <td class="py-3 pr-4">{{ $assignment->assignment_title }}</td>
-                                    <td class="py-3 pr-4">{{ $assignment->organizationUnit?->name ?? '-' }}</td>
-                                    <td class="py-3 pr-4">{{ $assignment->teacher?->name ?? '-' }}</td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="3" class="py-6 text-center text-slate-500">Belum ada penugasan.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-                <div class="mt-4">{{ $assignments->links() }}</div>
+                        @empty
+                            <tr>
+                                <td colspan="3" class="py-6"><x-empty-state title="Belum ada penugasan." class="border-none bg-transparent" /></td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
-        </div>
+            <div class="mt-4">{{ $assignments->links() }}</div>
+        </x-card>
     </div>
-</body>
-</html>
+@endsection
