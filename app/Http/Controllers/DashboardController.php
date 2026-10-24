@@ -29,14 +29,16 @@ class DashboardController extends Controller
             'munaqosahCount' => Munaqosah::count(),
             'trainingCount' => Training::query()->where('status', 'active')->count(),
             'announcements' => Announcement::published()->with('author')->latest('published_at')->take(5)->get(),
-            'upcomingSessions' => LearningSession::query()
-                ->when($this->canSee($user, 'learning-sessions'), fn ($query) => $query->visibleTo($user))
-                ->where('session_date', '>=', now()->toDateString())
-                ->orderBy('session_date')
-                ->orderBy('start_time')
-                ->with(['teacher', 'material'])
-                ->take(5)
-                ->get(),
+            'upcomingSessions' => $this->canSee($user, 'learning-sessions')
+                ? LearningSession::query()
+                    ->visibleTo($user)
+                    ->where('session_date', '>=', now()->toDateString())
+                    ->orderBy('session_date')
+                    ->orderBy('start_time')
+                    ->with(['teacher', 'material'])
+                    ->take(5)
+                    ->get()
+                : collect(),
         ]);
     }
 
