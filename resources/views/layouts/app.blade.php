@@ -21,6 +21,7 @@
 
             <main class="flex-1 px-4 py-6 sm:px-6 lg:px-8">
                 @include('layouts.partials.breadcrumb')
+                @include('layouts.partials.flash')
                 @yield('content')
             </main>
         </div>

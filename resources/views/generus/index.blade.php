@@ -19,21 +19,6 @@
         @endif
     </div>
 
-    @if (session('success'))
-        <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">{{ session('success') }}</div>
-    @endif
-
-    @if ($errors->any())
-        <div class="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
-            <p class="font-semibold">Import XLSX gagal.</p>
-            <ul class="mt-2 list-inside list-disc space-y-1">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-
     @if (\App\Support\Access::can('manage-generus'))
         <section class="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 class="text-lg font-bold text-slate-950">Import Database Generus</h2>
@@ -72,7 +57,7 @@
                         <tr class="border-b border-slate-100 last:border-0">
                             <td class="py-3 pr-4">{{ $item->registration_number }}</td>
                             <td class="py-3 pr-4"><a href="{{ route('generus.show', $item) }}" class="font-medium text-slate-900 hover:text-amber-600">{{ $item->full_name }}</a></td>
-                            <td class="py-3 pr-4"><span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $item->status === 'active' ? 'bg-emerald-100 text-emerald-700' : ($item->status === 'pindah_sambung' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600') }}">{{ match ($item->status) { 'active' => 'Aktif', 'pindah_sambung' => 'Pindah Sambung', 'married' => 'Sudah Menikah', default => $item->status } }}</span></td>
+                            <td class="py-3 pr-4"><x-badge :color="match ($item->status) { 'active' => 'emerald', 'pindah_sambung' => 'amber', default => 'slate' }">{{ match ($item->status) { 'active' => 'Aktif', 'pindah_sambung' => 'Pindah Sambung', 'married' => 'Sudah Menikah', default => $item->status } }}</x-badge></td>
                             <td class="py-3 pr-4">
                                 @foreach($item->assignments as $assignment)
                                     <div class="text-xs leading-6 text-slate-600">
@@ -93,7 +78,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="py-10 text-center"><p class="font-semibold text-slate-700">Belum ada data generus</p><p class="mt-1 text-sm text-slate-500">Tambahkan generus pertama untuk mulai mengelola pembinaan.</p></td>
+                            <td colspan="5" class="py-10"><x-empty-state title="Belum ada data generus" description="Tambahkan generus pertama untuk mulai mengelola pembinaan." class="border-none bg-transparent" /></td>
                         </tr>
                     @endforelse
                 </tbody>

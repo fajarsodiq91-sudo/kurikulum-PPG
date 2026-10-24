@@ -11,12 +11,6 @@
         <p class="mt-2 text-sm text-slate-500">Password awal akun generus dan guru sama dengan nomor induk. Sebaiknya segera diganti.</p>
     </div>
 
-    @if (session('success'))
-        <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">{{ session('success') }}</div>
-    @endif
-
-    @include('layouts.partials.validation-errors')
-
     <section class="max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <form method="POST" action="{{ route('password.update') }}" class="space-y-4">
             @csrf

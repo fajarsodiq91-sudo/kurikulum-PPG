@@ -18,23 +18,6 @@
         @endif
     </div>
 
-    @if (session('success'))
-        <div class="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-            {{ session('success') }}
-        </div>
-    @endif
-
-    @if ($errors->any())
-        <div class="mb-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
-            <p class="font-semibold">Import XLSX gagal.</p>
-            <ul class="mt-2 list-inside list-disc space-y-1">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-
     @if (\App\Support\Access::can('manage-learning-materials'))
         <section class="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 class="text-lg font-bold text-slate-950">Import Materi dari XLSX</h2>

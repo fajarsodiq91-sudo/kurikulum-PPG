@@ -16,16 +16,6 @@
         <p class="mt-2 text-sm text-slate-500">Kelola semester pada setiap tahun akademik.</p>
     </div>
 
-    @if (session('success'))
-        <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">{{ session('success') }}</div>
-    @endif
-    @if ($errors->any())
-        <div class="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
-            <p class="font-semibold">Data belum dapat disimpan.</p>
-            <ul class="mt-2 list-inside list-disc">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
-        </div>
-    @endif
-
     @if (\App\Support\Access::can('manage-master-data'))
     @include('layouts.partials.spreadsheet-tools', ['exportUrl' => route('master-data.export', 'semesters'), 'importUrl' => route('master-data.import', 'semesters')])
     @endif

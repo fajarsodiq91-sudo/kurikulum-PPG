@@ -15,12 +15,6 @@
         <p class="mt-2 text-sm text-slate-500">Catat komunikasi guru dengan orang tua atau wali per murid.</p>
     </div>
 
-    @if (session('success'))
-        <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">{{ session('success') }}</div>
-    @endif
-
-    @include('layouts.partials.validation-errors')
-
     @include('layouts.partials.spreadsheet-tools', ['exportUrl' => route('parent-communications.export'), 'importUrl' => \App\Support\Access::can('manage-parent-communications') ? route('parent-communications.import') : null])
 
     <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">

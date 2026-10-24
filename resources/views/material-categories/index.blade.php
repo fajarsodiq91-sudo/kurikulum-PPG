@@ -11,22 +11,6 @@
         <p class="mt-2 text-sm text-slate-500">Kelompok materi untuk setiap kelas pada tiap semester.</p>
     </div>
 
-    @if (session('success'))
-        <div class="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-            {{ session('success') }}
-        </div>
-    @endif
-
-    @if ($errors->any())
-        <div class="mb-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
-            <ul class="list-inside list-disc space-y-1">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-
     @include('layouts.partials.spreadsheet-tools', ['exportUrl' => route('material-categories.export'), 'importUrl' => \App\Support\Access::can('manage-learning-materials') ? route('material-categories.import') : null])
 
     <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">

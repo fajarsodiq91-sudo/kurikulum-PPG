@@ -11,12 +11,6 @@
         <p class="mt-2 text-sm text-slate-500">Kelola akun, status aktif, dan peran pengguna pada sistem.</p>
     </div>
 
-    @if (session('success'))
-        <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">{{ session('success') }}</div>
-    @endif
-
-    @include('layouts.partials.validation-errors')
-
     @include('layouts.partials.spreadsheet-tools', ['exportUrl' => route('users.export'), 'importUrl' => route('users.import')])
 
     <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">
@@ -63,9 +57,7 @@
                                     @endif
                                 </td>
                                 <td class="py-3 pr-4">
-                                    <span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $user->status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600' }}">
-                                        {{ $user->status === 'active' ? 'Aktif' : 'Nonaktif' }}
-                                    </span>
+                                    <x-badge :color="$user->status === 'active' ? 'emerald' : 'slate'">{{ $user->status === 'active' ? 'Aktif' : 'Nonaktif' }}</x-badge>
                                 </td>
                                 <td class="py-3 text-right">
                                     <a href="{{ route('users.edit', $user) }}" class="text-xs font-semibold text-amber-600 hover:text-amber-700">Ubah</a>
@@ -73,9 +65,8 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="py-10 text-center">
-                                    <p class="font-semibold text-slate-700">Belum ada data pengguna</p>
-                                    <p class="mt-1 text-sm text-slate-500">Tambahkan pengguna pertama untuk mulai mengelola akses sistem.</p>
+                                <td colspan="5" class="py-10">
+                                    <x-empty-state title="Belum ada data pengguna" description="Tambahkan pengguna pertama untuk mulai mengelola akses sistem." class="border-none bg-transparent" />
                                 </td>
                             </tr>
                         @endforelse

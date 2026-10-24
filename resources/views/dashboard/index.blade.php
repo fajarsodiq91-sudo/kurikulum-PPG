@@ -6,7 +6,7 @@
 
 @section('content')
     @if ($announcements->isNotEmpty())
-        <section class="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <x-card class="mb-6">
             <div class="flex items-center justify-between gap-4">
                 <h2 class="font-bold text-slate-950">Berita &amp; Pengumuman</h2>
                 @if (\App\Support\Access::can('manage-announcements'))
@@ -32,7 +32,7 @@
                     </article>
                 @endforeach
             </div>
-        </section>
+        </x-card>
     @endif
 
     @guest
@@ -63,7 +63,7 @@
             ['label' => 'Munaqosah', 'value' => $munaqosahCount, 'badge' => 'bg-amber-50 text-amber-600', 'icon' => 'check-badge'],
             ['label' => 'Pelatihan Aktif', 'value' => $trainingCount, 'badge' => 'bg-amber-50 text-amber-600', 'icon' => 'bolt'],
         ] as $card)
-            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <x-card padding="p-5">
                 <div class="flex h-10 w-10 items-center justify-center rounded-xl {{ $card['badge'] }}">
                     @switch($card['icon'])
                         @case('group')
@@ -91,12 +91,12 @@
                 </div>
                 <p class="mt-4 text-3xl font-bold tracking-tight text-slate-950">{{ $card['value'] }}</p>
                 <p class="mt-1 text-sm font-medium text-slate-500">{{ $card['label'] }}</p>
-            </div>
+            </x-card>
         @endforeach
     </div>
 
     <div class="mt-6 grid gap-6 xl:grid-cols-[1.4fr_1fr]">
-        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <x-card>
             <div class="flex items-center justify-between gap-4">
                 <div>
                     <h2 class="font-bold text-slate-950">Akses cepat</h2>
@@ -139,9 +139,9 @@
                     </a>
                 @endif
             </div>
-        </section>
+        </x-card>
 
-        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <x-card>
             <h2 class="font-bold text-slate-950">Sesi KBM mendatang</h2>
             @if ($upcomingSessions->isNotEmpty())
                 <ul class="mt-5 space-y-3">
@@ -159,18 +159,12 @@
                     @endforeach
                 </ul>
             @else
-                <div class="mt-5 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
-                    <p class="text-sm font-semibold text-slate-700">Belum ada sesi terjadwal</p>
-                    <p class="mt-1 text-xs leading-5 text-slate-500">Sesi KBM yang dijadwalkan akan tampil di sini.</p>
-                </div>
+                <x-empty-state class="mt-5" title="Belum ada sesi terjadwal" description="Sesi KBM yang dijadwalkan akan tampil di sini." />
             @endif
-        </section>
+        </x-card>
     </div>
 
     @if ($generusCount === 0 && $teacherCount === 0 && $learningSessionCount === 0)
-        <section class="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6">
-            <h2 class="font-bold text-slate-900">Belum ada data operasional</h2>
-            <p class="mt-1 max-w-2xl text-sm leading-6 text-slate-500">Dashboard siap digunakan. Mulai dengan menambahkan generus, guru, atau sesi KBM melalui menu yang tersedia.</p>
-        </section>
+        <x-empty-state class="mt-6" title="Belum ada data operasional" description="Dashboard siap digunakan. Mulai dengan menambahkan generus, guru, atau sesi KBM melalui menu yang tersedia." />
     @endif
 @endsection

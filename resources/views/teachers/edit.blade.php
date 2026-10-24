@@ -17,8 +17,6 @@
         </div>
     </div>
 
-    @include('layouts.partials.validation-errors')
-
     <section class="max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <form method="POST" action="{{ route('teachers.update', $teacher) }}" enctype="multipart/form-data">
             @csrf

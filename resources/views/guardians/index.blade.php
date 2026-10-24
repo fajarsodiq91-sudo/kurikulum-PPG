@@ -11,12 +11,6 @@
         <p class="mt-2 text-sm text-slate-500">Kelola keterkaitan keluarga generus.</p>
     </div>
 
-    @if (session('success'))
-        <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">{{ session('success') }}</div>
-    @endif
-
-    @include('layouts.partials.validation-errors')
-
     @if (\App\Support\Access::can('manage-guardians'))
         @include('layouts.partials.spreadsheet-tools', ['exportUrl' => route('guardians.export'), 'importUrl' => route('guardians.import')])
     @endif

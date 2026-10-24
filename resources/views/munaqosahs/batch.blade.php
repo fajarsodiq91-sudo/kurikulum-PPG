@@ -14,12 +14,6 @@
         <a href="{{ route('munaqosahs.index') }}" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Kembali ke daftar</a>
     </div>
 
-    @if (session('success'))
-        <div class="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">{{ session('success') }}</div>
-    @endif
-
-    @include('layouts.partials.validation-errors')
-
     <section class="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <form method="GET" action="{{ route('munaqosahs.batch') }}" class="grid gap-3 sm:grid-cols-4">
             <div>

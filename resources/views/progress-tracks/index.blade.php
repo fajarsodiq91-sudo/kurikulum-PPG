@@ -11,14 +11,6 @@
         <p class="mt-2 text-sm text-slate-500">Monitor perkembangan generus dalam periode tertentu.</p>
     </div>
 
-        @if (session('success'))
-            <div class="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-                {{ session('success') }}
-            </div>
-        @endif
-
-        @include('layouts.partials.validation-errors')
-
         @include('layouts.partials.spreadsheet-tools', ['exportUrl' => route('progress-tracks.export'), 'importUrl' => \App\Support\Access::can('manage-progress-tracking') ? route('progress-tracks.import') : null])
 
         <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">

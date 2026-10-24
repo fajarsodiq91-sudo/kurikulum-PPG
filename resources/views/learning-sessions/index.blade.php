@@ -18,14 +18,6 @@
         @endif
     </div>
 
-        @if (session('success'))
-            <div class="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-                {{ session('success') }}
-            </div>
-        @endif
-
-        @include('layouts.partials.validation-errors')
-
         @include('layouts.partials.spreadsheet-tools', ['exportUrl' => route('learning-sessions.export')])
 
         <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">

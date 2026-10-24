@@ -11,12 +11,6 @@
         <p class="mt-2 text-sm text-slate-500">Centang generus yang menjadi murid. Data murid yang dicentang akan muncul di absensi, evaluasi, tindak lanjut, rapor, dan komunikasi orang tua saat guru login.</p>
     </div>
 
-    @if (session('success'))
-        <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">{{ session('success') }}</div>
-    @endif
-
-    @include('layouts.partials.validation-errors')
-
     @if ($teacher->group === null)
         <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">Guru ini belum memiliki kelompok, sehingga daftar generus belum bisa ditampilkan. Isi Desa dan Kelompok pada data guru terlebih dahulu.</div>
     @endif
