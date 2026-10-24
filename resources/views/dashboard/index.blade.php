@@ -55,21 +55,42 @@
 
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         @foreach ([
-            ['label' => 'Generus Aktif', 'value' => $generusCount, 'dot' => 'bg-amber-400'],
-            ['label' => 'Guru Aktif', 'value' => $teacherCount, 'dot' => 'bg-brand-500'],
-            ['label' => 'Desa', 'value' => $regionCount, 'dot' => 'bg-emerald-500'],
-            ['label' => 'Kelompok', 'value' => $groupCount, 'dot' => 'bg-brand-300'],
-            ['label' => 'Sesi KBM', 'value' => $learningSessionCount, 'dot' => 'bg-amber-600'],
-            ['label' => 'Munaqosah', 'value' => $munaqosahCount, 'dot' => 'bg-emerald-600'],
-            ['label' => 'Pelatihan Aktif', 'value' => $trainingCount, 'dot' => 'bg-brand-700'],
+            ['label' => 'Generus Aktif', 'value' => $generusCount, 'badge' => 'bg-brand-50 text-brand-600', 'icon' => 'group'],
+            ['label' => 'Guru Aktif', 'value' => $teacherCount, 'badge' => 'bg-brand-50 text-brand-600', 'icon' => 'person'],
+            ['label' => 'Desa', 'value' => $regionCount, 'badge' => 'bg-emerald-50 text-emerald-600', 'icon' => 'map-pin'],
+            ['label' => 'Kelompok', 'value' => $groupCount, 'badge' => 'bg-emerald-50 text-emerald-600', 'icon' => 'squares'],
+            ['label' => 'Sesi KBM', 'value' => $learningSessionCount, 'badge' => 'bg-amber-50 text-amber-600', 'icon' => 'book-open'],
+            ['label' => 'Munaqosah', 'value' => $munaqosahCount, 'badge' => 'bg-amber-50 text-amber-600', 'icon' => 'check-badge'],
+            ['label' => 'Pelatihan Aktif', 'value' => $trainingCount, 'badge' => 'bg-amber-50 text-amber-600', 'icon' => 'bolt'],
         ] as $card)
             <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div class="flex items-start justify-between gap-4">
-                    <p class="text-sm font-medium text-slate-500">{{ $card['label'] }}</p>
-                    <span class="h-2.5 w-2.5 rounded-full {{ $card['dot'] }}"></span>
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl {{ $card['badge'] }}">
+                    @switch($card['icon'])
+                        @case('group')
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M3.5 19.25a5.5 5.5 0 0 1 11 0"/><path stroke-linecap="round" stroke-linejoin="round" d="M14.5 14.5c2.761 0 5.5 1.5 5.5 4.75"/></svg>
+                            @break
+                        @case('person')
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 20.25a7.5 7.5 0 0 1 15 0"/></svg>
+                            @break
+                        @case('map-pin')
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 6-7.5 11.25-7.5 11.25S4.5 16.5 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/></svg>
+                            @break
+                        @case('squares')
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6a2.25 2.25 0 0 1 2.25-2.25h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6a2.25 2.25 0 0 1 2.25-2.25h2.25A2.25 2.25 0 0 1 20.25 6v2.25a2.25 2.25 0 0 1-2.25 2.25h-2.25a2.25 2.25 0 0 1-2.25-2.25V6Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 16.5a2.25 2.25 0 0 1 2.25-2.25h2.25a2.25 2.25 0 0 1 2.25 2.25v2.25A2.25 2.25 0 0 1 8.25 21H6a2.25 2.25 0 0 1-2.25-2.25V16.5Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 16.5a2.25 2.25 0 0 1 2.25-2.25h2.25a2.25 2.25 0 0 1 2.25 2.25v2.25A2.25 2.25 0 0 1 18 21h-2.25a2.25 2.25 0 0 1-2.25-2.25V16.5Z"/></svg>
+                            @break
+                        @case('book-open')
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/></svg>
+                            @break
+                        @case('check-badge')
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z"/></svg>
+                            @break
+                        @case('bolt')
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5 14.25 2.25 12 10.5h8.25L9.75 21.75 12 13.5H3.75Z"/></svg>
+                            @break
+                    @endswitch
                 </div>
                 <p class="mt-4 text-3xl font-bold tracking-tight text-slate-950">{{ $card['value'] }}</p>
-                <p class="mt-1 text-xs text-slate-400">Data aktual database</p>
+                <p class="mt-1 text-sm font-medium text-slate-500">{{ $card['label'] }}</p>
             </div>
         @endforeach
     </div>
@@ -84,30 +105,65 @@
             </div>
             <div class="mt-5 grid gap-3 sm:grid-cols-2">
                 @if (\App\Support\Access::can('manage-generus'))
-                    <a href="{{ route('generus.index') }}" class="rounded-xl border border-slate-200 p-4 transition hover:border-amber-300 hover:bg-amber-50"><span class="text-sm font-semibold text-slate-900">Data Generus</span><span class="mt-1 block text-xs text-slate-500">Lihat, import, dan export database generus</span></a>
-                    <a href="{{ route('generus.create') }}" class="rounded-xl border border-slate-200 p-4 transition hover:border-amber-300 hover:bg-amber-50"><span class="text-sm font-semibold text-slate-900">Tambah Generus</span><span class="mt-1 block text-xs text-slate-500">Daftarkan generus baru</span></a>
+                    <a href="{{ route('generus.index') }}" class="flex items-start gap-3 rounded-xl border border-slate-200 p-4 transition hover:border-amber-300 hover:bg-amber-50">
+                        <svg class="h-5 w-5 shrink-0 text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M3.5 19.25a5.5 5.5 0 0 1 11 0"/><path stroke-linecap="round" stroke-linejoin="round" d="M14.5 14.5c2.761 0 5.5 1.5 5.5 4.75"/></svg>
+                        <span><span class="block text-sm font-semibold text-slate-900">Data Generus</span><span class="mt-1 block text-xs text-slate-500">Lihat, import, dan export database generus</span></span>
+                    </a>
+                    <a href="{{ route('generus.create') }}" class="flex items-start gap-3 rounded-xl border border-slate-200 p-4 transition hover:border-amber-300 hover:bg-amber-50">
+                        <svg class="h-5 w-5 shrink-0 text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 20.25a7.5 7.5 0 0 1 13.5-4.5M19.5 15v3m1.5-1.5h-3"/></svg>
+                        <span><span class="block text-sm font-semibold text-slate-900">Tambah Generus</span><span class="mt-1 block text-xs text-slate-500">Daftarkan generus baru</span></span>
+                    </a>
                 @endif
                 @if (\App\Support\Access::can('manage-learning-sessions'))
-                    <a href="{{ route('learning-sessions.index') }}" class="rounded-xl border border-slate-200 p-4 transition hover:border-amber-300 hover:bg-amber-50"><span class="text-sm font-semibold text-slate-900">Kelola Sesi KBM</span><span class="mt-1 block text-xs text-slate-500">Lihat dan buat sesi pembelajaran</span></a>
+                    <a href="{{ route('learning-sessions.index') }}" class="flex items-start gap-3 rounded-xl border border-slate-200 p-4 transition hover:border-amber-300 hover:bg-amber-50">
+                        <svg class="h-5 w-5 shrink-0 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/></svg>
+                        <span><span class="block text-sm font-semibold text-slate-900">Kelola Sesi KBM</span><span class="mt-1 block text-xs text-slate-500">Lihat dan buat sesi pembelajaran</span></span>
+                    </a>
                 @endif
                 @if (\App\Support\Access::can('manage-evaluations'))
-                    <a href="{{ route('evaluations.index') }}" class="rounded-xl border border-slate-200 p-4 transition hover:border-amber-300 hover:bg-amber-50"><span class="text-sm font-semibold text-slate-900">Input Evaluasi</span><span class="mt-1 block text-xs text-slate-500">Catat evaluasi pembinaan</span></a>
+                    <a href="{{ route('evaluations.index') }}" class="flex items-start gap-3 rounded-xl border border-slate-200 p-4 transition hover:border-amber-300 hover:bg-amber-50">
+                        <svg class="h-5 w-5 shrink-0 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 3.75h6a1.5 1.5 0 0 1 1.5 1.5v.75h-9v-.75A1.5 1.5 0 0 1 9 3.75Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 6h9a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 19.5v-12A1.5 1.5 0 0 1 7.5 6Z"/><path stroke-linecap="round" stroke-linejoin="round" d="m9 13.5 2.25 2.25L15 11.25"/></svg>
+                        <span><span class="block text-sm font-semibold text-slate-900">Input Evaluasi</span><span class="mt-1 block text-xs text-slate-500">Catat evaluasi pembinaan</span></span>
+                    </a>
                 @endif
                 @if (\App\Support\Access::can('view-reports'))
-                    <a href="{{ route('reports.index') }}" class="rounded-xl border border-slate-200 p-4 transition hover:border-amber-300 hover:bg-amber-50"><span class="text-sm font-semibold text-slate-900">Lihat Laporan</span><span class="mt-1 block text-xs text-slate-500">Buka ringkasan pelaporan</span></a>
+                    <a href="{{ route('reports.index') }}" class="flex items-start gap-3 rounded-xl border border-slate-200 p-4 transition hover:border-amber-300 hover:bg-amber-50">
+                        <svg class="h-5 w-5 shrink-0 text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 20.25h18M6 20.25v-6M12 20.25v-10.5M18 20.25V6"/></svg>
+                        <span><span class="block text-sm font-semibold text-slate-900">Lihat Laporan</span><span class="mt-1 block text-xs text-slate-500">Buka ringkasan pelaporan</span></span>
+                    </a>
                 @endif
                 @if (\App\Support\Access::can('view-master-data'))
-                    <a href="{{ route('master-data.index') }}" class="rounded-xl border border-slate-200 p-4 transition hover:border-amber-300 hover:bg-amber-50"><span class="text-sm font-semibold text-slate-900">Master Data</span><span class="mt-1 block text-xs text-slate-500">Kelola desa, kelompok, jenjang, kelas, dan konfigurasi dinamis</span></a>
+                    <a href="{{ route('master-data.index') }}" class="flex items-start gap-3 rounded-xl border border-slate-200 p-4 transition hover:border-amber-300 hover:bg-amber-50">
+                        <svg class="h-5 w-5 shrink-0 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6a2.25 2.25 0 0 1 2.25-2.25h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6a2.25 2.25 0 0 1 2.25-2.25h2.25A2.25 2.25 0 0 1 20.25 6v2.25a2.25 2.25 0 0 1-2.25 2.25h-2.25a2.25 2.25 0 0 1-2.25-2.25V6Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 16.5a2.25 2.25 0 0 1 2.25-2.25h2.25a2.25 2.25 0 0 1 2.25 2.25v2.25A2.25 2.25 0 0 1 8.25 21H6a2.25 2.25 0 0 1-2.25-2.25V16.5Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 16.5a2.25 2.25 0 0 1 2.25-2.25h2.25a2.25 2.25 0 0 1 2.25 2.25v2.25A2.25 2.25 0 0 1 18 21h-2.25a2.25 2.25 0 0 1-2.25-2.25V16.5Z"/></svg>
+                        <span><span class="block text-sm font-semibold text-slate-900">Master Data</span><span class="mt-1 block text-xs text-slate-500">Kelola desa, kelompok, jenjang, kelas, dan konfigurasi dinamis</span></span>
+                    </a>
                 @endif
             </div>
         </section>
 
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 class="font-bold text-slate-950">Aktivitas terbaru</h2>
-            <div class="mt-5 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
-                <p class="text-sm font-semibold text-slate-700">Belum ada aktivitas</p>
-                <p class="mt-1 text-xs leading-5 text-slate-500">Activity log belum tersedia pada modul saat ini.</p>
-            </div>
+            <h2 class="font-bold text-slate-950">Sesi KBM mendatang</h2>
+            @if ($upcomingSessions->isNotEmpty())
+                <ul class="mt-5 space-y-3">
+                    @foreach ($upcomingSessions as $session)
+                        <li class="flex items-start gap-3 rounded-xl border border-slate-200 p-3">
+                            <span class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/></svg>
+                            </span>
+                            <div class="min-w-0">
+                                <p class="truncate text-sm font-semibold text-slate-900">{{ $session->material?->title ?? 'Sesi KBM' }}</p>
+                                <p class="mt-0.5 text-xs text-slate-500">{{ $session->session_date }}{{ $session->start_time ? ' · '.$session->start_time : '' }} · {{ $session->levelLabel() }}</p>
+                                <p class="mt-0.5 text-xs text-slate-400">{{ $session->teacher?->name ?? 'Guru belum ditentukan' }}</p>
+                            </div>
+                        </li>
+                    @endforeach
+                </ul>
+            @else
+                <div class="mt-5 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+                    <p class="text-sm font-semibold text-slate-700">Belum ada sesi terjadwal</p>
+                    <p class="mt-1 text-xs leading-5 text-slate-500">Sesi KBM yang dijadwalkan akan tampil di sini.</p>
+                </div>
+            @endif
         </section>
     </div>
 
