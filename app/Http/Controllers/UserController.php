@@ -163,7 +163,7 @@ class UserController extends Controller
                 'string',
                 'min:8',
             ],
-            'status' => ['required', 'in:active,inactive'],
+            'status' => ['required', 'in:active,inactive,pending'],
             'roles' => ['nullable', 'array'],
             'roles.*' => ['nullable', 'integer', 'exists:roles,id'],
         ]);

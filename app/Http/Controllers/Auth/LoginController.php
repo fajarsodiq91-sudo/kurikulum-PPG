@@ -67,8 +67,8 @@ class LoginController extends Controller
     }
 
     /**
-     * Sign in with an existing account whose email matches the Google account.
-     * Accounts are provisioned by an admin, so a new Google account never auto-registers.
+     * Sign in with an existing active account whose email matches the Google account.
+     * An unrecognised Google account is sent to self-register instead of just failing.
      */
     public function handleGoogleCallback(Request $request): RedirectResponse
     {
@@ -83,7 +83,22 @@ class LoginController extends Controller
 
         $user = User::where('email', $googleUser->getEmail())->first();
 
-        if ($user === null || $user->status !== 'active') {
+        if ($user === null) {
+            $request->session()->put('google_registration', [
+                'name' => $googleUser->getName() ?: $googleUser->getNickname() ?: $googleUser->getEmail(),
+                'email' => $googleUser->getEmail(),
+            ]);
+
+            return redirect()->route('register');
+        }
+
+        if ($user->status === 'pending') {
+            return redirect()->route('login')->withErrors([
+                'login' => 'Pendaftaran Anda masih menunggu persetujuan admin.',
+            ]);
+        }
+
+        if ($user->status !== 'active') {
             return redirect()->route('login')->withErrors([
                 'login' => 'Akun Google ini tidak terdaftar atau belum aktif di sistem.',
             ]);

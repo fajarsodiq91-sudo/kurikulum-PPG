@@ -21,6 +21,12 @@
 
             <h1 class="text-2xl font-bold text-slate-800 mb-6">Masuk ke Sistem</h1>
 
+            @if (session('success'))
+                <div class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
+                    {{ session('success') }}
+                </div>
+            @endif
+
             @if ($errors->any())
                 <div class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                     {{ $errors->first() }}

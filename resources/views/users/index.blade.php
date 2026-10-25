@@ -57,7 +57,11 @@
                                     @endif
                                 </td>
                                 <td class="py-3 pr-4">
-                                    <x-badge :color="$user->status === 'active' ? 'emerald' : 'slate'">{{ $user->status === 'active' ? 'Aktif' : 'Nonaktif' }}</x-badge>
+                                    @php
+                                        $statusLabels = ['active' => 'Aktif', 'pending' => 'Menunggu Persetujuan', 'inactive' => 'Nonaktif'];
+                                        $statusColors = ['active' => 'emerald', 'pending' => 'amber', 'inactive' => 'slate'];
+                                    @endphp
+                                    <x-badge :color="$statusColors[$user->status] ?? 'slate'">{{ $statusLabels[$user->status] ?? 'Nonaktif' }}</x-badge>
                                 </td>
                                 <td class="py-3 text-right">
                                     <a href="{{ route('users.edit', $user) }}" class="text-xs font-semibold text-amber-600 hover:text-amber-700">Ubah</a>

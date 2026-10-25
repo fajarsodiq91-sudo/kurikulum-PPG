@@ -7,6 +7,7 @@ use App\Http\Controllers\AnnualAuditController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordController;
+use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\CommunicationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EvaluationController;
@@ -50,6 +51,8 @@ Route::middleware('guest')->group(function () {
     Route::post('/login/face', [LoginController::class, 'face'])->middleware('throttle:10,1')->name('login.face');
     Route::get('/login/google', [LoginController::class, 'redirectToGoogle'])->name('login.google');
     Route::get('/login/google/callback', [LoginController::class, 'handleGoogleCallback'])->name('login.google.callback');
+    Route::get('/register', [RegistrationController::class, 'create'])->name('register');
+    Route::post('/register', [RegistrationController::class, 'store'])->name('register.store');
 });
 
 Route::post('/logout', [LoginController::class, 'logout'])->middleware('auth')->name('logout');

@@ -19,6 +19,7 @@
         <select id="status" name="status" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
             <option value="active" @selected(old('status', $user?->status ?? 'active') === 'active')>Aktif</option>
             <option value="inactive" @selected(old('status', $user?->status) === 'inactive')>Nonaktif</option>
+            <option value="pending" @selected(old('status', $user?->status) === 'pending')>Menunggu Persetujuan</option>
         </select>
     </div>
 
