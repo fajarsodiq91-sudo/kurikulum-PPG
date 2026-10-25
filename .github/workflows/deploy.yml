@@ -1,0 +1,27 @@
+name: Post-deploy (Hostinger)
+
+# Hostinger's Git auto-deploy only clones, runs `composer install`, and
+# publishes files — it never runs deploy.sh. This workflow fills that gap:
+# it waits for Hostinger's own auto-deploy to finish publishing, then SSHes
+# in and runs deploy.sh (migrations, package discovery, cache rebuild).
+on:
+  push:
+    branches: [main]
+
+jobs:
+  post-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Hostinger auto-deploy to publish files
+        run: sleep 60
+
+      - name: Run deploy.sh on Hostinger via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          port: ${{ secrets.HOSTINGER_PORT }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          script: |
+            cd ${{ secrets.HOSTINGER_PATH }}
+            bash deploy.sh
