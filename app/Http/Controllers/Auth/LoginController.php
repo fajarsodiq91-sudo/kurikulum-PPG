@@ -11,6 +11,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Laravel\Socialite\Contracts\User as SocialiteUser;
+use Laravel\Socialite\Facades\Socialite;
 
 class LoginController extends Controller
 {
@@ -57,6 +59,40 @@ class LoginController extends Controller
         $validated = $request->validate(['descriptor' => ['required', FaceDescriptors::rule()]]);
 
         return $this->signInMember($request, MemberLogin::forFace(FaceDescriptors::parse($validated['descriptor'])), 'Wajah tidak dikenali.');
+    }
+
+    public function redirectToGoogle(): RedirectResponse
+    {
+        return Socialite::driver('google')->redirect();
+    }
+
+    /**
+     * Sign in with an existing account whose email matches the Google account.
+     * Accounts are provisioned by an admin, so a new Google account never auto-registers.
+     */
+    public function handleGoogleCallback(Request $request): RedirectResponse
+    {
+        try {
+            /** @var SocialiteUser $googleUser */
+            $googleUser = Socialite::driver('google')->user();
+        } catch (\Throwable) {
+            return redirect()->route('login')->withErrors([
+                'login' => 'Gagal masuk dengan Google. Silakan coba lagi.',
+            ]);
+        }
+
+        $user = User::where('email', $googleUser->getEmail())->first();
+
+        if ($user === null || $user->status !== 'active') {
+            return redirect()->route('login')->withErrors([
+                'login' => 'Akun Google ini tidak terdaftar atau belum aktif di sistem.',
+            ]);
+        }
+
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        return redirect()->intended('/dashboard');
     }
 
     public function logout(Request $request): RedirectResponse

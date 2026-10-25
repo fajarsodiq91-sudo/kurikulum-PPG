@@ -47,6 +47,8 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:5,1');
     Route::post('/login/rfid', [LoginController::class, 'rfid'])->middleware('throttle:10,1')->name('login.rfid');
     Route::post('/login/face', [LoginController::class, 'face'])->middleware('throttle:10,1')->name('login.face');
+    Route::get('/login/google', [LoginController::class, 'redirectToGoogle'])->name('login.google');
+    Route::get('/login/google/callback', [LoginController::class, 'handleGoogleCallback'])->name('login.google.callback');
 });
 
 Route::post('/logout', [LoginController::class, 'logout'])->middleware('auth')->name('logout');

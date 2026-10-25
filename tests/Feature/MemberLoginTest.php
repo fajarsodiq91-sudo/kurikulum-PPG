@@ -11,6 +11,9 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Laravel\Socialite\Contracts\User as SocialiteUser;
+use Laravel\Socialite\Facades\Socialite;
+use Mockery;
 use Tests\TestCase;
 
 class MemberLoginTest extends TestCase
@@ -152,6 +155,41 @@ class MemberLoginTest extends TestCase
         $this->actingAs($admin)->postJson("/face-enrollment/generus/{$generus->id}", ['descriptor' => json_encode($this->descriptor(0.1))])->assertOk();
         $this->assertSame(0.1, $generus->fresh()->face_descriptor[0]);
         $this->actingAs($admin)->postJson("/face-enrollment/generus/{$generus->id}", ['descriptor' => '[1]'])->assertUnprocessable();
+    }
+
+    public function test_google_sign_in_matches_an_existing_active_account_by_email(): void
+    {
+        $user = User::create(['name' => 'Hana', 'email' => 'hana@ppg.test', 'password' => Hash::make('password123'), 'status' => 'active']);
+        $this->mockGoogleUser('hana@ppg.test');
+
+        $this->get('/login/google/callback')->assertRedirect('/dashboard');
+
+        $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_google_sign_in_is_refused_for_unknown_or_inactive_accounts(): void
+    {
+        User::create(['name' => 'Ina', 'email' => 'ina@ppg.test', 'password' => Hash::make('password123'), 'status' => 'inactive']);
+        $this->mockGoogleUser('ina@ppg.test');
+
+        $this->get('/login/google/callback')->assertRedirect('/login')->assertSessionHasErrors('login');
+        $this->assertGuest();
+
+        $this->mockGoogleUser('unknown@ppg.test');
+
+        $this->get('/login/google/callback')->assertRedirect('/login')->assertSessionHasErrors('login');
+        $this->assertGuest();
+    }
+
+    private function mockGoogleUser(string $email): void
+    {
+        $googleUser = Mockery::mock(SocialiteUser::class);
+        $googleUser->shouldReceive('getEmail')->andReturn($email);
+
+        $provider = Mockery::mock();
+        $provider->shouldReceive('user')->andReturn($googleUser);
+
+        Socialite::shouldReceive('driver')->with('google')->andReturn($provider);
     }
 
     private function adminWith(string $permission): User

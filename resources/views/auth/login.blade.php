@@ -55,6 +55,22 @@
                 </button>
             </form>
 
+            <div class="mt-4 flex items-center gap-3">
+                <span class="h-px flex-1 bg-slate-200"></span>
+                <span class="text-xs font-medium text-slate-400">atau</span>
+                <span class="h-px flex-1 bg-slate-200"></span>
+            </div>
+
+            <a href="{{ route('login.google') }}" class="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                <svg class="h-5 w-5" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M23.52 12.27c0-.82-.07-1.42-.22-2.04H12v4.07h6.6c-.13 1.09-.86 2.73-2.47 3.84l-.02.15 3.59 2.78.25.02c2.28-2.1 3.57-5.2 3.57-8.82z"/>
+                    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.07 7.93-2.9l-3.82-2.95c-1.02.71-2.4 1.21-4.11 1.21-3.15 0-5.82-2.09-6.78-5h-3.96v2.52C2.81 21.3 7 24 12 24z"/>
+                    <path fill="#FBBC05" d="M5.22 14.36A7.4 7.4 0 0 1 4.8 12c0-.82.14-1.62.39-2.36V7.12H1.24A11.9 11.9 0 0 0 0 12c0 1.92.46 3.74 1.24 5.88z"/>
+                    <path fill="#EA4335" d="M12 4.75c2.25 0 3.77.97 4.63 1.78l3.38-3.3C17.94 1.2 15.24 0 12 0 7 0 2.81 2.7 1.24 6.12l3.96 3.07c.96-2.91 3.63-4.44 6.8-4.44z"/>
+                </svg>
+                Masuk dengan Google
+            </a>
+
             <div class="mt-6 border-t border-slate-200 pt-6"
                 data-login-scanner
                 data-rfid-url="{{ route('login.rfid') }}"
