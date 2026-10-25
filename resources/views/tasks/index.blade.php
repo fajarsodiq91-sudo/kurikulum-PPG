@@ -106,7 +106,7 @@
                             @endif
 
                             <div class="mt-3 flex items-center gap-2 border-t border-slate-100 pt-3">
-                                @if ($task->isUpdatableStatusBy($user))
+                                @if ($task->isEditableBy($user))
                                     @if ($meta['next'])
                                         <form method="POST" action="{{ route('tasks.update-status', $task) }}">
                                             @csrf
@@ -123,7 +123,7 @@
                                         </form>
                                     @endif
                                 @endif
-                                @if ($task->isManageableBy($user))
+                                @if ($task->isEditableBy($user))
                                     <a href="{{ route('tasks.edit', $task) }}" class="ml-auto rounded-lg px-2 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-900">Ubah</a>
                                 @endif
                             </div>

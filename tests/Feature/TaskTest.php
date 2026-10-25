@@ -23,6 +23,8 @@ class TaskTest extends TestCase
 
     private Role $kelompokRole;
 
+    private Role $superAdminRole;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -37,8 +39,9 @@ class TaskTest extends TestCase
         $this->daerahRole = Role::create(['name' => 'PPG', 'slug' => 'ppg', 'is_active' => true]);
         $this->desaRole = Role::create(['name' => 'Perwakilan PPG Desa', 'slug' => 'perwakilan-ppg-desa', 'is_active' => true]);
         $this->kelompokRole = Role::create(['name' => 'Pelaksana PPG Kelompok', 'slug' => 'pelaksana-ppg-kelompok', 'is_active' => true]);
+        $this->superAdminRole = Role::create(['name' => 'Super Admin', 'slug' => 'super-admin', 'is_active' => true]);
 
-        foreach ([$this->daerahRole, $this->desaRole, $this->kelompokRole] as $role) {
+        foreach ([$this->daerahRole, $this->desaRole, $this->kelompokRole, $this->superAdminRole] as $role) {
             $role->permissions()->attach($permission->id);
         }
     }
@@ -148,15 +151,44 @@ class TaskTest extends TestCase
         $this->assertDatabaseHas('tasks', ['title' => 'Tugas dari daerah']);
     }
 
-    public function test_assignee_can_update_status_but_outsider_cannot_see_or_manage_task(): void
+    public function test_task_is_private_to_its_creator_and_assignees_only(): void
     {
         $village = $this->makeVillage('Desa A');
         $group = $this->makeGroup($village, 'Kelompok A1');
-        $otherVillage = $this->makeVillage('Desa B');
+        $otherGroup = $this->makeGroup($village, 'Kelompok A2');
+
+        $daerahUser = $this->makeUser('Daerah', $this->daerahRole, 'global', null);
+        $desaUser = $this->makeUser('Desa A', $this->desaRole, 'village', $village->id);
+        $kelompokUser = $this->makeUser('Kelompok A1', $this->kelompokRole, 'group', $group->id);
+        $otherKelompokUser = $this->makeUser('Kelompok A2', $this->kelompokRole, 'group', $otherGroup->id);
+
+        $task = Task::create([
+            'title' => 'Tugas Rapat Internal',
+            'priority' => 'medium',
+            'status' => 'todo',
+            'assigned_by_id' => $desaUser->id,
+        ]);
+        $task->assignees()->attach($kelompokUser->id);
+
+        // Creator and assignee can see it.
+        $this->actingAs($desaUser)->get('/tasks')->assertSee('Tugas Rapat Internal');
+        $this->actingAs($kelompokUser)->get('/tasks')->assertSee('Tugas Rapat Internal');
+
+        // Daerah (hierarchically above desaUser) is NOT the creator or an assignee, so even
+        // though it could have assigned this task itself, it must not see it - internal only.
+        $this->actingAs($daerahUser)->get('/tasks')->assertDontSee('Tugas Rapat Internal');
+
+        // An unrelated kelompok under the very same desa must not see it either.
+        $this->actingAs($otherKelompokUser)->get('/tasks')->assertDontSee('Tugas Rapat Internal');
+    }
+
+    public function test_assignee_can_edit_and_update_status_but_cannot_delete(): void
+    {
+        $village = $this->makeVillage('Desa A');
+        $group = $this->makeGroup($village, 'Kelompok A1');
 
         $desaUser = $this->makeUser('Desa A', $this->desaRole, 'village', $village->id);
         $kelompokUser = $this->makeUser('Kelompok A1', $this->kelompokRole, 'group', $group->id);
-        $outsider = $this->makeUser('Desa B', $this->desaRole, 'village', $otherVillage->id);
 
         $task = Task::create([
             'title' => 'Tugas Rapat',
@@ -171,11 +203,45 @@ class TaskTest extends TestCase
             ->assertRedirect();
         $this->assertDatabaseHas('tasks', ['id' => $task->id, 'status' => 'in_progress']);
 
-        $this->actingAs($outsider)->get('/tasks')->assertDontSee('Tugas Rapat');
-        $this->actingAs($outsider)->patch("/tasks/{$task->id}/status", ['status' => 'done'])->assertForbidden();
-        $this->actingAs($outsider)->delete("/tasks/{$task->id}")->assertForbidden();
+        $this->actingAs($kelompokUser)->put("/tasks/{$task->id}", [
+            'title' => 'Tugas Rapat (diubah assignee)',
+            'priority' => 'high',
+            'assignees' => [$kelompokUser->id],
+        ])->assertRedirect('/tasks');
+        $this->assertDatabaseHas('tasks', ['id' => $task->id, 'title' => 'Tugas Rapat (diubah assignee)']);
+
+        $this->actingAs($kelompokUser)->delete("/tasks/{$task->id}")->assertForbidden();
+        $this->assertDatabaseHas('tasks', ['id' => $task->id]);
 
         $this->actingAs($desaUser)->delete("/tasks/{$task->id}")->assertRedirect('/tasks');
+        $this->assertDatabaseMissing('tasks', ['id' => $task->id]);
+    }
+
+    public function test_super_admin_can_view_edit_and_delete_any_task(): void
+    {
+        $village = $this->makeVillage('Desa A');
+        $group = $this->makeGroup($village, 'Kelompok A1');
+
+        $desaUser = $this->makeUser('Desa A', $this->desaRole, 'village', $village->id);
+        $kelompokUser = $this->makeUser('Kelompok A1', $this->kelompokRole, 'group', $group->id);
+        $superAdmin = $this->makeUser('Super Admin', $this->superAdminRole, 'global', null);
+
+        $task = Task::create([
+            'title' => 'Tugas Rahasia Desa A',
+            'priority' => 'medium',
+            'status' => 'todo',
+            'assigned_by_id' => $desaUser->id,
+        ]);
+        $task->assignees()->attach($kelompokUser->id);
+
+        $this->actingAs($superAdmin)->get('/tasks')->assertSee('Tugas Rahasia Desa A');
+
+        $this->actingAs($superAdmin)
+            ->patch("/tasks/{$task->id}/status", ['status' => 'done'])
+            ->assertRedirect();
+        $this->assertDatabaseHas('tasks', ['id' => $task->id, 'status' => 'done']);
+
+        $this->actingAs($superAdmin)->delete("/tasks/{$task->id}")->assertRedirect('/tasks');
         $this->assertDatabaseMissing('tasks', ['id' => $task->id]);
     }
 }

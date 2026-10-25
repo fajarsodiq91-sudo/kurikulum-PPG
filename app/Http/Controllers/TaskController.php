@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Task;
+use App\Models\User;
 use App\Support\TaskHierarchy;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,7 +31,7 @@ class TaskController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $validated = $this->validateTask($request);
+        $validated = $this->validateTask($request, $request->user());
 
         $task = Task::create([
             'title' => $validated['title'],
@@ -49,19 +50,19 @@ class TaskController extends Controller
 
     public function edit(Request $request, Task $task): View
     {
-        abort_unless($task->isManageableBy($request->user()), 403);
+        abort_unless($task->isEditableBy($request->user()), 403);
 
         return view('tasks.edit', [
             'task' => $task->load('assignees'),
-            'recipients' => TaskHierarchy::assignableRecipients($request->user()),
+            'recipients' => TaskHierarchy::assignableRecipients($task->assignedBy),
         ]);
     }
 
     public function update(Request $request, Task $task): RedirectResponse
     {
-        abort_unless($task->isManageableBy($request->user()), 403);
+        abort_unless($task->isEditableBy($request->user()), 403);
 
-        $validated = $this->validateTask($request);
+        $validated = $this->validateTask($request, $task->assignedBy);
 
         $task->update([
             'title' => $validated['title'],
@@ -78,7 +79,7 @@ class TaskController extends Controller
 
     public function updateStatus(Request $request, Task $task): RedirectResponse
     {
-        abort_unless($task->isUpdatableStatusBy($request->user()), 403);
+        abort_unless($task->isEditableBy($request->user()), 403);
 
         $validated = $request->validate([
             'status' => ['required', Rule::in(Task::STATUSES)],
@@ -94,7 +95,7 @@ class TaskController extends Controller
 
     public function destroy(Request $request, Task $task): RedirectResponse
     {
-        abort_unless($task->isManageableBy($request->user()), 403);
+        abort_unless($task->isDeletableBy($request->user()), 403);
 
         $task->delete();
 
@@ -102,11 +103,15 @@ class TaskController extends Controller
     }
 
     /**
+     * Assignees are always validated against who the task's creator could reach, not the
+     * current editor - so an assignee editing a task they didn't create can't expand its
+     * audience, and resubmitting the existing (unchanged) assignee list never breaks.
+     *
      * @return array<string, mixed>
      */
-    private function validateTask(Request $request): array
+    private function validateTask(Request $request, User $recipientScopeUser): array
     {
-        $recipientIds = TaskHierarchy::assignableRecipients($request->user())->pluck('id')->all();
+        $recipientIds = TaskHierarchy::assignableRecipients($recipientScopeUser)->pluck('id')->all();
 
         return $request->validate([
             'title' => ['required', 'string', 'max:255'],

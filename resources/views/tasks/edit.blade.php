@@ -57,10 +57,12 @@
             <button type="submit" class="mt-2 w-full rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800">Simpan Perubahan</button>
         </form>
 
-        <form method="POST" action="{{ route('tasks.destroy', $task) }}" class="mt-4 border-t border-slate-100 pt-4" onsubmit="return confirm(@js('Hapus tugas '.$task->title.'? Tindakan ini tidak dapat dibatalkan.'))">
-            @csrf
-            @method('DELETE')
-            <button type="submit" class="w-full rounded-lg border border-rose-200 bg-white px-4 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50">Hapus Tugas</button>
-        </form>
+        @if ($task->isDeletableBy(auth()->user()))
+            <form method="POST" action="{{ route('tasks.destroy', $task) }}" class="mt-4 border-t border-slate-100 pt-4" onsubmit="return confirm(@js('Hapus tugas '.$task->title.'? Tindakan ini tidak dapat dibatalkan.'))">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="w-full rounded-lg border border-rose-200 bg-white px-4 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50">Hapus Tugas</button>
+            </form>
+        @endif
     </section>
 @endsection

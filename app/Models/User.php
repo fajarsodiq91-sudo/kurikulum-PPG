@@ -80,6 +80,23 @@ class User extends Authenticatable
     }
 
     /**
+     * Super Admin bypasses scoping that would otherwise apply (e.g. who may see a Task),
+     * regardless of the scope any of their roles carry.
+     */
+    public function isSuperAdmin(): bool
+    {
+        if ($this->status !== 'active') {
+            return false;
+        }
+
+        return $this->roles()
+            ->where('roles.is_active', true)
+            ->where('user_roles.is_active', true)
+            ->where('roles.slug', 'super-admin')
+            ->exists();
+    }
+
+    /**
      * Scopes (from the `user_roles` pivot) of every active role granting the permission.
      *
      * @return Collection<int, array{type: string, id: int|null}>

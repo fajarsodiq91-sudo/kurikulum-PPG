@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Support\TaskHierarchy;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -51,54 +50,38 @@ class Task extends Model
     }
 
     /**
-     * Tasks the user created, was assigned, or has hierarchical oversight of (their own
-     * organisation node or anything beneath it - see TaskHierarchy::downwardReachIds()).
+     * Tasks are internal to their creator and assignees - nobody else, regardless of where
+     * they sit in the organisation hierarchy. Super Admin sees everything.
      *
      * @param  Builder<static>  $query
      */
     #[Scope]
     protected function visibleTo(Builder $query, User $user): void
     {
-        $downwardIds = TaskHierarchy::downwardReachIds($user);
+        if ($user->isSuperAdmin()) {
+            return;
+        }
 
-        $query->where(function (Builder $scoped) use ($user, $downwardIds): void {
+        $query->where(function (Builder $scoped) use ($user): void {
             $scoped->where('assigned_by_id', $user->id)
                 ->orWhereHas('assignees', fn (Builder $assignees) => $assignees->whereKey($user->id));
-
-            if ($downwardIds === null) {
-                $scoped->orWhereRaw('1 = 1');
-            } elseif ($downwardIds !== []) {
-                $scoped->orWhereHas('assignees', fn (Builder $assignees) => $assignees->whereIn('users.id', $downwardIds));
-            }
         });
     }
 
     /**
-     * Full control (edit, reassign, delete): the creator, or anyone whose hierarchical
-     * downward reach covers every current assignee.
+     * Editable (title, description, assignees, status, ...) by the creator or anyone the
+     * task is assigned to - everyone the task is already visible to, in other words.
      */
-    public function isManageableBy(User $user): bool
+    public function isEditableBy(User $user): bool
     {
-        if ($this->assigned_by_id === $user->id) {
-            return true;
-        }
-
-        $downwardIds = TaskHierarchy::downwardReachIds($user);
-
-        if ($downwardIds === null) {
-            return true;
-        }
-
-        $assigneeIds = $this->assignees->pluck('id');
-
-        return $assigneeIds->isNotEmpty() && $assigneeIds->diff($downwardIds)->isEmpty();
+        return $user->isSuperAdmin() || $this->assigned_by_id === $user->id || $this->assignees->contains('id', $user->id);
     }
 
     /**
-     * Status may additionally be updated by anyone the task was assigned to.
+     * Deletable only by whoever created it (or Super Admin).
      */
-    public function isUpdatableStatusBy(User $user): bool
+    public function isDeletableBy(User $user): bool
     {
-        return $this->isManageableBy($user) || $this->assignees->contains('id', $user->id);
+        return $user->isSuperAdmin() || $this->assigned_by_id === $user->id;
     }
 }
