@@ -30,23 +30,29 @@
                 @php
                     $pivot = $user?->roles->firstWhere('id', $role->id)?->pivot;
                     $checked = in_array($role->id, old('roles', $user?->roles->pluck('id')->all() ?? []));
-                    $scopeType = old("role_scopes.{$role->id}.type", in_array($pivot?->scope_type, ['village', 'group'], true) ? $pivot->scope_type : 'global');
+                    $fixedScope = $fixedRoleScopes[$role->slug] ?? null;
+                    $scopeType = $fixedScope ?? old("role_scopes.{$role->id}.type", in_array($pivot?->scope_type, ['village', 'group'], true) ? $pivot->scope_type : 'global');
                     $scopeId = old("role_scopes.{$role->id}.id", $pivot?->scope_id);
                 @endphp
                 <div class="role-row" data-role-row>
                     <label class="flex items-center gap-3 text-sm text-slate-700">
                         <input type="checkbox" name="roles[]" value="{{ $role->id }}" @checked($checked) class="role-checkbox h-4 w-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500">
                         <span>{{ $role->name }}</span>
-                        @if ($pivot && ! in_array($pivot->scope_type, ['global', 'village', 'group', null], true))
+                        @if ($fixedScope)
+                            <span class="text-xs text-slate-400">(cakupan tetap: {{ ['global' => 'seluruh sistem', 'village' => 'satu desa', 'group' => 'satu kelompok'][$fixedScope] }})</span>
+                        @elseif ($pivot && ! in_array($pivot->scope_type, ['global', 'village', 'group', null], true))
                             <span class="text-xs text-slate-400">(cakupan khusus: {{ $pivot->scope_type }})</span>
                         @endif
                     </label>
                     <div class="scope-fields mt-2 hidden gap-2 pl-7 sm:grid-cols-2" @if (! $pivot || in_array($pivot->scope_type, ['global', 'village', 'group', null], true)) data-editable @endif>
-                        <select name="role_scopes[{{ $role->id }}][type]" class="scope-type w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                        <select name="role_scopes[{{ $role->id }}][type]" class="scope-type w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" @disabled($fixedScope)>
                             <option value="global" @selected($scopeType === 'global')>Seluruh sistem</option>
                             <option value="village" @selected($scopeType === 'village')>Satu desa</option>
                             <option value="group" @selected($scopeType === 'group')>Satu kelompok</option>
                         </select>
+                        @if ($fixedScope)
+                            <input type="hidden" name="role_scopes[{{ $role->id }}][type]" value="{{ $fixedScope }}">
+                        @endif
                         <select name="role_scopes[{{ $role->id }}][id]" class="scope-village hidden w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" data-scope="village" disabled>
                             <option value="">-- Pilih desa --</option>
                             @foreach ($villages as $village)
@@ -74,11 +80,13 @@
         const village = row.querySelector('.scope-village');
         const group = row.querySelector('.scope-group');
 
+        const lockedType = type.hasAttribute('disabled');
+
         function refresh() {
             const editable = fields.hasAttribute('data-editable');
             fields.classList.toggle('hidden', !checkbox.checked || !editable);
             fields.classList.toggle('grid', checkbox.checked && editable);
-            type.disabled = !editable;
+            type.disabled = lockedType || !editable;
             village.classList.toggle('hidden', type.value !== 'village');
             group.classList.toggle('hidden', type.value !== 'group');
             village.disabled = !editable || type.value !== 'village' || !checkbox.checked;

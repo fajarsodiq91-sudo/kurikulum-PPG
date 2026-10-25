@@ -24,7 +24,7 @@ class MunaqosahController extends Controller
     public function index(): View
     {
         return view('munaqosahs.index', [
-            'munaqosahs' => StudentScope::limit(Munaqosah::with(['generus', 'academicYear', 'semester'])->latest(), $this->studentIds())->paginate(25),
+            'munaqosahs' => StudentScope::limit(Munaqosah::with(['generus', 'academicYear', 'semester'])->latest(), StudentScope::viewIds(request()->user(), Munaqosah::MANAGE_PERMISSION))->paginate(25),
             ...$this->formOptions(),
         ]);
     }
@@ -222,7 +222,7 @@ class MunaqosahController extends Controller
 
     private function studentIds(): ?array
     {
-        return StudentScope::ids(request()->user(), Munaqosah::MANAGE_PERMISSION);
+        return StudentScope::manageIds(request()->user(), Munaqosah::MANAGE_PERMISSION);
     }
 
     private function authorizeRecord(Munaqosah $munaqosah): void

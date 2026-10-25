@@ -21,7 +21,7 @@ class ProgressTrackController extends Controller
     public function index(): View
     {
         return view('progress-tracks.index', [
-            'progressTracks' => StudentScope::limit(ProgressTrack::with(['generus', 'academicYear', 'semester'])->latest(), $this->studentIds())->paginate(25),
+            'progressTracks' => StudentScope::limit(ProgressTrack::with(['generus', 'academicYear', 'semester'])->latest(), StudentScope::viewIds(request()->user(), 'manage-progress-tracking'))->paginate(25),
             'generus' => StudentScope::limit(Generus::query(), $this->studentIds(), 'id')->get(),
             'academicYears' => AcademicYear::where('is_active', true)->get(),
             'semesters' => Semester::where('is_active', true)->get(),
@@ -48,7 +48,7 @@ class ProgressTrackController extends Controller
 
     private function studentIds(): ?array
     {
-        return StudentScope::ids(request()->user(), 'manage-progress-tracking');
+        return StudentScope::manageIds(request()->user(), 'manage-progress-tracking');
     }
 
     public function export(Request $request): BinaryFileResponse

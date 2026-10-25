@@ -137,15 +137,21 @@ class OrganizationRolesTest extends TestCase
         $this->actingAs($rep)->get('/users')->assertForbidden();
     }
 
-    public function test_group_executor_manages_only_own_group_data(): void
+    public function test_group_executor_sees_the_whole_desa_but_manages_only_own_group_data(): void
     {
         $exec = $this->userWithRole('pelaksana-ppg-kelompok', 'group', $this->groupA1->id);
         $otherCard = $this->reportCard($this->inA2);
         $this->reportCard($this->inA1);
 
-        $this->actingAs($exec)->get('/generus')->assertOk()->assertSee('Murid A1')->assertDontSee('Murid A2')->assertDontSee('Murid B1');
-        $this->actingAs($exec)->get('/teachers')->assertOk()->assertSee('Guru A1')->assertDontSee('Guru A2');
-        $this->actingAs($exec)->get('/report-cards')->assertOk()->assertSee('Murid A1')->assertDontSee('Murid A2');
+        // Sees every kelompok in their own desa (A1 and A2), never another desa (B).
+        $this->actingAs($exec)->get('/generus')->assertOk()->assertSee('Murid A1')->assertSee('Murid A2')->assertDontSee('Murid B1');
+        $this->actingAs($exec)->get('/teachers')->assertOk()->assertSee('Guru A1')->assertSee('Guru A2');
+        $this->actingAs($exec)->get('/report-cards')->assertOk()->assertSee('Murid A1')->assertSee('Murid A2');
+        $this->actingAs($exec)->get("/generus/{$this->inA2->id}")->assertOk();
+
+        // But can only manage records belonging to their own kelompok (A1), not a sibling one (A2).
+        $this->actingAs($exec)->get("/generus/{$this->inA2->id}/edit")->assertNotFound();
+        $this->actingAs($exec)->get('/teachers/'.Teacher::where('group_id', $this->groupA2->id)->value('id').'/edit')->assertNotFound();
         $this->actingAs($exec)->get("/report-cards/{$otherCard->id}/edit")->assertNotFound();
 
         $payload = ['full_name' => 'Murid Baru', 'status' => 'active', 'village_id' => $this->villageA->id, 'level_id' => $this->level->id];
@@ -161,5 +167,33 @@ class OrganizationRolesTest extends TestCase
 
         $this->actingAs($exec)->post('/master-data/villages', ['name' => 'Desa C', 'is_active' => 1])->assertForbidden();
         $this->actingAs($exec)->get('/master-data/villages')->assertForbidden();
+    }
+
+    public function test_admin_cannot_assign_organisation_roles_outside_their_fixed_scope(): void
+    {
+        $admin = $this->userWithRole('super-admin');
+
+        $roleId = Role::where('slug', 'pelaksana-ppg-kelompok')->value('id');
+
+        $response = $this->actingAs($admin)->post('/users', [
+            'name' => 'Pelaksana Salah',
+            'email' => 'pelaksana-salah@ppg.test',
+            'password' => 'password123',
+            'status' => 'active',
+            'roles' => [$roleId],
+            // A client that bypassed the (disabled) scope-type field would still submit 'village'
+            // here; the server must force it back to 'group' regardless.
+            'role_scopes' => [
+                $roleId => ['type' => 'village', 'id' => $this->groupA1->id],
+            ],
+        ]);
+
+        $response->assertRedirect(route('users.index'));
+
+        $user = User::where('email', 'pelaksana-salah@ppg.test')->firstOrFail();
+        $pivot = $user->roles()->first()->pivot;
+
+        $this->assertSame('group', $pivot->scope_type);
+        $this->assertSame($this->groupA1->id, $pivot->scope_id);
     }
 }

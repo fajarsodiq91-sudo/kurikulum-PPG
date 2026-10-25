@@ -26,7 +26,7 @@ class UjianSheet extends Sheet
 
     public function rows(): iterable
     {
-        $ids = StudentScope::ids($this->user, Ujian::MANAGE_PERMISSION);
+        $ids = StudentScope::viewIds($this->user, Ujian::MANAGE_PERMISSION);
 
         foreach (StudentScope::limit(Ujian::with(['generus', 'academicYear', 'semester']), $ids, 'generus_id')->orderBy('id')->cursor() as $ujian) {
             yield [
@@ -67,7 +67,7 @@ class UjianSheet extends Sheet
             return 'Generus dengan nomor registrasi tersebut tidak ditemukan.';
         }
 
-        $allowedIds = StudentScope::ids($this->user, Ujian::MANAGE_PERMISSION);
+        $allowedIds = StudentScope::manageIds($this->user, Ujian::MANAGE_PERMISSION);
 
         if ($allowedIds !== null && ! in_array($generus->id, $allowedIds, true)) {
             return 'Generus berada di luar wilayah akses Anda.';

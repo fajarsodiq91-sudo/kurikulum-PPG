@@ -22,16 +22,17 @@ class ParentCommunicationController extends Controller
 
     public function index(Request $request): View
     {
-        $ids = StudentScope::ids($request->user(), self::PERMISSION);
+        $viewIds = StudentScope::viewIds($request->user(), self::PERMISSION);
+        $manageIds = StudentScope::manageIds($request->user(), self::PERMISSION);
 
         return view('parent-communications.index', [
             'communications' => StudentScope::limit(
                 ParentCommunication::with(['generus', 'guardian', 'teacher'])->latest('communicated_at')->latest('id'),
-                $ids,
+                $viewIds,
             )->paginate(25),
-            'generus' => StudentScope::limit(Generus::where('status', 'active')->orderBy('full_name'), $ids, 'id')->get(),
+            'generus' => StudentScope::limit(Generus::where('status', 'active')->orderBy('full_name'), $manageIds, 'id')->get(),
             'guardians' => Guardian::with('generus:id,full_name')
-                ->whereHas('generus', fn ($query) => $ids === null ? $query : $query->whereIn('generus.id', $ids))
+                ->whereHas('generus', fn ($query) => $viewIds === null ? $query : $query->whereIn('generus.id', $viewIds))
                 ->orderBy('full_name')
                 ->get(),
             'channels' => ParentCommunication::CHANNELS,

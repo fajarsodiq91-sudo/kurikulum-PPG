@@ -24,7 +24,7 @@ class UjianController extends Controller
     public function index(): View
     {
         return view('ujians.index', [
-            'ujians' => StudentScope::limit(Ujian::with(['generus', 'academicYear', 'semester'])->latest(), $this->studentIds())->paginate(25),
+            'ujians' => StudentScope::limit(Ujian::with(['generus', 'academicYear', 'semester'])->latest(), StudentScope::viewIds(request()->user(), Ujian::MANAGE_PERMISSION))->paginate(25),
             ...$this->formOptions(),
         ]);
     }
@@ -213,7 +213,7 @@ class UjianController extends Controller
 
     private function studentIds(): ?array
     {
-        return StudentScope::ids(request()->user(), Ujian::MANAGE_PERMISSION);
+        return StudentScope::manageIds(request()->user(), Ujian::MANAGE_PERMISSION);
     }
 
     private function authorizeRecord(Ujian $ujian): void

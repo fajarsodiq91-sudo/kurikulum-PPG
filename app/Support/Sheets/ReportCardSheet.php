@@ -26,7 +26,7 @@ class ReportCardSheet extends Sheet
 
     public function rows(): iterable
     {
-        $ids = StudentScope::ids($this->user, 'manage-report-cards');
+        $ids = StudentScope::viewIds($this->user, 'manage-report-cards');
 
         foreach (StudentScope::limit(ReportCard::with(['generus', 'academicYear', 'semester']), $ids, 'generus_id')->orderBy('id')->cursor() as $reportCard) {
             yield [

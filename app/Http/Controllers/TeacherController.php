@@ -70,7 +70,7 @@ class TeacherController extends Controller
 
     public function edit(Request $request, Teacher $teacher): View
     {
-        $this->ensureVisible($request, $teacher);
+        $this->ensureManageable($request, $teacher);
 
         return view('teachers.edit', [
             'teacher' => $teacher->load('classGrades'),
@@ -81,7 +81,7 @@ class TeacherController extends Controller
 
     public function update(Request $request, Teacher $teacher): RedirectResponse
     {
-        $this->ensureVisible($request, $teacher);
+        $this->ensureManageable($request, $teacher);
 
         $validated = $this->validateTeacher($request, $teacher);
         $oldPhotoPath = $teacher->photo;
@@ -103,7 +103,7 @@ class TeacherController extends Controller
 
     public function destroy(Request $request, Teacher $teacher): RedirectResponse
     {
-        $this->ensureVisible($request, $teacher);
+        $this->ensureManageable($request, $teacher);
 
         if ($teacher->hasActivityHistory()) {
             return back()->withErrors([
@@ -261,6 +261,18 @@ class TeacherController extends Controller
     private function ensureVisible(Request $request, Teacher $teacher): void
     {
         abort_unless(Teacher::visibleTo($request->user())->whereKey($teacher->id)->exists(), 404);
+    }
+
+    /**
+     * Narrower than ensureVisible(): a kelompok executor's view-teachers permission widens to
+     * their whole desa (see User::scopedPlacementIdsAny()), but editing or deleting a teacher
+     * must stay within their manage-teachers scope alone.
+     */
+    private function ensureManageable(Request $request, Teacher $teacher): void
+    {
+        $covered = $request->user()?->coversPlacement(self::MANAGE_PERMISSION, $teacher->region_id, $teacher->village_id, $teacher->group_id) ?? false;
+
+        abort_unless($covered, 404);
     }
 
     private function storePhoto(?UploadedFile $photo): ?string

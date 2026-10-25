@@ -22,7 +22,7 @@ class EvaluationScoreController extends Controller
     public function index(): View
     {
         return view('evaluation-scores.index', [
-            'scores' => StudentScope::limit(EvaluationScore::with(['evaluation', 'generus'])->latest(), $this->studentIds())->paginate(25),
+            'scores' => StudentScope::limit(EvaluationScore::with(['evaluation', 'generus'])->latest(), StudentScope::viewIds(request()->user(), 'manage-evaluations'))->paginate(25),
             ...$this->formOptions(),
         ]);
     }
@@ -101,7 +101,7 @@ class EvaluationScoreController extends Controller
 
     private function studentIds(): ?array
     {
-        return StudentScope::ids(request()->user(), 'manage-evaluations');
+        return StudentScope::manageIds(request()->user(), 'manage-evaluations');
     }
 
     private function authorizeRecord(EvaluationScore $score): void

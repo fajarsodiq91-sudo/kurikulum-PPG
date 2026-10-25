@@ -21,7 +21,7 @@ class MilestoneController extends Controller
     public function index(): View
     {
         return view('milestones.index', [
-            'milestones' => StudentScope::limit(Milestone::with(['generus', 'academicYear', 'semester'])->latest(), $this->studentIds())->paginate(25),
+            'milestones' => StudentScope::limit(Milestone::with(['generus', 'academicYear', 'semester'])->latest(), StudentScope::viewIds(request()->user(), 'manage-milestones'))->paginate(25),
             'generus' => StudentScope::limit(Generus::query(), $this->studentIds(), 'id')->get(),
             'academicYears' => AcademicYear::where('is_active', true)->get(),
             'semesters' => Semester::where('is_active', true)->get(),
@@ -48,7 +48,7 @@ class MilestoneController extends Controller
 
     private function studentIds(): ?array
     {
-        return StudentScope::ids(request()->user(), 'manage-milestones');
+        return StudentScope::manageIds(request()->user(), 'manage-milestones');
     }
 
     public function export(Request $request): BinaryFileResponse

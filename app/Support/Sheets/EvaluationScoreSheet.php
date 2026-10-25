@@ -32,7 +32,7 @@ class EvaluationScoreSheet extends Sheet
 
     public function rows(): iterable
     {
-        $ids = StudentScope::ids($this->user, 'manage-evaluations');
+        $ids = StudentScope::viewIds($this->user, 'manage-evaluations');
 
         foreach (StudentScope::limit(EvaluationScore::with(['evaluation.teacher', 'evaluation.material', 'evaluation.semester', 'evaluation.academicYear', 'generus']), $ids, 'generus_id')->orderBy('id')->cursor() as $score) {
             $evaluation = $score->evaluation;
@@ -97,7 +97,7 @@ class EvaluationScoreSheet extends Sheet
             return 'Generus dengan nomor registrasi tersebut tidak ditemukan.';
         }
 
-        $allowedIds = StudentScope::ids($this->user, 'manage-evaluations');
+        $allowedIds = StudentScope::manageIds($this->user, 'manage-evaluations');
 
         if ($allowedIds !== null && ! in_array($generus->id, $allowedIds, true)) {
             return 'Generus berada di luar wilayah akses Anda.';

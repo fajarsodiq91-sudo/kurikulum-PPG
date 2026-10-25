@@ -277,7 +277,7 @@ class GenerusController extends Controller
 
     public function edit(Request $request, Generus $generus): View
     {
-        $this->ensureGenerusIsVisible($request->user(), $generus);
+        $this->ensureGenerusIsManageable($request->user(), $generus);
 
         return view('generus.edit', [
             'generus' => $generus,
@@ -289,7 +289,7 @@ class GenerusController extends Controller
     public function update(Request $request, Generus $generus): RedirectResponse
     {
         $user = $request->user();
-        $this->ensureGenerusIsVisible($user, $generus);
+        $this->ensureGenerusIsManageable($user, $generus);
 
         $validated = $this->validateGenerus($request);
         $this->ensurePlacementIsWithinUserScope($user, $validated);
@@ -317,7 +317,7 @@ class GenerusController extends Controller
 
     public function destroy(Request $request, Generus $generus): RedirectResponse
     {
-        $this->ensureGenerusIsVisible($request->user(), $generus);
+        $this->ensureGenerusIsManageable($request->user(), $generus);
 
         $generus->delete();
 
@@ -630,6 +630,22 @@ class GenerusController extends Controller
     private function ensureGenerusIsVisible(?User $user, Generus $generus): void
     {
         abort_unless(Generus::visibleTo($user)->whereKey($generus->id)->exists(), 404);
+    }
+
+    /**
+     * Narrower than ensureGenerusIsVisible(): a kelompok executor's view-generus permission
+     * widens to their whole desa (see User::scopedPlacementIdsAny()), but editing or deleting a
+     * generus must stay within their manage-generus scope alone.
+     */
+    private function ensureGenerusIsManageable(?User $user, Generus $generus): void
+    {
+        if ($user?->hasGlobalAccess(Generus::MANAGE_PERMISSION)) {
+            return;
+        }
+
+        $placementIds = $user?->scopedPlacementIds(Generus::MANAGE_PERMISSION) ?? [];
+
+        abort_unless($placementIds !== [] && Generus::query()->whereKey($generus->id)->inPlacement($placementIds)->exists(), 404);
     }
 
     private function generateRegistrationNumber(): string

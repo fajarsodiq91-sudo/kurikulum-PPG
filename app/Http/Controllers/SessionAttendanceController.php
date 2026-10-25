@@ -27,7 +27,7 @@ class SessionAttendanceController extends Controller
     public function index(): View
     {
         return view('session-attendances.index', [
-            'attendances' => StudentScope::limit(SessionAttendance::with(['learningSession', 'generus'])->latest(), $this->studentIds())->paginate(25),
+            'attendances' => StudentScope::limit(SessionAttendance::with(['learningSession', 'generus'])->latest(), StudentScope::viewIds(request()->user(), 'manage-learning-attendance'))->paginate(25),
             ...$this->formOptions(),
         ]);
     }
@@ -152,7 +152,7 @@ class SessionAttendanceController extends Controller
 
     private function studentIds(): ?array
     {
-        return StudentScope::ids(request()->user(), 'manage-learning-attendance');
+        return StudentScope::manageIds(request()->user(), 'manage-learning-attendance');
     }
 
     /**

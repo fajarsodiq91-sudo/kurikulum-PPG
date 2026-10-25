@@ -25,7 +25,7 @@ class MilestoneSheet extends Sheet
 
     public function rows(): iterable
     {
-        $ids = StudentScope::ids($this->user, 'manage-milestones');
+        $ids = StudentScope::viewIds($this->user, 'manage-milestones');
 
         foreach (StudentScope::limit(Milestone::with(['generus', 'academicYear', 'semester']), $ids, 'generus_id')->orderBy('id')->cursor() as $milestone) {
             yield [
@@ -64,7 +64,7 @@ class MilestoneSheet extends Sheet
             return 'Generus dengan nomor registrasi tersebut tidak ditemukan.';
         }
 
-        $allowedIds = StudentScope::ids($this->user, 'manage-milestones');
+        $allowedIds = StudentScope::manageIds($this->user, 'manage-milestones');
 
         if ($allowedIds !== null && ! in_array($generus->id, $allowedIds, true)) {
             return 'Generus berada di luar wilayah akses Anda.';

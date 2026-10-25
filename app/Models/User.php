@@ -130,11 +130,30 @@ class User extends Authenticatable
     public function scopedPlacementIdsAny(array $permissionSlugs): array
     {
         return collect($permissionSlugs)
-            ->flatMap(fn (string $slug): Collection => $this->permissionScopes($slug))
+            ->flatMap(fn (string $slug): Collection => $this->permissionScopes($slug)->map(fn (array $scope): array => $this->widenGroupViewScope($slug, $scope)))
             ->filter(fn (array $scope): bool => isset(self::SCOPE_COLUMNS[$scope['type']]) && $scope['id'] !== null)
             ->groupBy(fn (array $scope): string => self::SCOPE_COLUMNS[$scope['type']])
             ->map(fn (Collection $scopes): array => $scopes->pluck('id')->map(fn (mixed $id): int => (int) $id)->unique()->values()->all())
             ->all();
+    }
+
+    /**
+     * A group-scoped role assignment widens to its whole village for a view-* permission, so a
+     * kelompok executor can see (but not manage, since manage-* permissions are left untouched)
+     * the rest of their desa.
+     *
+     * @param  array{type: string, id: int|null}  $scope
+     * @return array{type: string, id: int|null}
+     */
+    private function widenGroupViewScope(string $permissionSlug, array $scope): array
+    {
+        if ($scope['type'] !== 'group' || $scope['id'] === null || ! str_starts_with($permissionSlug, 'view-')) {
+            return $scope;
+        }
+
+        $villageId = Group::find($scope['id'])?->village_id;
+
+        return $villageId === null ? $scope : ['type' => 'village', 'id' => $villageId];
     }
 
     public function coversPlacement(string $permissionSlug, ?int $regionId, ?int $villageId, ?int $groupId): bool

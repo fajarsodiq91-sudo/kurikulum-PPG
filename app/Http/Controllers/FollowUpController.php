@@ -20,7 +20,7 @@ class FollowUpController extends Controller
     public function index(): View
     {
         return view('follow-ups.index', [
-            'followUps' => StudentScope::limit(FollowUp::with(['generus', 'teacher'])->latest(), $this->studentIds())->paginate(25),
+            'followUps' => StudentScope::limit(FollowUp::with(['generus', 'teacher'])->latest(), StudentScope::viewIds(request()->user(), 'manage-follow-ups'))->paginate(25),
             'generus' => StudentScope::limit(Generus::query(), $this->studentIds(), 'id')->get(),
             'teachers' => Teacher::where('status', 'active')
                 ->when($this->isTeacherRestricted(), fn ($query) => $query->whereKey(request()->user()->teacher_id))
@@ -52,7 +52,7 @@ class FollowUpController extends Controller
 
     private function studentIds(): ?array
     {
-        return StudentScope::ids(request()->user(), 'manage-follow-ups');
+        return StudentScope::manageIds(request()->user(), 'manage-follow-ups');
     }
 
     private function isTeacherRestricted(): bool

@@ -25,7 +25,7 @@ class ProgressTrackSheet extends Sheet
 
     public function rows(): iterable
     {
-        $ids = StudentScope::ids($this->user, 'manage-progress-tracking');
+        $ids = StudentScope::viewIds($this->user, 'manage-progress-tracking');
 
         foreach (StudentScope::limit(ProgressTrack::with(['generus', 'academicYear', 'semester']), $ids, 'generus_id')->orderBy('id')->cursor() as $track) {
             yield [
@@ -64,7 +64,7 @@ class ProgressTrackSheet extends Sheet
             return 'Generus dengan nomor registrasi tersebut tidak ditemukan.';
         }
 
-        $allowedIds = StudentScope::ids($this->user, 'manage-progress-tracking');
+        $allowedIds = StudentScope::manageIds($this->user, 'manage-progress-tracking');
 
         if ($allowedIds !== null && ! in_array($generus->id, $allowedIds, true)) {
             return 'Generus berada di luar wilayah akses Anda.';

@@ -24,7 +24,7 @@ class SessionAttendanceSheet extends Sheet
 
     public function rows(): iterable
     {
-        $ids = StudentScope::ids($this->user, 'manage-learning-attendance');
+        $ids = StudentScope::viewIds($this->user, 'manage-learning-attendance');
 
         foreach (StudentScope::limit(SessionAttendance::with(['learningSession.material', 'learningSession.village', 'learningSession.group', 'generus']), $ids, 'generus_id')->orderBy('id')->cursor() as $attendance) {
             $session = $attendance->learningSession;
@@ -80,7 +80,7 @@ class SessionAttendanceSheet extends Sheet
             return 'Generus dengan nomor registrasi tersebut tidak ditemukan.';
         }
 
-        $allowedIds = StudentScope::ids($this->user, 'manage-learning-attendance');
+        $allowedIds = StudentScope::manageIds($this->user, 'manage-learning-attendance');
 
         if ($allowedIds !== null && ! in_array($generus->id, $allowedIds, true)) {
             return 'Generus berada di luar wilayah akses Anda.';

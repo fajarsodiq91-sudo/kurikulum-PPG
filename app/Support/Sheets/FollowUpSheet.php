@@ -24,7 +24,7 @@ class FollowUpSheet extends Sheet
 
     public function rows(): iterable
     {
-        $ids = StudentScope::ids($this->user, 'manage-follow-ups');
+        $ids = StudentScope::viewIds($this->user, 'manage-follow-ups');
 
         foreach (StudentScope::limit(FollowUp::with(['generus', 'teacher']), $ids, 'generus_id')->orderBy('id')->cursor() as $followUp) {
             yield [
@@ -63,7 +63,7 @@ class FollowUpSheet extends Sheet
             return 'Generus dengan nomor registrasi tersebut tidak ditemukan.';
         }
 
-        $allowedIds = StudentScope::ids($this->user, 'manage-follow-ups');
+        $allowedIds = StudentScope::manageIds($this->user, 'manage-follow-ups');
 
         if ($allowedIds !== null && ! in_array($generus->id, $allowedIds, true)) {
             return 'Generus berada di luar wilayah akses Anda.';

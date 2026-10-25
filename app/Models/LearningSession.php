@@ -173,6 +173,6 @@ class LearningSession extends Model
      */
     public function rosterFor(?User $user): Builder
     {
-        return StudentScope::limit($this->expectedGenerus(), StudentScope::ids($user, self::ATTENDANCE_PERMISSION), 'id');
+        return StudentScope::limit($this->expectedGenerus(), StudentScope::manageIds($user, self::ATTENDANCE_PERMISSION), 'id');
     }
 }

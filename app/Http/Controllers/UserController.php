@@ -20,6 +20,19 @@ class UserController extends Controller
 {
     use HandlesSheets;
 
+    /**
+     * Organisation roles whose scope is fixed by what the role means (PPG is daerah-wide,
+     * perwakilan-ppg-desa is one desa, pelaksana-ppg-kelompok is one kelompok): the admin form
+     * cannot override these, so a mismatched or missing submission falls back to this value.
+     *
+     * @var array<string, string>
+     */
+    private const FIXED_ROLE_SCOPES = [
+        'ppg' => 'global',
+        'perwakilan-ppg-desa' => 'village',
+        'pelaksana-ppg-kelompok' => 'group',
+    ];
+
     public function index(): View
     {
         return view('users.index', [
@@ -96,6 +109,7 @@ class UserController extends Controller
         return [
             'villages' => Village::where('is_active', true)->orderBy('name')->get(),
             'groups' => Group::with('village')->where('is_active', true)->orderBy('name')->get(),
+            'fixedRoleScopes' => self::FIXED_ROLE_SCOPES,
         ];
     }
 
@@ -109,10 +123,12 @@ class UserController extends Controller
     private function syncRoles(Request $request, User $user, array $roleIds): void
     {
         $existing = $user->roles()->get()->keyBy('id');
+        $roleSlugs = Role::whereIn('id', array_filter($roleIds))->pluck('slug', 'id');
         $sync = [];
 
         foreach (array_filter($roleIds) as $roleId) {
-            $type = $request->input("role_scopes.{$roleId}.type");
+            $fixedType = self::FIXED_ROLE_SCOPES[$roleSlugs[$roleId] ?? ''] ?? null;
+            $type = $fixedType ?? $request->input("role_scopes.{$roleId}.type");
             $scopeId = $request->input("role_scopes.{$roleId}.id");
 
             if (in_array($type, ['village', 'group'], true)) {

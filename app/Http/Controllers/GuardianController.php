@@ -40,14 +40,14 @@ class GuardianController extends Controller
 
     public function edit(Request $request, Guardian $guardian): View
     {
-        $this->ensureVisible($request, $guardian);
+        $this->ensureManageable($request, $guardian);
 
         return view('guardians.edit', ['guardian' => $guardian]);
     }
 
     public function update(Request $request, Guardian $guardian): RedirectResponse
     {
-        $this->ensureVisible($request, $guardian);
+        $this->ensureManageable($request, $guardian);
 
         $guardian->update($this->validateGuardian($request));
 
@@ -56,16 +56,29 @@ class GuardianController extends Controller
 
     public function destroy(Request $request, Guardian $guardian): RedirectResponse
     {
-        $this->ensureVisible($request, $guardian);
+        $this->ensureManageable($request, $guardian);
 
         $guardian->delete();
 
         return redirect()->route('guardians.index')->with('success', 'Data orang tua/wali berhasil dihapus.');
     }
 
-    private function ensureVisible(Request $request, Guardian $guardian): void
+    /**
+     * Narrower than Guardian::visibleTo(): a kelompok executor's view-guardians permission
+     * widens to their whole desa (see User::scopedPlacementIdsAny()), but editing or deleting a
+     * guardian must stay within their manage-guardians scope alone.
+     */
+    private function ensureManageable(Request $request, Guardian $guardian): void
     {
-        abort_unless(Guardian::visibleTo($request->user())->whereKey($guardian->id)->exists(), 404);
+        $user = $request->user();
+
+        if ($user?->hasGlobalAccess('manage-guardians')) {
+            return;
+        }
+
+        $placementIds = $user?->scopedPlacementIds('manage-guardians') ?? [];
+
+        abort_unless($placementIds !== [] && $guardian->generus()->inPlacement($placementIds)->exists(), 404);
     }
 
     /**

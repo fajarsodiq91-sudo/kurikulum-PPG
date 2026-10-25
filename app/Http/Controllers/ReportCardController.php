@@ -23,7 +23,7 @@ class ReportCardController extends Controller
     public function index(): View
     {
         return view('report-cards.index', [
-            'reportCards' => StudentScope::limit(ReportCard::with(['generus', 'academicYear', 'semester'])->latest(), $this->studentIds())->paginate(25),
+            'reportCards' => StudentScope::limit(ReportCard::with(['generus', 'academicYear', 'semester'])->latest(), StudentScope::viewIds(request()->user(), 'manage-report-cards'))->paginate(25),
             ...$this->formOptions(),
         ]);
     }
@@ -109,7 +109,7 @@ class ReportCardController extends Controller
 
     private function studentIds(): ?array
     {
-        return StudentScope::ids(request()->user(), 'manage-report-cards');
+        return StudentScope::manageIds(request()->user(), 'manage-report-cards');
     }
 
     private function authorizeRecord(ReportCard $reportCard): void

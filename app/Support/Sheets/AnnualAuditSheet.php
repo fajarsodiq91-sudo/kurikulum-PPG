@@ -25,7 +25,7 @@ class AnnualAuditSheet extends Sheet
 
     public function rows(): iterable
     {
-        $ids = StudentScope::ids($this->user, 'manage-annual-audit');
+        $ids = StudentScope::viewIds($this->user, 'manage-annual-audit');
 
         foreach (StudentScope::limit(AnnualAudit::with(['generus', 'academicYear', 'semester']), $ids, 'generus_id')->orderBy('id')->cursor() as $audit) {
             yield [
@@ -62,7 +62,7 @@ class AnnualAuditSheet extends Sheet
             return 'Generus dengan nomor registrasi tersebut tidak ditemukan.';
         }
 
-        $allowedIds = StudentScope::ids($this->user, 'manage-annual-audit');
+        $allowedIds = StudentScope::manageIds($this->user, 'manage-annual-audit');
 
         if ($allowedIds !== null && ! in_array($generus->id, $allowedIds, true)) {
             return 'Generus berada di luar wilayah akses Anda.';

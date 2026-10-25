@@ -69,7 +69,7 @@ class Group extends Model
     {
         return StudentScope::limit(
             Generus::where('status', 'active')->inPlacement(['group_id' => [(int) $this->id]])->orderBy('full_name'),
-            StudentScope::ids($user, $permission),
+            StudentScope::manageIds($user, $permission),
             'id',
         );
     }
