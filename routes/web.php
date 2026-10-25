@@ -30,6 +30,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SessionAttendanceController;
 use App\Http\Controllers\SessionAttendanceScanController;
+use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\TeacherStudentController;
 use App\Http\Controllers\TrainingController;
@@ -650,4 +651,22 @@ Route::middleware(['auth', 'permission:manage-parent-communications'])->group(fu
         ->name('parent-communications.store');
     Route::post('/parent-communications/import', [ParentCommunicationController::class, 'import'])
         ->name('parent-communications.import');
+});
+
+Route::middleware(['auth', 'permission:view-tasks,manage-tasks'])->group(function () {
+    Route::get('/tasks', [TaskController::class, 'index'])
+        ->name('tasks.index');
+});
+
+Route::middleware(['auth', 'permission:manage-tasks'])->group(function () {
+    Route::post('/tasks', [TaskController::class, 'store'])
+        ->name('tasks.store');
+    Route::get('/tasks/{task}/edit', [TaskController::class, 'edit'])
+        ->name('tasks.edit');
+    Route::put('/tasks/{task}', [TaskController::class, 'update'])
+        ->name('tasks.update');
+    Route::patch('/tasks/{task}/status', [TaskController::class, 'updateStatus'])
+        ->name('tasks.update-status');
+    Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])
+        ->name('tasks.destroy');
 });

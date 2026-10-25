@@ -10,6 +10,7 @@
     @php
         $navigation = [
             ['label' => 'Dashboard', 'permission' => 'view-dashboard', 'route' => 'dashboard', 'icon' => '◈'],
+            ['label' => 'Tugas', 'permission' => ['view-tasks', 'manage-tasks'], 'route' => 'tasks.index', 'icon' => '☑'],
             ['label' => 'Manajemen Pengguna', 'permission' => 'manage-users', 'icon' => '⚙', 'items' => [
                 ['label' => 'Data Pengguna', 'route' => 'users.index'],
                 ['label' => 'Data Peran', 'route' => 'roles.index'],

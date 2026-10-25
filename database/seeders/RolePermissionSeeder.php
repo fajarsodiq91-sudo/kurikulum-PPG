@@ -21,7 +21,7 @@ class RolePermissionSeeder extends Seeder
         'curriculum', 'learning-materials', 'learning-sessions', 'learning-attendance', 'evaluations',
         'training', 'communication', 'munaqosah', 'ujian', 'report-cards', 'follow-ups', 'progress-tracking',
         'milestones', 'annual-audit', 'organization-units', 'assignments', 'activity-schedules',
-        'activity-executions', 'announcements',
+        'activity-executions', 'announcements', 'tasks',
     ];
 
     /**
@@ -33,6 +33,7 @@ class RolePermissionSeeder extends Seeder
         'manage-generus', 'manage-teachers', 'manage-guardians', 'manage-learning-attendance',
         'manage-evaluations', 'manage-follow-ups', 'manage-progress-tracking', 'manage-report-cards',
         'manage-milestones', 'manage-munaqosah', 'manage-ujian', 'manage-parent-communications',
+        'manage-tasks',
     ];
 
     /**
@@ -40,13 +41,14 @@ class RolePermissionSeeder extends Seeder
      *
      * @var list<string>
      */
-    private const VILLAGE_MANAGE = ['manage-learning-attendance'];
+    private const VILLAGE_MANAGE = ['manage-learning-attendance', 'manage-tasks'];
 
     public function run(): void
     {
         $this->ensurePermission('manage-master-data', 'Manage Master Data', 'master-data');
         $this->ensurePermission('manage-parent-communications', 'Manage Parent Communications', 'parent-communications');
         $this->ensurePermission('view-parent-communications', 'View Parent Communications', 'parent-communications');
+        $this->ensurePermission('manage-tasks', 'Manage Tasks', 'tasks');
 
         foreach (self::MODULES as $module) {
             $this->ensurePermission("view-{$module}", 'View '.str($module)->replace('-', ' ')->title(), $module);
@@ -57,7 +59,7 @@ class RolePermissionSeeder extends Seeder
         $viewPermissions = Permission::where('slug', 'like', 'view-%')->pluck('slug');
         $forVillage = $viewPermissions->reject(fn (string $slug): bool => $slug === 'view-master-data')->values();
 
-        $this->syncRole('ppg', 'PPG', 'Melihat semua data (baca-saja)', [...$viewPermissions->all(), 'manage-announcements']);
+        $this->syncRole('ppg', 'PPG', 'Melihat semua data (baca-saja)', [...$viewPermissions->all(), 'manage-announcements', 'manage-tasks']);
         $this->syncRole('perwakilan-ppg-desa', 'Perwakilan PPG Desa', 'Melihat data di desanya dan mengisi daftar hadir KBM tingkat desa', [...$forVillage->all(), ...self::VILLAGE_MANAGE]);
         $this->syncRole('pelaksana-ppg-kelompok', 'Pelaksana PPG Kelompok', 'Mengelola seluruh data di tingkat kelompok', [...$forVillage->all(), ...self::GROUP_MANAGE]);
 
