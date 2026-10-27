@@ -45,10 +45,32 @@
                     <select id="role_id" name="role_id" required data-register-role class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-brand-500 focus:outline-none">
                         <option value="">-- Pilih peran --</option>
                         @foreach ($roles as $role)
-                            <option value="{{ $role->id }}" data-scope="{{ $roleScopes[$role->slug] ?? 'global' }}" @selected((string) old('role_id') === (string) $role->id)>{{ $role->name }}</option>
+                            <option value="{{ $role->id }}" data-scope="{{ $roleScopes[$role->slug] ?? 'global' }}" data-role-slug="{{ $role->slug }}" @selected((string) old('role_id') === (string) $role->id)>{{ $role->name }}</option>
                         @endforeach
                     </select>
                 </div>
+
+                @foreach ($roles as $role)
+                    <div class="mb-4 hidden" data-register-dapukan="{{ $role->slug }}">
+                        <label class="block text-sm font-medium text-slate-700 mb-2" for="dapukan_id_{{ $role->slug }}">Dapukan</label>
+                        <select id="dapukan_id_{{ $role->slug }}" name="dapukan_id" class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-brand-500 focus:outline-none">
+                            <option value="">-- Pilih dapukan --</option>
+                            @foreach (($dapukansByRole[$role->slug] ?? collect())->groupBy('group_label') as $groupLabel => $dapukans)
+                                @if ($groupLabel)
+                                    <optgroup label="{{ $groupLabel }}">
+                                        @foreach ($dapukans as $dapukan)
+                                            <option value="{{ $dapukan->id }}" @selected((string) old('dapukan_id') === (string) $dapukan->id)>{{ $dapukan->name }}</option>
+                                        @endforeach
+                                    </optgroup>
+                                @else
+                                    @foreach ($dapukans as $dapukan)
+                                        <option value="{{ $dapukan->id }}" @selected((string) old('dapukan_id') === (string) $dapukan->id)>{{ $dapukan->name }}</option>
+                                    @endforeach
+                                @endif
+                            @endforeach
+                        </select>
+                    </div>
+                @endforeach
 
                 <div class="mb-4 hidden" data-register-scope="village">
                     <label class="block text-sm font-medium text-slate-700 mb-2" for="village_id">Desa</label>
@@ -81,13 +103,21 @@
     <script>
         const roleSelect = document.querySelector('[data-register-role]');
         const scopeFields = document.querySelectorAll('[data-register-scope]');
+        const dapukanFields = document.querySelectorAll('[data-register-dapukan]');
 
         function refreshScope() {
             const selected = roleSelect.options[roleSelect.selectedIndex];
             const scope = selected ? selected.dataset.scope : null;
+            const roleSlug = selected ? selected.dataset.roleSlug : null;
 
             scopeFields.forEach((field) => {
                 const matches = field.dataset.registerScope === scope;
+                field.classList.toggle('hidden', !matches);
+                field.querySelector('select').disabled = !matches;
+            });
+
+            dapukanFields.forEach((field) => {
+                const matches = field.dataset.registerDapukan === roleSlug;
                 field.classList.toggle('hidden', !matches);
                 field.querySelector('select').disabled = !matches;
             });

@@ -34,6 +34,7 @@
                     $fixedScope = $fixedRoleScopes[$role->slug] ?? null;
                     $scopeType = $fixedScope ?? old("role_scopes.{$role->id}.type", in_array($pivot?->scope_type, ['village', 'group'], true) ? $pivot->scope_type : 'global');
                     $scopeId = old("role_scopes.{$role->id}.id", $pivot?->scope_id);
+                    $dapukanId = old("role_dapukan.{$role->id}", $pivot?->dapukan_id);
                 @endphp
                 <div class="role-row" data-role-row>
                     <label class="flex items-center gap-3 text-sm text-slate-700">
@@ -67,6 +68,26 @@
                             @endforeach
                         </select>
                     </div>
+                    @if ($fixedScope)
+                        <div class="dapukan-field mt-2 hidden pl-7">
+                            <select name="role_dapukan[{{ $role->id }}]" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" disabled>
+                                <option value="">-- Pilih dapukan --</option>
+                                @foreach (($dapukansByRole[$role->slug] ?? collect())->groupBy('group_label') as $groupLabel => $dapukans)
+                                    @if ($groupLabel)
+                                        <optgroup label="{{ $groupLabel }}">
+                                            @foreach ($dapukans as $dapukan)
+                                                <option value="{{ $dapukan->id }}" @selected((int) $dapukanId === $dapukan->id)>{{ $dapukan->name }}</option>
+                                            @endforeach
+                                        </optgroup>
+                                    @else
+                                        @foreach ($dapukans as $dapukan)
+                                            <option value="{{ $dapukan->id }}" @selected((int) $dapukanId === $dapukan->id)>{{ $dapukan->name }}</option>
+                                        @endforeach
+                                    @endif
+                                @endforeach
+                            </select>
+                        </div>
+                    @endif
                 </div>
             @endforeach
         </div>
@@ -80,6 +101,8 @@
         const type = row.querySelector('.scope-type');
         const village = row.querySelector('.scope-village');
         const group = row.querySelector('.scope-group');
+        const dapukanField = row.querySelector('.dapukan-field');
+        const dapukan = dapukanField ? dapukanField.querySelector('select') : null;
 
         const lockedType = type.hasAttribute('disabled');
 
@@ -92,6 +115,11 @@
             group.classList.toggle('hidden', type.value !== 'group');
             village.disabled = !editable || type.value !== 'village' || !checkbox.checked;
             group.disabled = !editable || type.value !== 'group' || !checkbox.checked;
+
+            if (dapukanField && dapukan) {
+                dapukanField.classList.toggle('hidden', !checkbox.checked);
+                dapukan.disabled = !checkbox.checked;
+            }
         }
 
         checkbox.addEventListener('change', refresh);

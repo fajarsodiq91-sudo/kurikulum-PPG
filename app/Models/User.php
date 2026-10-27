@@ -37,16 +37,17 @@ class User extends Authenticatable
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class, 'user_roles')
-            ->withPivot(['scope_type', 'scope_id', 'is_active'])
+            ->withPivot(['scope_type', 'scope_id', 'dapukan_id', 'is_active'])
             ->withTimestamps();
     }
 
-    public function assignRole(int $roleId, string $scopeType = 'global', ?int $scopeId = null): void
+    public function assignRole(int $roleId, string $scopeType = 'global', ?int $scopeId = null, ?int $dapukanId = null): void
     {
         $this->roles()->syncWithoutDetaching([
             $roleId => [
                 'scope_type' => $scopeType,
                 'scope_id' => $scopeId,
+                'dapukan_id' => $dapukanId,
                 'is_active' => true,
             ],
         ]);

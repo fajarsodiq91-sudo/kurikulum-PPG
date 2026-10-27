@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Dapukan;
 use App\Models\Group;
 use App\Models\Permission;
 use App\Models\Region;
@@ -28,6 +29,14 @@ class GoogleRegistrationTest extends TestCase
         $role->permissions()->attach(Permission::firstOrCreate(['slug' => 'view-generus'], ['name' => 'View Generus', 'module' => 'generus', 'is_active' => true])->id);
 
         return $role;
+    }
+
+    /**
+     * Dapukans also aren't seeded by migrations, only by DapukanSeeder (not run for tests).
+     */
+    private function selfRegisterableDapukan(string $roleSlug, string $name = 'Dapukan Uji'): Dapukan
+    {
+        return Dapukan::create(['role_slug' => $roleSlug, 'group_label' => null, 'name' => $name, 'sort_order' => 0, 'can_approve' => false, 'is_active' => true]);
     }
 
     private function mockGoogleUser(string $email, string $name = 'Warga Baru'): void
@@ -57,6 +66,7 @@ class GoogleRegistrationTest extends TestCase
     {
         $village = Village::create(['region_id' => Region::karawangTimur()->id, 'name' => 'Desa Satu', 'is_active' => true]);
         $role = $this->selfRegisterableRole('perwakilan-ppg-desa', 'Perwakilan PPG Desa');
+        $dapukan = $this->selfRegisterableDapukan('perwakilan-ppg-desa', 'Pembina Desa');
 
         $this->mockGoogleUser('desa@gmail.com', 'Perwakilan Desa');
         $this->get('/login/google/callback');
@@ -64,6 +74,7 @@ class GoogleRegistrationTest extends TestCase
         $this->post('/register', [
             'name' => 'Perwakilan Desa',
             'role_id' => $role->id,
+            'dapukan_id' => $dapukan->id,
             'village_id' => $village->id,
         ])->assertRedirect('/login');
 
@@ -75,6 +86,7 @@ class GoogleRegistrationTest extends TestCase
         $pivot = $user->roles()->first()->pivot;
         $this->assertSame('village', $pivot->scope_type);
         $this->assertSame($village->id, $pivot->scope_id);
+        $this->assertSame($dapukan->id, $pivot->dapukan_id);
         $this->assertFalse((bool) $pivot->is_active);
         $this->assertFalse($user->hasPermission('view-generus'));
     }
@@ -82,14 +94,34 @@ class GoogleRegistrationTest extends TestCase
     public function test_registering_as_perwakilan_desa_or_pelaksana_kelompok_requires_the_matching_scope(): void
     {
         $role = $this->selfRegisterableRole('perwakilan-ppg-desa', 'Perwakilan PPG Desa');
+        $dapukan = $this->selfRegisterableDapukan('perwakilan-ppg-desa');
 
         $this->mockGoogleUser('tanpa-desa@gmail.com');
         $this->get('/login/google/callback');
 
-        $this->post('/register', ['name' => 'Tanpa Desa', 'role_id' => $role->id])
+        $this->post('/register', ['name' => 'Tanpa Desa', 'role_id' => $role->id, 'dapukan_id' => $dapukan->id])
             ->assertSessionHasErrors('village_id');
 
         $this->assertDatabaseMissing('users', ['email' => 'tanpa-desa@gmail.com']);
+    }
+
+    public function test_registering_with_a_dapukan_from_a_different_role_fails_validation(): void
+    {
+        $village = Village::create(['region_id' => Region::karawangTimur()->id, 'name' => 'Desa Tiga', 'is_active' => true]);
+        $role = $this->selfRegisterableRole('perwakilan-ppg-desa', 'Perwakilan PPG Desa');
+        $wrongDapukan = $this->selfRegisterableDapukan('pelaksana-ppg-kelompok');
+
+        $this->mockGoogleUser('dapukan-salah@gmail.com');
+        $this->get('/login/google/callback');
+
+        $this->post('/register', [
+            'name' => 'Dapukan Salah',
+            'role_id' => $role->id,
+            'dapukan_id' => $wrongDapukan->id,
+            'village_id' => $village->id,
+        ])->assertSessionHasErrors('dapukan_id');
+
+        $this->assertDatabaseMissing('users', ['email' => 'dapukan-salah@gmail.com']);
     }
 
     public function test_registration_form_is_unreachable_without_first_going_through_google(): void
@@ -102,10 +134,11 @@ class GoogleRegistrationTest extends TestCase
     {
         $group = Group::create(['village_id' => Village::create(['region_id' => Region::karawangTimur()->id, 'name' => 'Desa Dua', 'is_active' => true])->id, 'name' => 'Kelompok Dua', 'is_active' => true]);
         $role = $this->selfRegisterableRole('pelaksana-ppg-kelompok', 'Pelaksana PPG Kelompok');
+        $dapukan = $this->selfRegisterableDapukan('pelaksana-ppg-kelompok', 'Unsur Pembina Generus');
 
         $this->mockGoogleUser('kelompok@gmail.com', 'Pelaksana Kelompok');
         $this->get('/login/google/callback');
-        $this->post('/register', ['name' => 'Pelaksana Kelompok', 'role_id' => $role->id, 'group_id' => $group->id]);
+        $this->post('/register', ['name' => 'Pelaksana Kelompok', 'role_id' => $role->id, 'dapukan_id' => $dapukan->id, 'group_id' => $group->id]);
 
         $this->mockGoogleUser('kelompok@gmail.com', 'Pelaksana Kelompok');
         $this->get('/login/google/callback')->assertRedirect('/login')->assertSessionHasErrors('login');
@@ -120,6 +153,7 @@ class GoogleRegistrationTest extends TestCase
             'status' => 'active',
             'roles' => [$role->id],
             'role_scopes' => [$role->id => ['type' => 'group', 'id' => $group->id]],
+            'role_dapukan' => [$role->id => $dapukan->id],
         ])->assertSessionHasNoErrors();
 
         $user->refresh();

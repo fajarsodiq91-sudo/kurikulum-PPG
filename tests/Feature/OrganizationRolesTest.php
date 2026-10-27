@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\AcademicYear;
+use App\Models\Dapukan;
 use App\Models\Generus;
 use App\Models\GenerusAssignment;
 use App\Models\Group;
@@ -95,7 +96,7 @@ class OrganizationRolesTest extends TestCase
         $this->assertFalse($ppg->contains('manage-generus'));
         $this->assertFalse($ppg->contains('manage-users'));
         $this->assertFalse($village->contains('view-master-data'));
-        $this->assertSame(['manage-learning-attendance', 'manage-tasks'], $village->reject(fn (string $slug): bool => str_starts_with($slug, 'view-'))->sort()->values()->all());
+        $this->assertSame(['approve-registrations', 'manage-learning-attendance', 'manage-tasks'], $village->reject(fn (string $slug): bool => str_starts_with($slug, 'view-'))->sort()->values()->all());
         $this->assertTrue($group->contains('manage-generus'));
         $this->assertFalse($group->contains('manage-master-data'));
     }
@@ -174,6 +175,7 @@ class OrganizationRolesTest extends TestCase
         $admin = $this->userWithRole('super-admin');
 
         $roleId = Role::where('slug', 'pelaksana-ppg-kelompok')->value('id');
+        $dapukanId = Dapukan::where('role_slug', 'pelaksana-ppg-kelompok')->value('id');
 
         $response = $this->actingAs($admin)->post('/users', [
             'name' => 'Pelaksana Salah',
@@ -186,6 +188,7 @@ class OrganizationRolesTest extends TestCase
             'role_scopes' => [
                 $roleId => ['type' => 'village', 'id' => $this->groupA1->id],
             ],
+            'role_dapukan' => [$roleId => $dapukanId],
         ]);
 
         $response->assertRedirect(route('users.index'));

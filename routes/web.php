@@ -26,6 +26,7 @@ use App\Http\Controllers\MunaqosahController;
 use App\Http\Controllers\OrganizationUnitController;
 use App\Http\Controllers\ParentCommunicationController;
 use App\Http\Controllers\ProgressTrackController;
+use App\Http\Controllers\RegistrationApprovalController;
 use App\Http\Controllers\ReportCardController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
@@ -672,4 +673,13 @@ Route::middleware(['auth', 'permission:manage-tasks'])->group(function () {
         ->name('tasks.update-status');
     Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])
         ->name('tasks.destroy');
+});
+
+Route::middleware(['auth', 'permission:manage-users,approve-registrations'])->group(function () {
+    Route::get('/registrations/pending', [RegistrationApprovalController::class, 'index'])
+        ->name('registrations.pending');
+    Route::post('/registrations/{user}/approve', [RegistrationApprovalController::class, 'approve'])
+        ->name('registrations.approve');
+    Route::post('/registrations/{user}/reject', [RegistrationApprovalController::class, 'reject'])
+        ->name('registrations.reject');
 });

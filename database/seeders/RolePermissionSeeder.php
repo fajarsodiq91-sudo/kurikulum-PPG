@@ -49,6 +49,7 @@ class RolePermissionSeeder extends Seeder
         $this->ensurePermission('manage-parent-communications', 'Manage Parent Communications', 'parent-communications');
         $this->ensurePermission('view-parent-communications', 'View Parent Communications', 'parent-communications');
         $this->ensurePermission('manage-tasks', 'Manage Tasks', 'tasks');
+        $this->ensurePermission('approve-registrations', 'Approve Registrations', 'registrations');
 
         foreach (self::MODULES as $module) {
             $this->ensurePermission("view-{$module}", 'View '.str($module)->replace('-', ' ')->title(), $module);
@@ -59,9 +60,9 @@ class RolePermissionSeeder extends Seeder
         $viewPermissions = Permission::where('slug', 'like', 'view-%')->pluck('slug');
         $forVillage = $viewPermissions->reject(fn (string $slug): bool => $slug === 'view-master-data')->values();
 
-        $this->syncRole('ppg', 'Pengurus PPG Daerah', 'Melihat semua data (baca-saja)', [...$viewPermissions->all(), 'manage-announcements', 'manage-tasks']);
-        $this->syncRole('perwakilan-ppg-desa', 'Perwakilan PPG Desa', 'Melihat data di desanya dan mengisi daftar hadir KBM tingkat desa', [...$forVillage->all(), ...self::VILLAGE_MANAGE]);
-        $this->syncRole('pelaksana-ppg-kelompok', 'Pelaksana PPG Kelompok', 'Mengelola seluruh data di tingkat kelompok', [...$forVillage->all(), ...self::GROUP_MANAGE]);
+        $this->syncRole('ppg', 'Pengurus PPG Daerah', 'Melihat semua data (baca-saja)', [...$viewPermissions->all(), 'manage-announcements', 'manage-tasks', 'approve-registrations']);
+        $this->syncRole('perwakilan-ppg-desa', 'Perwakilan PPG Desa', 'Melihat data di desanya dan mengisi daftar hadir KBM tingkat desa', [...$forVillage->all(), ...self::VILLAGE_MANAGE, 'approve-registrations']);
+        $this->syncRole('pelaksana-ppg-kelompok', 'Pelaksana PPG Kelompok', 'Mengelola seluruh data di tingkat kelompok', [...$forVillage->all(), ...self::GROUP_MANAGE, 'approve-registrations']);
 
         Role::where('slug', 'super-admin')->first()?->permissions()->syncWithoutDetaching(Permission::pluck('id'));
     }

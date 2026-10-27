@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Dapukan;
 use App\Models\Group;
 use App\Models\Role;
 use App\Models\User;
@@ -40,6 +41,7 @@ class RegistrationController extends Controller
             'roleScopes' => self::ROLE_SCOPES,
             'villages' => Village::where('is_active', true)->orderBy('name')->get(),
             'groups' => Group::with('village')->where('is_active', true)->orderBy('name')->get(),
+            'dapukansByRole' => Dapukan::where('is_active', true)->orderBy('sort_order')->get()->groupBy('role_slug'),
         ]);
     }
 
@@ -58,6 +60,7 @@ class RegistrationController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'role_id' => ['required', Rule::exists('roles', 'id')->where('is_active', true)],
+            'dapukan_id' => ['required', Rule::exists('dapukans', 'id')->where('is_active', true)],
             'village_id' => ['nullable', 'integer', 'exists:villages,id'],
             'group_id' => ['nullable', 'integer', 'exists:groups,id'],
         ]);
@@ -67,6 +70,12 @@ class RegistrationController extends Controller
 
         if ($scopeType === null) {
             throw ValidationException::withMessages(['role_id' => 'Peran tidak tersedia untuk pendaftaran mandiri.']);
+        }
+
+        $dapukan = Dapukan::findOrFail($validated['dapukan_id']);
+
+        if ($dapukan->role_slug !== $role->slug) {
+            throw ValidationException::withMessages(['dapukan_id' => 'Dapukan yang dipilih tidak sesuai dengan peran.']);
         }
 
         if ($scopeType === 'village' && empty($validated['village_id'])) {
@@ -92,6 +101,7 @@ class RegistrationController extends Controller
         $user->roles()->attach($role->id, [
             'scope_type' => $scopeType,
             'scope_id' => $scopeId,
+            'dapukan_id' => $dapukan->id,
             'is_active' => false,
         ]);
 

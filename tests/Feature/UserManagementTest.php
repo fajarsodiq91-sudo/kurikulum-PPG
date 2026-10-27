@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Dapukan;
 use App\Models\Group;
 use App\Models\Permission;
 use App\Models\Region;
@@ -114,6 +115,40 @@ class UserManagementTest extends TestCase
         Village::create(['region_id' => Region::karawangTimur()->id, 'name' => 'Desa Pilihan', 'is_active' => true]);
 
         $this->actingAs($admin)->get('/users')->assertOk()->assertSee('Satu desa')->assertSee('Satu kelompok')->assertSee('Desa Pilihan');
+    }
+
+    public function test_assigning_a_fixed_scope_role_requires_a_matching_dapukan(): void
+    {
+        $adminRole = Role::create(['name' => 'Super Admin', 'slug' => 'super-admin', 'is_active' => true]);
+        $adminRole->permissions()->attach(Permission::create(['name' => 'Manage Users', 'slug' => 'manage-users', 'module' => 'users', 'is_active' => true])->id);
+        $admin = User::create(['name' => 'Admin', 'email' => 'admin@ppg.test', 'password' => Hash::make('password123'), 'status' => 'active']);
+        $admin->assignRole($adminRole->id);
+
+        $groupRole = Role::create(['name' => 'Pelaksana PPG Kelompok', 'slug' => 'pelaksana-ppg-kelompok', 'is_active' => true]);
+        $village = Village::create(['region_id' => Region::karawangTimur()->id, 'name' => 'Desa Dapukan', 'is_active' => true]);
+        $group = Group::create(['village_id' => $village->id, 'name' => 'Kelompok Dapukan', 'is_active' => true]);
+        $dapukan = Dapukan::create(['role_slug' => 'pelaksana-ppg-kelompok', 'group_label' => null, 'name' => 'Unsur Pembina Generus', 'sort_order' => 0, 'can_approve' => false, 'is_active' => true]);
+
+        $this->actingAs($admin)->get('/users')->assertOk()->assertSee('Unsur Pembina Generus');
+
+        $base = ['name' => 'Pelaksana Baru', 'email' => 'pelaksana-baru@ppg.test', 'password' => 'password123', 'status' => 'active'];
+
+        $this->actingAs($admin)
+            ->post('/users', [...$base, 'roles' => [$groupRole->id], 'role_scopes' => [$groupRole->id => ['type' => 'group', 'id' => $group->id]]])
+            ->assertSessionHasErrors('role_dapukan');
+        $this->assertDatabaseMissing('users', ['email' => 'pelaksana-baru@ppg.test']);
+
+        $this->actingAs($admin)
+            ->post('/users', [
+                ...$base,
+                'roles' => [$groupRole->id],
+                'role_scopes' => [$groupRole->id => ['type' => 'group', 'id' => $group->id]],
+                'role_dapukan' => [$groupRole->id => $dapukan->id],
+            ])
+            ->assertRedirect('/users');
+
+        $user = User::where('email', 'pelaksana-baru@ppg.test')->firstOrFail();
+        $this->assertDatabaseHas('user_roles', ['user_id' => $user->id, 'role_id' => $groupRole->id, 'dapukan_id' => $dapukan->id]);
     }
 
     public function test_user_without_manage_users_permission_cannot_access_user_management(): void

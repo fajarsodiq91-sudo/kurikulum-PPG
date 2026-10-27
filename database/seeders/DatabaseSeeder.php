@@ -104,5 +104,6 @@ class DatabaseSeeder extends Seeder
         $admin->assignRole($role->id);
 
         $this->call(RolePermissionSeeder::class);
+        $this->call(DapukanSeeder::class);
     }
 }

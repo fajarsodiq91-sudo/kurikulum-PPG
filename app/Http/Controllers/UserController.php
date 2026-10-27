@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\HandlesSheets;
+use App\Models\Dapukan;
 use App\Models\Group;
 use App\Models\Role;
 use App\Models\User;
@@ -10,6 +11,7 @@ use App\Models\Village;
 use App\Support\Sheets\UserSheet;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -46,14 +48,16 @@ class UserController extends Controller
     {
         $validated = $this->validateUser($request);
 
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'status' => $validated['status'],
-        ]);
+        DB::transaction(function () use ($request, $validated): void {
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+                'status' => $validated['status'],
+            ]);
 
-        $this->syncRoles($request, $user, $validated['roles'] ?? []);
+            $this->syncRoles($request, $user, $validated['roles'] ?? []);
+        });
 
         return redirect()->route('users.index')->with('success', 'Data pengguna berhasil ditambahkan.');
     }
@@ -71,18 +75,20 @@ class UserController extends Controller
     {
         $validated = $this->validateUser($request, $user);
 
-        $payload = [
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'status' => $validated['status'],
-        ];
+        DB::transaction(function () use ($request, $user, $validated): void {
+            $payload = [
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'status' => $validated['status'],
+            ];
 
-        if ($request->filled('password')) {
-            $payload['password'] = Hash::make($validated['password']);
-        }
+            if ($request->filled('password')) {
+                $payload['password'] = Hash::make($validated['password']);
+            }
 
-        $user->update($payload);
-        $this->syncRoles($request, $user, $validated['roles'] ?? []);
+            $user->update($payload);
+            $this->syncRoles($request, $user, $validated['roles'] ?? []);
+        });
 
         return redirect()->route('users.index')->with('success', 'Data pengguna berhasil diperbarui.');
     }
@@ -110,6 +116,7 @@ class UserController extends Controller
             'villages' => Village::where('is_active', true)->orderBy('name')->get(),
             'groups' => Group::with('village')->where('is_active', true)->orderBy('name')->get(),
             'fixedRoleScopes' => self::FIXED_ROLE_SCOPES,
+            'dapukansByRole' => Dapukan::where('is_active', true)->orderBy('sort_order')->get()->groupBy('role_slug'),
         ];
     }
 
@@ -127,9 +134,11 @@ class UserController extends Controller
         $sync = [];
 
         foreach (array_filter($roleIds) as $roleId) {
-            $fixedType = self::FIXED_ROLE_SCOPES[$roleSlugs[$roleId] ?? ''] ?? null;
+            $roleSlug = $roleSlugs[$roleId] ?? null;
+            $fixedType = self::FIXED_ROLE_SCOPES[$roleSlug ?? ''] ?? null;
             $type = $fixedType ?? $request->input("role_scopes.{$roleId}.type");
             $scopeId = $request->input("role_scopes.{$roleId}.id");
+            $dapukanId = $roleSlug !== null ? $this->resolveDapukanId($request, (int) $roleId, $roleSlug) : null;
 
             if (in_array($type, ['village', 'group'], true)) {
                 $exists = $type === 'village' ? Village::whereKey($scopeId)->exists() : Group::whereKey($scopeId)->exists();
@@ -138,16 +147,34 @@ class UserController extends Controller
                     throw ValidationException::withMessages(['role_scopes' => 'Pilih '.($type === 'village' ? 'desa' : 'kelompok').' untuk cakupan peran yang dipilih.']);
                 }
 
-                $sync[$roleId] = ['scope_type' => $type, 'scope_id' => (int) $scopeId, 'is_active' => true];
+                $sync[$roleId] = ['scope_type' => $type, 'scope_id' => (int) $scopeId, 'dapukan_id' => $dapukanId, 'is_active' => true];
             } elseif ($type === 'global' || ! $existing->has((int) $roleId)) {
-                $sync[$roleId] = ['scope_type' => 'global', 'scope_id' => null, 'is_active' => true];
+                $sync[$roleId] = ['scope_type' => 'global', 'scope_id' => null, 'dapukan_id' => $dapukanId, 'is_active' => true];
             } else {
                 $pivot = $existing->get((int) $roleId)->pivot;
-                $sync[$roleId] = ['scope_type' => $pivot->scope_type, 'scope_id' => $pivot->scope_id, 'is_active' => (bool) $pivot->is_active];
+                $sync[$roleId] = ['scope_type' => $pivot->scope_type, 'scope_id' => $pivot->scope_id, 'dapukan_id' => $dapukanId ?? $pivot->dapukan_id, 'is_active' => (bool) $pivot->is_active];
             }
         }
 
         $user->roles()->sync($sync);
+    }
+
+    /**
+     * Only the three fixed-scope organisation roles carry a dapukan; any other role ignores it.
+     */
+    private function resolveDapukanId(Request $request, int $roleId, string $roleSlug): ?int
+    {
+        if (! array_key_exists($roleSlug, self::FIXED_ROLE_SCOPES)) {
+            return null;
+        }
+
+        $dapukanId = $request->input("role_dapukan.{$roleId}");
+
+        if (! Dapukan::where('id', $dapukanId)->where('role_slug', $roleSlug)->where('is_active', true)->exists()) {
+            throw ValidationException::withMessages(['role_dapukan' => 'Pilih dapukan untuk peran yang dipilih.']);
+        }
+
+        return (int) $dapukanId;
     }
 
     /**
