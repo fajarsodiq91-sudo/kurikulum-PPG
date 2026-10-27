@@ -16,6 +16,7 @@ use App\Http\Controllers\FaceEnrollmentController;
 use App\Http\Controllers\FollowUpController;
 use App\Http\Controllers\GenerusController;
 use App\Http\Controllers\GuardianController;
+use App\Http\Controllers\KontrolController;
 use App\Http\Controllers\LearningMaterialController;
 use App\Http\Controllers\LearningSessionController;
 use App\Http\Controllers\MasterData\MasterDataController;
@@ -431,6 +432,18 @@ Route::middleware(['auth', 'permission:manage-evaluations'])->group(function () 
     Route::delete('/evaluation-scores/{evaluationScore}', [EvaluationScoreController::class, 'destroy'])
         ->whereNumber('evaluationScore')
         ->name('evaluation-scores.destroy');
+});
+
+Route::middleware(['auth', 'permission:view-ujian,manage-ujian'])->group(function () {
+    Route::get('/kontrol/bacaan', [KontrolController::class, 'batch'])
+        ->defaults('category', 'bacaan')
+        ->name('kontrol.bacaan');
+});
+
+Route::middleware(['auth', 'permission:manage-ujian'])->group(function () {
+    Route::post('/kontrol/bacaan', [KontrolController::class, 'saveBatch'])
+        ->defaults('category', 'bacaan')
+        ->name('kontrol.bacaan.save');
 });
 
 Route::middleware(['auth', 'permission:view-training,manage-training'])->group(function () {

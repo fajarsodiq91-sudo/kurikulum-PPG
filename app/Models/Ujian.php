@@ -17,6 +17,7 @@ class Ujian extends Model
         'academic_year_id',
         'semester_id',
         'title',
+        'material_id',
         'type',
         'score',
         'result',
@@ -35,6 +36,11 @@ class Ujian extends Model
     public function generus(): BelongsTo
     {
         return $this->belongsTo(Generus::class);
+    }
+
+    public function material(): BelongsTo
+    {
+        return $this->belongsTo(LearningMaterial::class);
     }
 
     public function gradeScale(): BelongsTo
