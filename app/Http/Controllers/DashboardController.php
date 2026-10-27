@@ -8,9 +8,13 @@ use App\Models\Group;
 use App\Models\LearningSession;
 use App\Models\Munaqosah;
 use App\Models\Region;
+use App\Models\Semester;
 use App\Models\Teacher;
 use App\Models\Training;
+use App\Models\Ujian;
 use App\Models\User;
+use App\Support\StudentScope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -39,7 +43,40 @@ class DashboardController extends Controller
                     ->take(5)
                     ->get()
                 : collect(),
+            'kontrolSemester' => $kontrolSemester = $this->canSee($user, 'ujian') ? Semester::where('is_active', true)->first() : null,
+            'kontrolSummary' => $kontrolSemester ? $this->kontrolSummary($user, $kontrolSemester) : [],
         ]);
+    }
+
+    /**
+     * Rata-rata & jumlah nilai kontrol (Ujian bertaut materi RPP) per kategori target generus,
+     * pada semester aktif, disaring ke generus yang boleh dilihat user (kelompok/desa/daerah).
+     *
+     * @return list<array{category: string, label: string, average: ?float, count: int}>
+     */
+    private function kontrolSummary(?User $user, Semester $semester): array
+    {
+        $viewIds = StudentScope::viewIds($user, Ujian::MANAGE_PERMISSION);
+
+        $categoryQuery = function (string $code) use ($semester, $viewIds): Builder {
+            return StudentScope::limit(
+                Ujian::query()
+                    ->whereHas('material.materialChapter.materialCategory', fn (Builder $query) => $query->where('code', $code))
+                    ->where('semester_id', $semester->id)
+                    ->whereNotNull('score'),
+                $viewIds,
+            );
+        };
+
+        return collect(KontrolController::CATEGORIES)
+            ->map(fn (string $label, string $code): array => [
+                'category' => $code,
+                'label' => $label,
+                'average' => $categoryQuery($code)->avg('score'),
+                'count' => $categoryQuery($code)->count(),
+            ])
+            ->values()
+            ->all();
     }
 
     /**

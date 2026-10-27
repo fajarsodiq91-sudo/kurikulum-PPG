@@ -95,6 +95,26 @@
         @endforeach
     </div>
 
+    @if (! empty($kontrolSummary))
+        <div class="mt-8">
+            <div class="mb-4 flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
+                <div>
+                    <h2 class="text-lg font-bold tracking-tight text-slate-950">Kontrol Pencapaian Materi</h2>
+                    <p class="mt-1 text-sm text-slate-500">Rata-rata nilai kontrol generus semester {{ $kontrolSemester->name }}, sesuai area yang Anda kelola/monitor.</p>
+                </div>
+            </div>
+            <div class="grid gap-4 sm:grid-cols-3 xl:grid-cols-6">
+                @foreach ($kontrolSummary as $item)
+                    <a href="{{ route('kontrol.'.$item['category']) }}" class="block rounded-xl border border-slate-200 bg-white p-4 transition hover:border-amber-300 hover:bg-amber-50">
+                        <p class="text-sm font-semibold text-slate-900">{{ $item['label'] }}</p>
+                        <p class="mt-2 text-2xl font-bold tracking-tight text-slate-950">{{ $item['average'] !== null ? number_format($item['average'], 1) : '-' }}</p>
+                        <p class="mt-1 text-xs text-slate-500">{{ $item['count'] }} nilai tercatat</p>
+                    </a>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     <div class="mt-6 grid gap-6 xl:grid-cols-[1.4fr_1fr]">
         <x-card>
             <div class="flex items-center justify-between gap-4">
