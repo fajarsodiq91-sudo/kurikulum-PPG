@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\HandlesSheets;
 use App\Http\Controllers\Controller;
 use App\Models\AcademicYear;
 use App\Models\ClassGrade;
+use App\Models\Dapukan;
 use App\Models\GradeScale;
 use App\Models\Group;
 use App\Models\Level;
@@ -14,6 +15,7 @@ use App\Models\Semester;
 use App\Models\Village;
 use App\Support\Sheets\AcademicYearSheet;
 use App\Support\Sheets\ClassGradeSheet;
+use App\Support\Sheets\DapukanSheet;
 use App\Support\Sheets\GradeScaleSheet;
 use App\Support\Sheets\GroupSheet;
 use App\Support\Sheets\LevelSheet;
@@ -29,6 +31,17 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 class MasterDataController extends Controller
 {
     use HandlesSheets;
+
+    /**
+     * The three organisation roles a dapukan may belong to, in display order.
+     *
+     * @var array<string, string>
+     */
+    private const DAPUKAN_ROLE_LABELS = [
+        'ppg' => 'Daerah (PPG)',
+        'perwakilan-ppg-desa' => 'Desa (Perwakilan PPG Desa)',
+        'pelaksana-ppg-kelompok' => 'Kelompok (Pelaksana PPG Kelompok)',
+    ];
 
     public function index(): RedirectResponse
     {
@@ -87,6 +100,14 @@ class MasterDataController extends Controller
     {
         return view('master-data.grade-scales', [
             'gradeScales' => GradeScale::query()->orderBy('sort_order')->orderByDesc('min_score')->get(),
+        ]);
+    }
+
+    public function dapukans(): View
+    {
+        return view('master-data.dapukans', [
+            'dapukans' => Dapukan::query()->orderBy('role_slug')->orderBy('sort_order')->get()->groupBy('role_slug'),
+            'roleSlugs' => self::DAPUKAN_ROLE_LABELS,
         ]);
     }
 
@@ -288,6 +309,37 @@ class MasterDataController extends Controller
         return $this->success('Konversi nilai berhasil diperbarui.', 'grade-scales');
     }
 
+    public function storeDapukan(Request $request): RedirectResponse
+    {
+        $validated = $this->validateDapukan($request);
+        Dapukan::create($validated);
+
+        return $this->success('Dapukan berhasil ditambahkan.', 'dapukans');
+    }
+
+    public function updateDapukan(Request $request, Dapukan $dapukan): RedirectResponse
+    {
+        $validated = $this->validateDapukan($request);
+        $dapukan->update($validated);
+
+        return $this->success('Dapukan berhasil diperbarui.', 'dapukans');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function validateDapukan(Request $request): array
+    {
+        return $request->validate([
+            'role_slug' => ['required', Rule::in(array_keys(self::DAPUKAN_ROLE_LABELS))],
+            'group_label' => ['nullable', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
+            'sort_order' => ['required', 'integer', 'min:0'],
+            'can_approve' => ['required', 'boolean'],
+            'is_active' => ['required', 'boolean'],
+        ]);
+    }
+
     public function export(string $page): BinaryFileResponse
     {
         return $this->exportSheet($this->sheetFor($page));
@@ -308,6 +360,7 @@ class MasterDataController extends Controller
             'academic-years' => new AcademicYearSheet,
             'semesters' => new SemesterSheet,
             'grade-scales' => new GradeScaleSheet,
+            'dapukans' => new DapukanSheet,
             default => abort(404),
         };
     }

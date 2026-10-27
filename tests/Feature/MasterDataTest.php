@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\AcademicYear;
+use App\Models\Dapukan;
 use App\Models\Group;
 use App\Models\Level;
 use App\Models\Permission;
@@ -113,9 +114,38 @@ class MasterDataTest extends TestCase
 
         $this->actingAs($user)->get('/master-data')->assertRedirect('/master-data/villages');
 
-        foreach (['villages', 'groups', 'levels', 'class-grades', 'academic-years', 'semesters'] as $page) {
+        foreach (['villages', 'groups', 'levels', 'class-grades', 'academic-years', 'semesters', 'dapukans'] as $page) {
             $this->actingAs($user)->get("/master-data/{$page}")->assertOk();
         }
+    }
+
+    public function test_admin_can_create_and_update_a_dapukan(): void
+    {
+        [$user] = $this->createMasterDataUser();
+
+        $this->actingAs($user)->post('/master-data/dapukans', [
+            'role_slug' => 'ppg',
+            'group_label' => 'PH PPG',
+            'name' => 'Ketua PPG',
+            'sort_order' => 1,
+            'can_approve' => true,
+            'is_active' => true,
+        ])->assertRedirect('/master-data/dapukans');
+
+        $dapukan = Dapukan::firstOrFail();
+        $this->assertSame('ppg', $dapukan->role_slug);
+        $this->assertTrue($dapukan->can_approve);
+
+        $this->actingAs($user)->put("/master-data/dapukans/{$dapukan->id}", [
+            'role_slug' => 'ppg',
+            'group_label' => 'PH PPG',
+            'name' => 'Ketua PPG',
+            'sort_order' => 1,
+            'can_approve' => false,
+            'is_active' => false,
+        ])->assertRedirect('/master-data/dapukans');
+
+        $this->assertDatabaseHas('dapukans', ['id' => $dapukan->id, 'can_approve' => false, 'is_active' => false]);
     }
 
     /**

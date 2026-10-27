@@ -166,14 +166,16 @@ Route::middleware(['auth', 'permission:view-master-data'])->group(function () {
         ->name('master-data.semesters.index');
     Route::get('/master-data/grade-scales', [MasterDataController::class, 'gradeScales'])
         ->name('master-data.grade-scales.index');
+    Route::get('/master-data/dapukans', [MasterDataController::class, 'dapukans'])
+        ->name('master-data.dapukans.index');
 });
 
 Route::middleware(['auth', 'permission:manage-master-data'])->group(function () {
     Route::get('/master-data/{page}/export', [MasterDataController::class, 'export'])
-        ->whereIn('page', ['villages', 'groups', 'levels', 'class-grades', 'academic-years', 'semesters', 'grade-scales'])
+        ->whereIn('page', ['villages', 'groups', 'levels', 'class-grades', 'academic-years', 'semesters', 'grade-scales', 'dapukans'])
         ->name('master-data.export');
     Route::post('/master-data/{page}/import', [MasterDataController::class, 'import'])
-        ->whereIn('page', ['villages', 'groups', 'levels', 'class-grades', 'academic-years', 'semesters', 'grade-scales'])
+        ->whereIn('page', ['villages', 'groups', 'levels', 'class-grades', 'academic-years', 'semesters', 'grade-scales', 'dapukans'])
         ->name('master-data.import');
     Route::post('/master-data/villages', [MasterDataController::class, 'storeVillage'])
         ->name('master-data.villages.store');
@@ -203,6 +205,10 @@ Route::middleware(['auth', 'permission:manage-master-data'])->group(function () 
         ->name('master-data.grade-scales.store');
     Route::put('/master-data/grade-scales/{gradeScale}', [MasterDataController::class, 'updateGradeScale'])
         ->name('master-data.grade-scales.update');
+    Route::post('/master-data/dapukans', [MasterDataController::class, 'storeDapukan'])
+        ->name('master-data.dapukans.store');
+    Route::put('/master-data/dapukans/{dapukan}', [MasterDataController::class, 'updateDapukan'])
+        ->name('master-data.dapukans.update');
 });
 
 // Publicly reachable, read-only for anonymous visitors covered by the guest role permissions.

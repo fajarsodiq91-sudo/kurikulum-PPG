@@ -42,6 +42,7 @@
                 ['label' => 'Tahun Akademik', 'route' => 'master-data.academic-years.index'],
                 ['label' => 'Semester', 'route' => 'master-data.semesters.index'],
                 ['label' => 'Konversi Nilai', 'route' => 'master-data.grade-scales.index'],
+                ['label' => 'Dapukan', 'route' => 'master-data.dapukans.index'],
             ]],
             ['label' => 'Kurikulum', 'permission' => ['view-learning-materials', 'manage-learning-materials'], 'icon' => '▥', 'items' => [
                 ['label' => 'Kategori Materi', 'route' => 'material-categories.index'],
