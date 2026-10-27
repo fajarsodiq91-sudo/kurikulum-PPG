@@ -447,6 +447,9 @@ Route::middleware(['auth', 'permission:view-ujian,manage-ujian'])->group(functio
     Route::get('/kontrol/praktik-ibadah', [KontrolController::class, 'batch'])
         ->defaults('category', 'praktik-ibadah')
         ->name('kontrol.praktik-ibadah');
+    Route::get('/kontrol/akhlaq', [KontrolController::class, 'batch'])
+        ->defaults('category', 'akhlaq')
+        ->name('kontrol.akhlaq');
 });
 
 Route::middleware(['auth', 'permission:manage-ujian'])->group(function () {
@@ -462,6 +465,9 @@ Route::middleware(['auth', 'permission:manage-ujian'])->group(function () {
     Route::post('/kontrol/praktik-ibadah', [KontrolController::class, 'saveBatch'])
         ->defaults('category', 'praktik-ibadah')
         ->name('kontrol.praktik-ibadah.save');
+    Route::post('/kontrol/akhlaq', [KontrolController::class, 'saveBatch'])
+        ->defaults('category', 'akhlaq')
+        ->name('kontrol.akhlaq.save');
 });
 
 Route::middleware(['auth', 'permission:view-training,manage-training'])->group(function () {
