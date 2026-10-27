@@ -67,6 +67,7 @@
                 ['label' => 'Kontrol Menulis', 'route' => 'kontrol.menulis', 'permission' => ['view-ujian', 'manage-ujian']],
                 ['label' => 'Kontrol Praktik Ibadah', 'route' => 'kontrol.praktik-ibadah', 'permission' => ['view-ujian', 'manage-ujian']],
                 ['label' => 'Kontrol Akhlaq', 'route' => 'kontrol.akhlaq', 'permission' => ['view-ujian', 'manage-ujian']],
+                ['label' => 'Kontrol Kemandirian', 'route' => 'kontrol.kemandirian', 'permission' => ['view-ujian', 'manage-ujian']],
                 ['label' => 'Rapor Generus', 'route' => 'report-cards.index', 'permission' => ['view-report-cards', 'manage-report-cards']],
             ]],
             ['label' => 'Komunikasi & Berita', 'icon' => '✉', 'items' => [
