@@ -63,6 +63,8 @@
                 ['label' => 'Daftar Munaqosah', 'route' => 'munaqosahs.index', 'permission' => ['view-munaqosah', 'manage-munaqosah']],
                 ['label' => 'Daftar Ujian', 'route' => 'ujians.index', 'permission' => ['view-ujian', 'manage-ujian']],
                 ['label' => 'Kontrol Bacaan', 'route' => 'kontrol.bacaan', 'permission' => ['view-ujian', 'manage-ujian']],
+                ['label' => 'Kontrol Hafalan', 'route' => 'kontrol.hafalan', 'permission' => ['view-ujian', 'manage-ujian']],
+                ['label' => 'Kontrol Menulis', 'route' => 'kontrol.menulis', 'permission' => ['view-ujian', 'manage-ujian']],
                 ['label' => 'Rapor Generus', 'route' => 'report-cards.index', 'permission' => ['view-report-cards', 'manage-report-cards']],
             ]],
             ['label' => 'Komunikasi & Berita', 'icon' => '✉', 'items' => [

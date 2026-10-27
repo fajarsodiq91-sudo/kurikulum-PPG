@@ -438,12 +438,24 @@ Route::middleware(['auth', 'permission:view-ujian,manage-ujian'])->group(functio
     Route::get('/kontrol/bacaan', [KontrolController::class, 'batch'])
         ->defaults('category', 'bacaan')
         ->name('kontrol.bacaan');
+    Route::get('/kontrol/hafalan', [KontrolController::class, 'batch'])
+        ->defaults('category', 'hafalan')
+        ->name('kontrol.hafalan');
+    Route::get('/kontrol/menulis', [KontrolController::class, 'batch'])
+        ->defaults('category', 'menulis')
+        ->name('kontrol.menulis');
 });
 
 Route::middleware(['auth', 'permission:manage-ujian'])->group(function () {
     Route::post('/kontrol/bacaan', [KontrolController::class, 'saveBatch'])
         ->defaults('category', 'bacaan')
         ->name('kontrol.bacaan.save');
+    Route::post('/kontrol/hafalan', [KontrolController::class, 'saveBatch'])
+        ->defaults('category', 'hafalan')
+        ->name('kontrol.hafalan.save');
+    Route::post('/kontrol/menulis', [KontrolController::class, 'saveBatch'])
+        ->defaults('category', 'menulis')
+        ->name('kontrol.menulis.save');
 });
 
 Route::middleware(['auth', 'permission:view-training,manage-training'])->group(function () {
