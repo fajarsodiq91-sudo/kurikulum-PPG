@@ -7,8 +7,115 @@
 @section('content')
     <div class="mb-6">
         <p class="text-sm font-semibold text-amber-600">Organisasi</p>
+        <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Struktur Organisasi</h2>
+        <p class="mt-2 text-sm text-slate-500">Susunan pengurus aktif, mulai dari PPG Daerah, Perwakilan PPG Desa, hingga Pelaksana PPG Kelompok.</p>
+    </div>
+
+    @php
+        $daerahPengurus = $pengurusDaerah->get('global', collect());
+    @endphp
+
+    <section class="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="flex items-center justify-between gap-4">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-wide text-amber-600">Daerah</p>
+                <h3 class="text-lg font-bold text-slate-950">Pengurus PPG {{ $region?->name ?? 'Daerah' }}</h3>
+            </div>
+            <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">{{ $daerahPengurus->count() }} pengurus aktif</span>
+        </div>
+
+        @if ($daerahPengurus->isEmpty())
+            <p class="mt-4 text-sm text-slate-500">Belum ada pengurus PPG Daerah yang aktif.</p>
+        @else
+            <ul class="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                @foreach ($daerahPengurus as $pengurus)
+                    <li class="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                        <p class="text-sm font-semibold text-slate-900">{{ $pengurus->user_name }}</p>
+                        <p class="text-xs text-slate-500">{{ $pengurus->jabatan ?? 'Tanpa jabatan' }}</p>
+                    </li>
+                @endforeach
+            </ul>
+        @endif
+    </section>
+
+    <section class="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <p class="text-xs font-semibold uppercase tracking-wide text-amber-600">Desa & Kelompok</p>
+        <h3 class="text-lg font-bold text-slate-950">Perwakilan PPG Desa dan Pelaksana PPG Kelompok</h3>
+
+        @if ($villages->isEmpty())
+            <p class="mt-4 text-sm text-slate-500">Belum ada data desa untuk daerah ini.</p>
+        @else
+            <div class="mt-4 space-y-3">
+                @foreach ($villages as $village)
+                    @php
+                        $desaPengurus = $perwakilanDesa->get($village->id, collect());
+                    @endphp
+                    <details class="group rounded-xl border border-slate-200 bg-slate-50/60 p-4" {{ $village === $villages->first() ? 'open' : '' }}>
+                        <summary class="flex cursor-pointer items-center justify-between gap-4 text-sm">
+                            <span class="font-semibold text-slate-900">Desa {{ $village->name }}</span>
+                            <span class="text-xs text-slate-500">{{ $desaPengurus->count() }} perwakilan &middot; {{ $village->groups->count() }} kelompok</span>
+                        </summary>
+
+                        <div class="mt-4 space-y-4">
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Perwakilan PPG Desa</p>
+                                @if ($desaPengurus->isEmpty())
+                                    <p class="mt-2 text-sm text-slate-500">Belum ada perwakilan aktif.</p>
+                                @else
+                                    <ul class="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                                        @foreach ($desaPengurus as $pengurus)
+                                            <li class="rounded-lg border border-slate-200 bg-white px-3 py-2">
+                                                <p class="text-sm font-semibold text-slate-900">{{ $pengurus->user_name }}</p>
+                                                <p class="text-xs text-slate-500">{{ $pengurus->jabatan ?? 'Tanpa jabatan' }}</p>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                @endif
+                            </div>
+
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Pelaksana PPG Kelompok</p>
+                                @if ($village->groups->isEmpty())
+                                    <p class="mt-2 text-sm text-slate-500">Belum ada kelompok terdaftar.</p>
+                                @else
+                                    <div class="mt-2 space-y-2">
+                                        @foreach ($village->groups as $group)
+                                            @php
+                                                $kelompokPengurus = $pelaksanaKelompok->get($group->id, collect());
+                                            @endphp
+                                            <details class="rounded-lg border border-slate-200 bg-white p-3">
+                                                <summary class="flex cursor-pointer items-center justify-between gap-4 text-sm">
+                                                    <span class="font-medium text-slate-900">Kelompok {{ $group->name }}</span>
+                                                    <span class="text-xs text-slate-500">{{ $kelompokPengurus->count() }} pengurus</span>
+                                                </summary>
+                                                @if ($kelompokPengurus->isEmpty())
+                                                    <p class="mt-2 text-sm text-slate-500">Belum ada pengurus aktif.</p>
+                                                @else
+                                                    <ul class="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                                                        @foreach ($kelompokPengurus as $pengurus)
+                                                            <li class="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
+                                                                <p class="text-sm font-semibold text-slate-900">{{ $pengurus->user_name }}</p>
+                                                                <p class="text-xs text-slate-500">{{ $pengurus->jabatan ?? 'Tanpa jabatan' }}</p>
+                                                            </li>
+                                                        @endforeach
+                                                    </ul>
+                                                @endif
+                                            </details>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </details>
+                @endforeach
+            </div>
+        @endif
+    </section>
+
+    <div class="mb-6">
+        <p class="text-sm font-semibold text-amber-600">Organisasi</p>
         <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Unit Organisasi</h2>
-        <p class="mt-2 text-sm text-slate-500">Kelola struktur organisasi dan bidang kerja.</p>
+        <p class="mt-2 text-sm text-slate-500">Kelola bidang kerja tambahan di luar struktur Daerah/Desa/Kelompok.</p>
     </div>
 
     @include('layouts.partials.spreadsheet-tools', ['exportUrl' => route('organization-units.export'), 'importUrl' => \App\Support\Access::can('manage-organization-units') ? route('organization-units.import') : null])

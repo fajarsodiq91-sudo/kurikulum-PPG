@@ -4,9 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\HandlesSheets;
 use App\Models\OrganizationUnit;
+use App\Models\Region;
+use App\Models\Village;
 use App\Support\Sheets\OrganizationUnitSheet;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -16,9 +20,53 @@ class OrganizationUnitController extends Controller
 
     public function index(): View
     {
+        $region = Region::query()->where('is_active', true)->orderBy('name')->first();
+
+        $villages = $region
+            ? Village::query()
+                ->where('region_id', $region->id)
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->with(['groups' => fn ($query) => $query->where('is_active', true)->orderBy('name')])
+                ->get()
+            : collect();
+
         return view('organization-units.index', [
             'organizationUnits' => OrganizationUnit::latest()->paginate(25),
+            'region' => $region,
+            'villages' => $villages,
+            'pengurusDaerah' => $this->activePengurus('ppg', 'global'),
+            'perwakilanDesa' => $this->activePengurus('perwakilan-ppg-desa', 'village'),
+            'pelaksanaKelompok' => $this->activePengurus('pelaksana-ppg-kelompok', 'group'),
         ]);
+    }
+
+    /**
+     * Active users holding the given role at the given scope level, grouped by scope id
+     * (or 'global' when unscoped), ordered by their jabatan's sort order.
+     *
+     * @return Collection<int|string, Collection<int, object>>
+     */
+    private function activePengurus(string $roleSlug, string $scopeType): Collection
+    {
+        return DB::table('user_roles')
+            ->join('users', 'users.id', '=', 'user_roles.user_id')
+            ->join('roles', 'roles.id', '=', 'user_roles.role_id')
+            ->leftJoin('dapukans', 'dapukans.id', '=', 'user_roles.dapukan_id')
+            ->where('users.status', 'active')
+            ->where('roles.slug', $roleSlug)
+            ->where('roles.is_active', true)
+            ->where('user_roles.is_active', true)
+            ->where('user_roles.scope_type', $scopeType)
+            ->orderBy('dapukans.sort_order')
+            ->orderBy('users.name')
+            ->get([
+                'users.name as user_name',
+                'user_roles.scope_id as scope_id',
+                'dapukans.name as jabatan',
+                'dapukans.group_label as group_label',
+            ])
+            ->groupBy(fn (object $row): int|string => $row->scope_id ?? 'global');
     }
 
     public function store(Request $request): RedirectResponse

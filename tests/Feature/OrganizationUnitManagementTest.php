@@ -2,9 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Models\Dapukan;
+use App\Models\Group;
 use App\Models\Permission;
+use App\Models\Region;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\Village;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -55,5 +59,56 @@ class OrganizationUnitManagementTest extends TestCase
             'code' => 'KUR',
             'unit_type' => 'bidang',
         ]);
+    }
+
+    public function test_index_shows_active_pengurus_grouped_by_daerah_desa_and_kelompok(): void
+    {
+        $viewPermission = Permission::create([
+            'name' => 'View Organization Units',
+            'slug' => 'view-organization-units',
+            'module' => 'organization-units',
+            'is_active' => true,
+        ]);
+
+        $viewerRole = Role::create(['name' => 'Viewer', 'slug' => 'viewer', 'is_active' => true]);
+        $viewerRole->permissions()->attach($viewPermission->id);
+
+        $viewer = User::create([
+            'name' => 'Peninjau',
+            'email' => 'peninjau@ppg.test',
+            'password' => Hash::make('password123'),
+            'status' => 'active',
+        ]);
+        $viewer->assignRole($viewerRole->id, 'global', null);
+
+        $region = Region::create(['name' => 'Karawang Timur', 'code' => 'KT', 'is_active' => true]);
+        $village = Village::create(['region_id' => $region->id, 'name' => 'Desa Satu', 'code' => 'DS1', 'is_active' => true]);
+        $group = Group::create(['village_id' => $village->id, 'name' => 'Kelompok A', 'code' => 'KA', 'is_active' => true]);
+
+        $ppgRole = Role::create(['name' => 'Pengurus PPG Daerah', 'slug' => 'ppg', 'is_active' => true]);
+        $desaRole = Role::create(['name' => 'Perwakilan PPG Desa', 'slug' => 'perwakilan-ppg-desa', 'is_active' => true]);
+        $kelompokRole = Role::create(['name' => 'Pelaksana PPG Kelompok', 'slug' => 'pelaksana-ppg-kelompok', 'is_active' => true]);
+
+        $ketuaDaerah = Dapukan::create(['role_slug' => 'ppg', 'name' => 'Ketua PPG', 'sort_order' => 1, 'can_approve' => true, 'is_active' => true]);
+        $pembinaDesa = Dapukan::create(['role_slug' => 'perwakilan-ppg-desa', 'name' => 'Pembina Desa', 'sort_order' => 1, 'can_approve' => true, 'is_active' => true]);
+        $guruGenerus = Dapukan::create(['role_slug' => 'pelaksana-ppg-kelompok', 'name' => 'Guru Generus', 'sort_order' => 1, 'can_approve' => false, 'is_active' => true]);
+
+        $daerahUser = User::create(['name' => 'Ketua Daerah', 'email' => 'ketua@ppg.test', 'password' => Hash::make('password123'), 'status' => 'active']);
+        $daerahUser->assignRole($ppgRole->id, 'global', null, $ketuaDaerah->id);
+
+        $desaUser = User::create(['name' => 'Pembina Desa Satu', 'email' => 'desa@ppg.test', 'password' => Hash::make('password123'), 'status' => 'active']);
+        $desaUser->assignRole($desaRole->id, 'village', $village->id, $pembinaDesa->id);
+
+        $kelompokUser = User::create(['name' => 'Guru Kelompok A', 'email' => 'kelompok@ppg.test', 'password' => Hash::make('password123'), 'status' => 'active']);
+        $kelompokUser->assignRole($kelompokRole->id, 'group', $group->id, $guruGenerus->id);
+
+        $response = $this->actingAs($viewer)->get('/organization-units');
+
+        $response->assertOk();
+        $response->assertSeeText('Ketua Daerah');
+        $response->assertSeeText('Pembina Desa Satu');
+        $response->assertSeeText('Guru Kelompok A');
+        $response->assertSeeText('Desa Satu');
+        $response->assertSeeText('Kelompok A');
     }
 }
