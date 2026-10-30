@@ -22,6 +22,8 @@ use App\Support\Sheets\LevelSheet;
 use App\Support\Sheets\SemesterSheet;
 use App\Support\Sheets\Sheet;
 use App\Support\Sheets\VillageSheet;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -137,6 +139,11 @@ class MasterDataController extends Controller
         return $this->success('Desa berhasil diperbarui.', 'villages');
     }
 
+    public function destroyVillage(Village $village): RedirectResponse
+    {
+        return $this->delete($village, 'Desa berhasil dihapus.', 'villages');
+    }
+
     public function storeGroup(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -165,6 +172,11 @@ class MasterDataController extends Controller
         return $this->success('Kelompok berhasil diperbarui.', 'groups');
     }
 
+    public function destroyGroup(Group $group): RedirectResponse
+    {
+        return $this->delete($group, 'Kelompok berhasil dihapus.', 'groups');
+    }
+
     public function storeLevel(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -191,6 +203,11 @@ class MasterDataController extends Controller
         $level->update($validated);
 
         return $this->success('Jenjang berhasil diperbarui.', 'levels');
+    }
+
+    public function destroyLevel(Level $level): RedirectResponse
+    {
+        return $this->delete($level, 'Jenjang berhasil dihapus.', 'levels');
     }
 
     public function storeClassGrade(Request $request): RedirectResponse
@@ -223,6 +240,11 @@ class MasterDataController extends Controller
         return $this->success('Kelas berhasil diperbarui.', 'class-grades');
     }
 
+    public function destroyClassGrade(ClassGrade $classGrade): RedirectResponse
+    {
+        return $this->delete($classGrade, 'Kelas berhasil dihapus.', 'class-grades');
+    }
+
     public function storeAcademicYear(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -251,6 +273,11 @@ class MasterDataController extends Controller
         return $this->success('Tahun akademik berhasil diperbarui.', 'academic-years');
     }
 
+    public function destroyAcademicYear(AcademicYear $academicYear): RedirectResponse
+    {
+        return $this->delete($academicYear, 'Tahun akademik berhasil dihapus.', 'academic-years');
+    }
+
     public function storeSemester(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -277,6 +304,11 @@ class MasterDataController extends Controller
         $semester->update($validated);
 
         return $this->success('Semester berhasil diperbarui.', 'semesters');
+    }
+
+    public function destroySemester(Semester $semester): RedirectResponse
+    {
+        return $this->delete($semester, 'Semester berhasil dihapus.', 'semesters');
     }
 
     public function storeGradeScale(Request $request): RedirectResponse
@@ -311,6 +343,11 @@ class MasterDataController extends Controller
         return $this->success('Konversi nilai berhasil diperbarui.', 'grade-scales');
     }
 
+    public function destroyGradeScale(GradeScale $gradeScale): RedirectResponse
+    {
+        return $this->delete($gradeScale, 'Konversi nilai berhasil dihapus.', 'grade-scales');
+    }
+
     public function storeDapukan(Request $request): RedirectResponse
     {
         $validated = $this->validateDapukan($request);
@@ -325,6 +362,11 @@ class MasterDataController extends Controller
         $dapukan->update($validated);
 
         return $this->success('Dapukan berhasil diperbarui.', 'dapukans');
+    }
+
+    public function destroyDapukan(Dapukan $dapukan): RedirectResponse
+    {
+        return $this->delete($dapukan, 'Dapukan berhasil dihapus.', 'dapukans');
     }
 
     /**
@@ -370,5 +412,22 @@ class MasterDataController extends Controller
     private function success(string $message, string $page): RedirectResponse
     {
         return redirect()->route("master-data.{$page}.index")->with('success', $message);
+    }
+
+    private function delete(Model $model, string $message, string $page): RedirectResponse
+    {
+        try {
+            $model->delete();
+        } catch (QueryException $e) {
+            if ($e->getCode() === '23000') {
+                return redirect()->route("master-data.{$page}.index")->withErrors([
+                    'delete' => 'Data tidak dapat dihapus karena masih digunakan oleh data lain.',
+                ]);
+            }
+
+            throw $e;
+        }
+
+        return $this->success($message, $page);
     }
 }

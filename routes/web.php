@@ -182,34 +182,50 @@ Route::middleware(['auth', 'permission:manage-master-data'])->group(function () 
         ->name('master-data.villages.store');
     Route::put('/master-data/villages/{village}', [MasterDataController::class, 'updateVillage'])
         ->name('master-data.villages.update');
+    Route::delete('/master-data/villages/{village}', [MasterDataController::class, 'destroyVillage'])
+        ->name('master-data.villages.destroy');
     Route::post('/master-data/groups', [MasterDataController::class, 'storeGroup'])
         ->name('master-data.groups.store');
     Route::put('/master-data/groups/{group}', [MasterDataController::class, 'updateGroup'])
         ->name('master-data.groups.update');
+    Route::delete('/master-data/groups/{group}', [MasterDataController::class, 'destroyGroup'])
+        ->name('master-data.groups.destroy');
     Route::post('/master-data/levels', [MasterDataController::class, 'storeLevel'])
         ->name('master-data.levels.store');
     Route::put('/master-data/levels/{level}', [MasterDataController::class, 'updateLevel'])
         ->name('master-data.levels.update');
+    Route::delete('/master-data/levels/{level}', [MasterDataController::class, 'destroyLevel'])
+        ->name('master-data.levels.destroy');
     Route::post('/master-data/class-grades', [MasterDataController::class, 'storeClassGrade'])
         ->name('master-data.class-grades.store');
     Route::put('/master-data/class-grades/{classGrade}', [MasterDataController::class, 'updateClassGrade'])
         ->name('master-data.class-grades.update');
+    Route::delete('/master-data/class-grades/{classGrade}', [MasterDataController::class, 'destroyClassGrade'])
+        ->name('master-data.class-grades.destroy');
     Route::post('/master-data/academic-years', [MasterDataController::class, 'storeAcademicYear'])
         ->name('master-data.academic-years.store');
     Route::put('/master-data/academic-years/{academicYear}', [MasterDataController::class, 'updateAcademicYear'])
         ->name('master-data.academic-years.update');
+    Route::delete('/master-data/academic-years/{academicYear}', [MasterDataController::class, 'destroyAcademicYear'])
+        ->name('master-data.academic-years.destroy');
     Route::post('/master-data/semesters', [MasterDataController::class, 'storeSemester'])
         ->name('master-data.semesters.store');
     Route::put('/master-data/semesters/{semester}', [MasterDataController::class, 'updateSemester'])
         ->name('master-data.semesters.update');
+    Route::delete('/master-data/semesters/{semester}', [MasterDataController::class, 'destroySemester'])
+        ->name('master-data.semesters.destroy');
     Route::post('/master-data/grade-scales', [MasterDataController::class, 'storeGradeScale'])
         ->name('master-data.grade-scales.store');
     Route::put('/master-data/grade-scales/{gradeScale}', [MasterDataController::class, 'updateGradeScale'])
         ->name('master-data.grade-scales.update');
+    Route::delete('/master-data/grade-scales/{gradeScale}', [MasterDataController::class, 'destroyGradeScale'])
+        ->name('master-data.grade-scales.destroy');
     Route::post('/master-data/dapukans', [MasterDataController::class, 'storeDapukan'])
         ->name('master-data.dapukans.store');
     Route::put('/master-data/dapukans/{dapukan}', [MasterDataController::class, 'updateDapukan'])
         ->name('master-data.dapukans.update');
+    Route::delete('/master-data/dapukans/{dapukan}', [MasterDataController::class, 'destroyDapukan'])
+        ->name('master-data.dapukans.destroy');
 });
 
 // Publicly reachable, read-only for anonymous visitors covered by the guest role permissions.

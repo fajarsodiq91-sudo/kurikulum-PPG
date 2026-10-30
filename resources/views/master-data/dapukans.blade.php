@@ -85,6 +85,11 @@
                             </label>
                             <button class="mt-3 block rounded-lg bg-brand-950 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800">Simpan Perubahan</button>
                         </form>
+                        <form method="POST" action="{{ route('master-data.dapukans.destroy', $dapukan) }}" class="mt-2" onsubmit="return confirm(@js('Hapus dapukan '.$dapukan->name.'? Tindakan ini tidak dapat dibatalkan.'))">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="block w-full rounded-lg border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-600 transition hover:bg-rose-50">Hapus Dapukan</button>
+                        </form>
 @endif
                     </details>
                 @empty

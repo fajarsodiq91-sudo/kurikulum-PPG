@@ -148,6 +148,51 @@ class MasterDataTest extends TestCase
         $this->assertDatabaseHas('dapukans', ['id' => $dapukan->id, 'can_approve' => false, 'is_active' => false]);
     }
 
+    public function test_admin_can_delete_a_dapukan(): void
+    {
+        [$user] = $this->createMasterDataUser();
+        $dapukan = Dapukan::create([
+            'role_slug' => 'ppg',
+            'group_label' => 'PH PPG',
+            'name' => 'Ketua PPG',
+            'sort_order' => 1,
+            'can_approve' => true,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->delete("/master-data/dapukans/{$dapukan->id}")
+            ->assertRedirect('/master-data/dapukans');
+
+        $this->assertDatabaseMissing('dapukans', ['id' => $dapukan->id]);
+    }
+
+    public function test_admin_can_delete_a_village_with_no_dependents(): void
+    {
+        [$user, $region] = $this->createMasterDataUser();
+        $village = Village::create(['region_id' => $region->id, 'name' => 'Desa A', 'code' => 'DSA', 'is_active' => true]);
+
+        $this->actingAs($user)
+            ->delete("/master-data/villages/{$village->id}")
+            ->assertRedirect('/master-data/villages');
+
+        $this->assertDatabaseMissing('villages', ['id' => $village->id]);
+    }
+
+    public function test_village_cannot_be_deleted_while_it_still_has_a_group(): void
+    {
+        [$user, $region] = $this->createMasterDataUser();
+        $village = Village::create(['region_id' => $region->id, 'name' => 'Desa A', 'code' => 'DSA', 'is_active' => true]);
+        Group::create(['village_id' => $village->id, 'name' => 'Kelompok 1', 'is_active' => true]);
+
+        $this->actingAs($user)
+            ->delete("/master-data/villages/{$village->id}")
+            ->assertRedirect('/master-data/villages')
+            ->assertSessionHasErrors('delete');
+
+        $this->assertDatabaseHas('villages', ['id' => $village->id]);
+    }
+
     /**
      * @return array{0: User, 1: Region}
      */

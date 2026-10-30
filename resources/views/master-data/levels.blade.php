@@ -58,6 +58,11 @@
                         </label>
                         <button class="mt-3 block rounded-lg bg-brand-950 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800">Simpan Perubahan</button>
                     </form>
+                    <form method="POST" action="{{ route('master-data.levels.destroy', $level) }}" class="mt-2" onsubmit="return confirm(@js('Hapus jenjang '.$level->name.'? Tindakan ini tidak dapat dibatalkan.'))">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="block w-full rounded-lg border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-600 transition hover:bg-rose-50">Hapus Jenjang</button>
+                    </form>
 @endif
                 </details>
             @endforeach
