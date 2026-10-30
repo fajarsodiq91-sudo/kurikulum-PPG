@@ -65,6 +65,7 @@ class GenerusImport implements OnEachRow, WithChunkReading, WithHeadingRow
 
         $data = collect($data)
             ->map(fn (mixed $value): mixed => is_int($value) || is_float($value) ? (string) $value : $value)
+            ->map(fn (mixed $value): mixed => $value === '' ? null : $value)
             ->all();
 
         $validator = Validator::make($data, [

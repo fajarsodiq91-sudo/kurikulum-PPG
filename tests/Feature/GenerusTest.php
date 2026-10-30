@@ -344,6 +344,39 @@ class GenerusTest extends TestCase
         $this->assertDatabaseMissing('generus', ['registration_number' => 'PPG-INVALID-001']);
     }
 
+    public function test_import_treats_blank_cells_as_null_instead_of_empty_string(): void
+    {
+        [$user] = $this->createGenerusImportContext();
+
+        $xlsx = Excel::raw(new class implements FromArray, WithHeadings
+        {
+            public function headings(): array
+            {
+                return ['registration_number', 'full_name', 'status', 'birth_date', 'birth_order'];
+            }
+
+            public function array(): array
+            {
+                return [
+                    ['PPG-BLANK-001', 'Generus Tanpa Tanggal Lahir', 'active', '', ''],
+                ];
+            }
+        }, ExcelWriter::XLSX);
+
+        $this->actingAs($user)
+            ->post('/generus/import', [
+                'file' => UploadedFile::fake()->createWithContent('generus.xlsx', $xlsx),
+            ])
+            ->assertRedirect('/generus')
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('generus', [
+            'registration_number' => 'PPG-BLANK-001',
+            'birth_date' => null,
+            'birth_order' => null,
+        ]);
+    }
+
     public function test_group_scoped_user_only_sees_generus_in_own_group(): void
     {
         [, , $village, $group] = $this->createGenerusImportContext();
