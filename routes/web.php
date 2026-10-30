@@ -26,6 +26,7 @@ use App\Http\Controllers\MilestoneController;
 use App\Http\Controllers\MunaqosahController;
 use App\Http\Controllers\OrganizationUnitController;
 use App\Http\Controllers\ParentCommunicationController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProgressTrackController;
 use App\Http\Controllers\RegistrationApprovalController;
 use App\Http\Controllers\ReportCardController;
@@ -62,6 +63,9 @@ Route::post('/logout', [LoginController::class, 'logout'])->middleware('auth')->
 Route::middleware('auth')->group(function () {
     Route::get('/password', [PasswordController::class, 'edit'])->name('password.edit');
     Route::put('/password', [PasswordController::class, 'update'])->name('password.update');
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/users/{user}/photo', [ProfileController::class, 'photo'])->name('users.photo');
 });
 
 // Publicly reachable, read-only for anonymous visitors covered by the guest role permissions.

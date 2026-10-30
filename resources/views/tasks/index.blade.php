@@ -20,7 +20,8 @@
         $totalTasks = $tasksByStatus->flatten()->count();
         $doneCount = $tasksByStatus->get('done', collect())->count();
         $progressPercent = $totalTasks > 0 ? (int) round($doneCount / $totalTasks * 100) : 0;
-        $formShouldOpen = $errors->any();
+        $preselectedAssigneeId = request('assign_to');
+        $formShouldOpen = $errors->any() || $preselectedAssigneeId !== null;
     @endphp
 
     <div class="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
@@ -91,7 +92,7 @@
                         </div>
                         <div class="md:col-span-2">
                             <span class="mb-2 block text-sm font-medium text-slate-700">Ditugaskan Kepada</span>
-                            @include('tasks.partials.assignee-picker', ['recipients' => $recipients, 'selectedIds' => old('assignees', [])])
+                            @include('tasks.partials.assignee-picker', ['recipients' => $recipients, 'selectedIds' => old('assignees', $preselectedAssigneeId !== null ? [$preselectedAssigneeId] : [])])
                             <p class="mt-1 text-xs text-slate-500">Hanya pengurus di jalur vertikal Anda (atasan dan cabang Anda sendiri) yang bisa dipilih.</p>
                         </div>
                         <div class="md:col-span-2">

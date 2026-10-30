@@ -112,6 +112,47 @@ class OrganizationUnitManagementTest extends TestCase
         $response->assertSeeText('Kelompok A');
     }
 
+    public function test_person_detail_carries_contact_info_and_task_button_only_when_manager(): void
+    {
+        $viewPermission = Permission::create(['name' => 'View Organization Units', 'slug' => 'view-organization-units', 'module' => 'organization-units', 'is_active' => true]);
+        $manageTasksPermission = Permission::create(['name' => 'Manage Tasks', 'slug' => 'manage-tasks', 'module' => 'tasks', 'is_active' => true]);
+
+        $managerRole = Role::create(['name' => 'Manager', 'slug' => 'manager-viewer', 'is_active' => true]);
+        $managerRole->permissions()->attach([$viewPermission->id, $manageTasksPermission->id]);
+
+        $plainViewerRole = Role::create(['name' => 'Plain Viewer', 'slug' => 'plain-viewer', 'is_active' => true]);
+        $plainViewerRole->permissions()->attach($viewPermission->id);
+
+        $manager = User::create(['name' => 'Manajer', 'email' => 'manajer@ppg.test', 'password' => Hash::make('password123'), 'status' => 'active']);
+        $manager->assignRole($managerRole->id, 'global', null);
+
+        $plainViewer = User::create(['name' => 'Peninjau Biasa', 'email' => 'biasa@ppg.test', 'password' => Hash::make('password123'), 'status' => 'active']);
+        $plainViewer->assignRole($plainViewerRole->id, 'global', null);
+
+        $ppgRole = Role::create(['name' => 'Pengurus PPG Daerah', 'slug' => 'ppg', 'is_active' => true]);
+        $ketuaDaerah = Dapukan::create(['role_slug' => 'ppg', 'name' => 'Ketua PPG', 'sort_order' => 1, 'can_approve' => true, 'is_active' => true]);
+
+        $daerahUser = User::create([
+            'name' => 'Ketua Daerah',
+            'email' => 'ketua@ppg.test',
+            'password' => Hash::make('password123'),
+            'status' => 'active',
+            'whatsapp' => '081234567890',
+        ]);
+        $daerahUser->assignRole($ppgRole->id, 'global', null, $ketuaDaerah->id);
+
+        $managerResponse = $this->actingAs($manager)->get('/organization-units');
+        $managerResponse->assertOk();
+        $managerResponse->assertSee('ketua@ppg.test', false);
+        $managerResponse->assertSee('https:\/\/wa.me\/6281234567890', false);
+        $managerResponse->assertSee('assign_to', false);
+
+        $plainViewerResponse = $this->actingAs($plainViewer)->get('/organization-units');
+        $plainViewerResponse->assertOk();
+        $plainViewerResponse->assertSee('ketua@ppg.test', false);
+        $plainViewerResponse->assertDontSee('assign_to', false);
+    }
+
     public function test_village_scoped_user_only_sees_the_daerah_chart_and_their_own_desa_branch(): void
     {
         $viewPermission = Permission::create(['name' => 'View Organization Units', 'slug' => 'view-organization-units', 'module' => 'organization-units', 'is_active' => true]);

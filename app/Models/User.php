@@ -16,12 +16,16 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
+    public const PHOTO_DIRECTORY = 'user-photos';
+
     protected $fillable = [
         'name',
         'email',
         'username',
         'password',
         'status',
+        'photo',
+        'whatsapp',
     ];
 
     protected $hidden = [
@@ -32,6 +36,29 @@ class User extends Authenticatable
     public function teacher(): BelongsTo
     {
         return $this->belongsTo(Teacher::class);
+    }
+
+    /**
+     * The wa.me deep link for a raw WhatsApp number, or null when blank. A leading 0 is
+     * rewritten to Indonesia's 62 country code since that's how numbers are collected locally.
+     */
+    public static function whatsappUrl(?string $number): ?string
+    {
+        if (blank($number)) {
+            return null;
+        }
+
+        $digits = preg_replace('/\D+/', '', $number);
+
+        if ($digits === '' || $digits === null) {
+            return null;
+        }
+
+        if (str_starts_with($digits, '0')) {
+            $digits = '62'.substr($digits, 1);
+        }
+
+        return "https://wa.me/{$digits}";
     }
 
     public function roles(): BelongsToMany

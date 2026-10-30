@@ -13,8 +13,12 @@
                 <p class="text-sm font-semibold text-slate-800">{{ auth()->user()->name ?? 'Tamu' }}</p>
                 <p class="text-xs text-slate-500">{{ \App\Support\Access::currentRoleLabel() }}</p>
             </div>
-            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-brand-900 text-sm font-bold text-white" aria-hidden="true">
-                {{ str(auth()->user()->name ?? 'Tamu')->substr(0, 1)->upper() }}
+            <div class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-brand-900 text-sm font-bold text-white" aria-hidden="true">
+                @if (auth()->user()?->photo)
+                    <img src="{{ route('users.photo', auth()->user()) }}" alt="{{ auth()->user()->name }}" class="h-full w-full object-cover">
+                @else
+                    {{ str(auth()->user()->name ?? 'Tamu')->substr(0, 1)->upper() }}
+                @endif
             </div>
         </button>
 
@@ -24,6 +28,7 @@
                 <p class="text-xs text-slate-500">{{ \App\Support\Access::currentRoleLabel() }}</p>
             </div>
             @auth
+                <a href="{{ route('profile.edit') }}" class="block w-full rounded-lg px-3 py-2 text-left text-sm text-slate-600 transition hover:bg-slate-100">Edit profil</a>
                 <a href="{{ route('password.edit') }}" class="block w-full rounded-lg px-3 py-2 text-left text-sm text-slate-600 transition hover:bg-slate-100">Ganti password</a>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf

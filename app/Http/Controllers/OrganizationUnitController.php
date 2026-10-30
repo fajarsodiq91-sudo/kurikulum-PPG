@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\HandlesSheets;
 use App\Models\OrganizationUnit;
 use App\Models\Region;
+use App\Models\User;
 use App\Models\Village;
+use App\Support\Access;
 use App\Support\Sheets\OrganizationUnitSheet;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -40,6 +42,7 @@ class OrganizationUnitController extends Controller
             'region' => $region,
             'isGlobal' => $isGlobal,
             'villages' => $villagesQuery?->get() ?? collect(),
+            'canManageTasks' => Access::can('manage-tasks'),
             'pengurusDaerah' => $this->activePengurus('ppg', 'global'),
             'perwakilanDesa' => $this->activePengurus('perwakilan-ppg-desa', 'village'),
             'pelaksanaKelompok' => $this->activePengurus('pelaksana-ppg-kelompok', 'group'),
@@ -66,11 +69,20 @@ class OrganizationUnitController extends Controller
             ->orderBy('dapukans.sort_order')
             ->orderBy('users.name')
             ->get([
+                'users.id as user_id',
                 'users.name as user_name',
+                'users.email as email',
+                'users.photo as photo',
+                'users.whatsapp as whatsapp',
                 'user_roles.scope_id as scope_id',
                 'dapukans.name as jabatan',
                 'dapukans.group_label as group_label',
             ])
+            ->map(function (object $row): object {
+                $row->whatsapp_url = User::whatsappUrl($row->whatsapp);
+
+                return $row;
+            })
             ->groupBy(fn (object $row): int|string => $row->scope_id ?? 'global');
     }
 
