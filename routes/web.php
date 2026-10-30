@@ -345,14 +345,26 @@ Route::middleware(['auth', 'permission:view-learning-materials,manage-learning-m
 Route::middleware(['auth', 'permission:manage-learning-materials'])->group(function () {
     Route::post('/material-categories', [MaterialCategoryController::class, 'store'])
         ->name('material-categories.store');
+    Route::put('/material-categories/{material_category}', [MaterialCategoryController::class, 'update'])
+        ->name('material-categories.update');
+    Route::delete('/material-categories/{material_category}', [MaterialCategoryController::class, 'destroy'])
+        ->name('material-categories.destroy');
     Route::post('/material-categories/import', [MaterialCategoryController::class, 'import'])
         ->name('material-categories.import');
     Route::post('/material-chapters', [MaterialChapterController::class, 'store'])
         ->name('material-chapters.store');
+    Route::put('/material-chapters/{material_chapter}', [MaterialChapterController::class, 'update'])
+        ->name('material-chapters.update');
+    Route::delete('/material-chapters/{material_chapter}', [MaterialChapterController::class, 'destroy'])
+        ->name('material-chapters.destroy');
     Route::post('/material-chapters/import', [MaterialChapterController::class, 'import'])
         ->name('material-chapters.import');
     Route::post('/learning-materials', [LearningMaterialController::class, 'store'])
         ->name('learning-materials.store');
+    Route::put('/learning-materials/{learning_material}', [LearningMaterialController::class, 'update'])
+        ->name('learning-materials.update');
+    Route::delete('/learning-materials/{learning_material}', [LearningMaterialController::class, 'destroy'])
+        ->name('learning-materials.destroy');
     Route::post('/learning-materials/import', [LearningMaterialController::class, 'import'])
         ->name('learning-materials.import');
 });
@@ -617,6 +629,10 @@ Route::middleware(['auth', 'permission:view-progress-tracking,manage-progress-tr
 Route::middleware(['auth', 'permission:manage-progress-tracking'])->group(function () {
     Route::post('/progress-tracks', [ProgressTrackController::class, 'store'])
         ->name('progress-tracks.store');
+    Route::put('/progress-tracks/{progress_track}', [ProgressTrackController::class, 'update'])
+        ->name('progress-tracks.update');
+    Route::delete('/progress-tracks/{progress_track}', [ProgressTrackController::class, 'destroy'])
+        ->name('progress-tracks.destroy');
     Route::post('/progress-tracks/import', [ProgressTrackController::class, 'import'])
         ->name('progress-tracks.import');
 });

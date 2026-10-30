@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\HandlesSheets;
 use App\Models\MaterialCategory;
 use App\Models\MaterialChapter;
 use App\Support\Sheets\MaterialChapterSheet;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -63,6 +64,48 @@ class MaterialChapterController extends Controller
         MaterialChapter::create($validated);
 
         return redirect()->route('material-chapters.index')->with('success', 'Bab materi berhasil ditambahkan.');
+    }
+
+    public function update(Request $request, MaterialChapter $material_chapter): RedirectResponse
+    {
+        $validated = $request->validate([
+            'material_category_id' => ['required', 'exists:material_categories,id'],
+            'name' => ['required', 'string', 'max:255'],
+            'code' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('material_chapters', 'code')
+                    ->where('material_category_id', $request->integer('material_category_id'))
+                    ->ignore($material_chapter->id),
+            ],
+            'sort_order' => ['nullable', 'integer', 'min:0'],
+            'description' => ['nullable', 'string'],
+            'is_active' => ['required', 'boolean'],
+        ]);
+
+        $validated['sort_order'] ??= 0;
+
+        $material_chapter->update($validated);
+
+        return redirect()->route('material-chapters.index')->with('success', 'Bab materi berhasil diperbarui.');
+    }
+
+    public function destroy(MaterialChapter $material_chapter): RedirectResponse
+    {
+        try {
+            $material_chapter->delete();
+        } catch (QueryException $e) {
+            if ($e->getCode() === '23000') {
+                return redirect()->route('material-chapters.index')->withErrors([
+                    'delete' => 'Bab materi tidak dapat dihapus karena masih memiliki materi pembelajaran.',
+                ]);
+            }
+
+            throw $e;
+        }
+
+        return redirect()->route('material-chapters.index')->with('success', 'Bab materi berhasil dihapus.');
     }
 
     public function export(): BinaryFileResponse

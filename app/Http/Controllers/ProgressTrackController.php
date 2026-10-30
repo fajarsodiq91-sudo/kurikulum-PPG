@@ -9,6 +9,7 @@ use App\Models\ProgressTrack;
 use App\Models\Semester;
 use App\Support\Sheets\ProgressTrackSheet;
 use App\Support\StudentScope;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -59,6 +60,45 @@ class ProgressTrackController extends Controller
         ProgressTrack::create($validated);
 
         return redirect()->route('progress-tracks.index')->with('success', 'Progress tracking berhasil ditambahkan.');
+    }
+
+    public function update(Request $request, ProgressTrack $progress_track): RedirectResponse
+    {
+        StudentScope::authorize($request->user(), 'manage-progress-tracking', $progress_track->generus_id);
+
+        $validated = $request->validate([
+            'generus_id' => ['required', StudentScope::existsRule($request->user(), 'manage-progress-tracking')],
+            'academic_year_id' => ['required', 'exists:academic_years,id'],
+            'semester_id' => ['required', 'exists:semesters,id'],
+            'period_label' => ['required', 'string', 'max:50'],
+            'overall_status' => ['required', 'string', 'max:50'],
+            'score' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'notes' => ['nullable', 'string'],
+            'next_goal' => ['nullable', 'string'],
+        ]);
+
+        $progress_track->update($validated);
+
+        return redirect()->route('progress-tracks.index')->with('success', 'Progress tracking berhasil diperbarui.');
+    }
+
+    public function destroy(ProgressTrack $progress_track): RedirectResponse
+    {
+        StudentScope::authorize(request()->user(), 'manage-progress-tracking', $progress_track->generus_id);
+
+        try {
+            $progress_track->delete();
+        } catch (QueryException $e) {
+            if ($e->getCode() === '23000') {
+                return redirect()->route('progress-tracks.index')->withErrors([
+                    'delete' => 'Progress tracking tidak dapat dihapus karena masih digunakan oleh data lain.',
+                ]);
+            }
+
+            throw $e;
+        }
+
+        return redirect()->route('progress-tracks.index')->with('success', 'Progress tracking berhasil dihapus.');
     }
 
     private function studentIds(): ?array

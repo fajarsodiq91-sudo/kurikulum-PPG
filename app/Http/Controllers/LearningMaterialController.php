@@ -7,9 +7,11 @@ use App\Imports\LearningMaterialImport;
 use App\Models\AcademicYear;
 use App\Models\LearningMaterial;
 use App\Models\MaterialChapter;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
@@ -65,6 +67,43 @@ class LearningMaterialController extends Controller
         LearningMaterial::create($validated);
 
         return redirect()->route('learning-materials.index')->with('success', 'Materi pembelajaran berhasil ditambahkan.');
+    }
+
+    public function update(Request $request, LearningMaterial $learning_material): RedirectResponse
+    {
+        $validated = $request->validate([
+            'material_chapter_id' => ['required', 'exists:material_chapters,id'],
+            'title' => ['required', 'string', 'max:255'],
+            'code' => ['required', 'string', 'max:50', Rule::unique('learning_materials', 'code')->ignore($learning_material->id)],
+            'sort_order' => ['nullable', 'integer', 'min:0'],
+            'week_number' => ['nullable', 'integer', 'min:1', 'max:52'],
+            'academic_year_id' => ['nullable', 'exists:academic_years,id'],
+            'description' => ['nullable', 'string'],
+            'is_active' => ['required', 'boolean'],
+        ]);
+
+        $validated['sort_order'] ??= 0;
+
+        $learning_material->update($validated);
+
+        return redirect()->route('learning-materials.index')->with('success', 'Materi pembelajaran berhasil diperbarui.');
+    }
+
+    public function destroy(LearningMaterial $learning_material): RedirectResponse
+    {
+        try {
+            $learning_material->delete();
+        } catch (QueryException $e) {
+            if ($e->getCode() === '23000') {
+                return redirect()->route('learning-materials.index')->withErrors([
+                    'delete' => 'Materi pembelajaran tidak dapat dihapus karena masih digunakan oleh data lain.',
+                ]);
+            }
+
+            throw $e;
+        }
+
+        return redirect()->route('learning-materials.index')->with('success', 'Materi pembelajaran berhasil dihapus.');
     }
 
     public function import(Request $request): RedirectResponse

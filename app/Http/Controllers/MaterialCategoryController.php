@@ -7,6 +7,7 @@ use App\Models\ClassGrade;
 use App\Models\MaterialCategory;
 use App\Models\Semester;
 use App\Support\Sheets\MaterialCategorySheet;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -67,6 +68,50 @@ class MaterialCategoryController extends Controller
         MaterialCategory::create($validated);
 
         return redirect()->route('material-categories.index')->with('success', 'Kategori materi berhasil ditambahkan.');
+    }
+
+    public function update(Request $request, MaterialCategory $material_category): RedirectResponse
+    {
+        $validated = $request->validate([
+            'class_grade_id' => ['required', 'exists:class_grades,id'],
+            'semester_id' => ['required', 'exists:semesters,id'],
+            'name' => ['required', 'string', 'max:255'],
+            'code' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('material_categories', 'code')
+                    ->where('class_grade_id', $request->integer('class_grade_id'))
+                    ->where('semester_id', $request->integer('semester_id'))
+                    ->ignore($material_category->id),
+            ],
+            'sort_order' => ['nullable', 'integer', 'min:0'],
+            'description' => ['nullable', 'string'],
+            'is_active' => ['required', 'boolean'],
+        ]);
+
+        $validated['sort_order'] ??= 0;
+
+        $material_category->update($validated);
+
+        return redirect()->route('material-categories.index')->with('success', 'Kategori materi berhasil diperbarui.');
+    }
+
+    public function destroy(MaterialCategory $material_category): RedirectResponse
+    {
+        try {
+            $material_category->delete();
+        } catch (QueryException $e) {
+            if ($e->getCode() === '23000') {
+                return redirect()->route('material-categories.index')->withErrors([
+                    'delete' => 'Kategori materi tidak dapat dihapus karena masih memiliki bab materi.',
+                ]);
+            }
+
+            throw $e;
+        }
+
+        return redirect()->route('material-categories.index')->with('success', 'Kategori materi berhasil dihapus.');
     }
 
     public function export(): BinaryFileResponse
