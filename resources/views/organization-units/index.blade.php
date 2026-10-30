@@ -5,205 +5,106 @@
 @section('breadcrumb', 'Organisasi / Struktur Organisasi')
 
 @section('content')
+    <style>
+        .org-chart { display: inline-block; min-width: 100%; }
+        .org-chart ul { padding-top: 20px; position: relative; display: flex; justify-content: center; }
+        .org-chart li { display: flex; flex-direction: column; align-items: center; list-style-type: none; position: relative; padding: 20px 14px 0 14px; }
+        .org-chart li::before, .org-chart li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 2px solid #cbd5e1; width: 50%; height: 20px; }
+        .org-chart li::after { right: auto; left: 50%; border-left: 2px solid #cbd5e1; }
+        .org-chart li:only-child::before, .org-chart li:only-child::after { display: none; }
+        .org-chart li:only-child { padding-top: 0; }
+        .org-chart li:first-child::before, .org-chart li:last-child::after { border: 0 none; }
+        .org-chart li:last-child::before { border-right: 2px solid #cbd5e1; border-radius: 0 6px 0 0; }
+        .org-chart li:first-child::after { border-radius: 6px 0 0 0; }
+        .org-chart ul ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 2px solid #cbd5e1; width: 0; height: 20px; }
+        .org-node { display: inline-block; border: 1px solid #e2e8f0; border-radius: 0.75rem; background: #fff; padding: 0.75rem 1rem; min-width: 11rem; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+        .org-node--daerah { border-color: #f59e0b; background: #fffbeb; }
+        .org-node--desa { border-color: #93c5fd; background: #eff6ff; }
+        .org-node-title { font-weight: 700; font-size: 0.8rem; color: #0f172a; }
+        .org-node-person { font-size: 0.7rem; color: #475569; margin-top: 0.25rem; }
+        .org-node-person span { display: block; color: #94a3b8; }
+        .org-leaf-frame { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 2px solid #cbd5e1; width: 100%; }
+        .org-leaf-frame-title { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: #64748b; text-align: center; margin-bottom: 0.5rem; }
+        .org-leaf-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
+        .org-leaf { border: 1px solid #e2e8f0; border-radius: 0.5rem; background: #f8fafc; padding: 0.5rem 0.75rem; min-width: 8rem; }
+        .org-leaf-title { font-size: 0.75rem; font-weight: 600; color: #0f172a; }
+        .org-leaf-person { font-size: 0.7rem; color: #475569; }
+        .org-leaf-empty { font-size: 0.7rem; color: #94a3b8; }
+    </style>
+
     <div class="mb-6">
         <p class="text-sm font-semibold text-amber-600">Organisasi</p>
         <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Struktur Organisasi</h2>
-        <p class="mt-2 text-sm text-slate-500">Susunan pengurus aktif, mulai dari PPG Daerah, Perwakilan PPG Desa, hingga Pelaksana PPG Kelompok.</p>
+        <p class="mt-2 text-sm text-slate-500">
+            @if ($isGlobal)
+                Bagan kepengurusan aktif PPG Daerah, Desa, dan Kelompok.
+            @else
+                Bagan kepengurusan aktif sesuai wilayah penempatan Anda.
+            @endif
+        </p>
     </div>
 
     @php
         $daerahPengurus = $pengurusDaerah->get('global', collect());
     @endphp
 
-    <section class="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div class="flex items-center justify-between gap-4">
-            <div>
-                <p class="text-xs font-semibold uppercase tracking-wide text-amber-600">Daerah</p>
-                <h3 class="text-lg font-bold text-slate-950">Pengurus PPG {{ $region?->name ?? 'Daerah' }}</h3>
-            </div>
-            <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">{{ $daerahPengurus->count() }} pengurus aktif</span>
-        </div>
-
-        @if ($daerahPengurus->isEmpty())
-            <p class="mt-4 text-sm text-slate-500">Belum ada pengurus PPG Daerah yang aktif.</p>
+    <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        @if ($daerahPengurus->isEmpty() && $villages->isEmpty())
+            <p class="py-10 text-center text-sm text-slate-500">Belum ada struktur kepengurusan aktif untuk ditampilkan.</p>
         @else
-            <ul class="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                @foreach ($daerahPengurus as $pengurus)
-                    <li class="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
-                        <p class="text-sm font-semibold text-slate-900">{{ $pengurus->user_name }}</p>
-                        <p class="text-xs text-slate-500">{{ $pengurus->jabatan ?? 'Tanpa jabatan' }}</p>
-                    </li>
-                @endforeach
-            </ul>
-        @endif
-    </section>
-
-    <section class="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p class="text-xs font-semibold uppercase tracking-wide text-amber-600">Desa & Kelompok</p>
-        <h3 class="text-lg font-bold text-slate-950">Perwakilan PPG Desa dan Pelaksana PPG Kelompok</h3>
-
-        @if ($villages->isEmpty())
-            <p class="mt-4 text-sm text-slate-500">Belum ada data desa untuk daerah ini.</p>
-        @else
-            <div class="mt-4 space-y-3">
-                @foreach ($villages as $village)
-                    @php
-                        $desaPengurus = $perwakilanDesa->get($village->id, collect());
-                    @endphp
-                    <details class="group rounded-xl border border-slate-200 bg-slate-50/60 p-4" {{ $village === $villages->first() ? 'open' : '' }}>
-                        <summary class="flex cursor-pointer items-center justify-between gap-4 text-sm">
-                            <span class="font-semibold text-slate-900">Desa {{ $village->name }}</span>
-                            <span class="text-xs text-slate-500">{{ $desaPengurus->count() }} perwakilan &middot; {{ $village->groups->count() }} kelompok</span>
-                        </summary>
-
-                        <div class="mt-4 space-y-4">
-                            <div>
-                                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Perwakilan PPG Desa</p>
-                                @if ($desaPengurus->isEmpty())
-                                    <p class="mt-2 text-sm text-slate-500">Belum ada perwakilan aktif.</p>
-                                @else
-                                    <ul class="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                                        @foreach ($desaPengurus as $pengurus)
-                                            <li class="rounded-lg border border-slate-200 bg-white px-3 py-2">
-                                                <p class="text-sm font-semibold text-slate-900">{{ $pengurus->user_name }}</p>
-                                                <p class="text-xs text-slate-500">{{ $pengurus->jabatan ?? 'Tanpa jabatan' }}</p>
-                                            </li>
-                                        @endforeach
-                                    </ul>
-                                @endif
+            <div class="overflow-x-auto">
+                <div class="org-chart">
+                    <ul>
+                        <li>
+                            <div class="org-node org-node--daerah">
+                                <p class="org-node-title">PPG {{ $region?->name ?? 'Daerah' }}</p>
+                                @forelse ($daerahPengurus as $pengurus)
+                                    <p class="org-node-person">{{ $pengurus->user_name }}<span>{{ $pengurus->jabatan ?? 'Tanpa jabatan' }}</span></p>
+                                @empty
+                                    <p class="org-node-person">Belum ada pengurus aktif</p>
+                                @endforelse
                             </div>
 
-                            <div>
-                                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Pelaksana PPG Kelompok</p>
-                                @if ($village->groups->isEmpty())
-                                    <p class="mt-2 text-sm text-slate-500">Belum ada kelompok terdaftar.</p>
-                                @else
-                                    <div class="mt-2 space-y-2">
-                                        @foreach ($village->groups as $group)
-                                            @php
-                                                $kelompokPengurus = $pelaksanaKelompok->get($group->id, collect());
-                                            @endphp
-                                            <details class="rounded-lg border border-slate-200 bg-white p-3">
-                                                <summary class="flex cursor-pointer items-center justify-between gap-4 text-sm">
-                                                    <span class="font-medium text-slate-900">Kelompok {{ $group->name }}</span>
-                                                    <span class="text-xs text-slate-500">{{ $kelompokPengurus->count() }} pengurus</span>
-                                                </summary>
-                                                @if ($kelompokPengurus->isEmpty())
-                                                    <p class="mt-2 text-sm text-slate-500">Belum ada pengurus aktif.</p>
-                                                @else
-                                                    <ul class="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                                                        @foreach ($kelompokPengurus as $pengurus)
-                                                            <li class="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
-                                                                <p class="text-sm font-semibold text-slate-900">{{ $pengurus->user_name }}</p>
-                                                                <p class="text-xs text-slate-500">{{ $pengurus->jabatan ?? 'Tanpa jabatan' }}</p>
-                                                            </li>
+                            @if ($villages->isNotEmpty())
+                                <ul>
+                                    @foreach ($villages as $village)
+                                        @php $desaPengurus = $perwakilanDesa->get($village->id, collect()); @endphp
+                                        <li>
+                                            <div class="org-node org-node--desa">
+                                                <p class="org-node-title">Desa {{ $village->name }}</p>
+                                                @forelse ($desaPengurus as $pengurus)
+                                                    <p class="org-node-person">{{ $pengurus->user_name }}<span>{{ $pengurus->jabatan ?? 'Tanpa jabatan' }}</span></p>
+                                                @empty
+                                                    <p class="org-node-person">Belum ada perwakilan aktif</p>
+                                                @endforelse
+                                            </div>
+
+                                            @if ($village->groups->isNotEmpty())
+                                                <div class="org-leaf-frame">
+                                                    <p class="org-leaf-frame-title">Pelaksana PPG Kelompok</p>
+                                                    <div class="org-leaf-grid">
+                                                        @foreach ($village->groups as $group)
+                                                            @php $kelompokPengurus = $pelaksanaKelompok->get($group->id, collect()); @endphp
+                                                            <div class="org-leaf">
+                                                                <p class="org-leaf-title">Kelompok {{ $group->name }}</p>
+                                                                @forelse ($kelompokPengurus as $pengurus)
+                                                                    <p class="org-leaf-person">{{ $pengurus->user_name }} &middot; {{ $pengurus->jabatan ?? 'Tanpa jabatan' }}</p>
+                                                                @empty
+                                                                    <p class="org-leaf-empty">Belum ada pengurus aktif</p>
+                                                                @endforelse
+                                                            </div>
                                                         @endforeach
-                                                    </ul>
-                                                @endif
-                                            </details>
-                                        @endforeach
-                                    </div>
-                                @endif
-                            </div>
-                        </div>
-                    </details>
-                @endforeach
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            @endif
+                        </li>
+                    </ul>
+                </div>
             </div>
         @endif
     </section>
-
-    <div class="mb-6">
-        <p class="text-sm font-semibold text-amber-600">Organisasi</p>
-        <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Unit Organisasi</h2>
-        <p class="mt-2 text-sm text-slate-500">Kelola bidang kerja tambahan di luar struktur Daerah/Desa/Kelompok.</p>
-    </div>
-
-    @include('layouts.partials.spreadsheet-tools', ['exportUrl' => route('organization-units.export'), 'importUrl' => \App\Support\Access::can('manage-organization-units') ? route('organization-units.import') : null])
-
-    <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">
-        @if (\App\Support\Access::can('manage-organization-units'))
-        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 class="text-lg font-bold text-slate-950">Tambah Unit</h2>
-            <p class="mt-1 text-sm text-slate-500">Tambahkan unit baru ke struktur organisasi.</p>
-                <form method="POST" action="{{ route('organization-units.store') }}">
-                    @csrf
-                    <div class="mt-6 space-y-4">
-                        <div>
-                            <label class="mb-2 block text-sm font-medium text-slate-700" for="name">Nama <span class="text-rose-500">*</span></label>
-                            <input id="name" name="name" type="text" required value="{{ old('name') }}" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
-                        </div>
-                        <div>
-                            <label class="mb-2 block text-sm font-medium text-slate-700" for="code">Kode <span class="text-rose-500">*</span></label>
-                            <input id="code" name="code" type="text" required value="{{ old('code') }}" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
-                        </div>
-                        <div>
-                            <label class="mb-2 block text-sm font-medium text-slate-700" for="leader_name">Penanggung Jawab</label>
-                            <input id="leader_name" name="leader_name" type="text" value="{{ old('leader_name') }}" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
-                        </div>
-                        <div>
-                            <label class="mb-2 block text-sm font-medium text-slate-700" for="unit_type">Tipe Unit</label>
-                            <select id="unit_type" name="unit_type" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
-                                <option value="bidang">Bidang</option>
-                                <option value="departemen">Departemen</option>
-                                <option value="tim">Tim</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="mb-2 block text-sm font-medium text-slate-700" for="status">Status</label>
-                            <select id="status" name="status" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
-                                <option value="active">Aktif</option>
-                                <option value="inactive">Nonaktif</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="mb-2 block text-sm font-medium text-slate-700" for="description">Deskripsi</label>
-                            <textarea id="description" name="description" rows="3" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">{{ old('description') }}</textarea>
-                        </div>
-                    </div>
-                    <button type="submit" class="mt-6 w-full rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800">Simpan Unit</button>
-                </form>
-        </section>
-        @endif
-
-        <section class="min-w-0 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div class="flex items-center justify-between gap-4">
-                <div>
-                    <h2 class="text-lg font-bold text-slate-950">Daftar Unit</h2>
-                    <p class="mt-1 text-sm text-slate-500">{{ $organizationUnits->total() }} unit terdaftar.</p>
-                </div>
-            </div>
-                <div class="overflow-x-auto">
-                    <table class="mt-5 min-w-full text-left text-sm">
-                        <thead class="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-400">
-                            <tr>
-                                <th class="py-3 pr-4 font-semibold">Nama</th>
-                                <th class="py-3 pr-4 font-semibold">Kode</th>
-                                <th class="py-3 pr-4 font-semibold">Tipe</th>
-                                <th class="py-3 pr-4 font-semibold">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($organizationUnits as $unit)
-                                <tr class="border-b border-slate-100 last:border-0">
-                                    <td class="py-3 pr-4">{{ $unit->name }}</td>
-                                    <td class="py-3 pr-4">{{ $unit->code }}</td>
-                                    <td class="py-3 pr-4">{{ $unit->unit_type }}</td>
-                                    <td class="py-3 pr-4">
-                                        <span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $unit->status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600' }}">{{ $unit->status === 'active' ? 'Aktif' : 'Nonaktif' }}</span>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="4" class="py-10 text-center">
-                                        <p class="font-semibold text-slate-700">Belum ada unit organisasi</p>
-                                        <p class="mt-1 text-sm text-slate-500">Gunakan formulir di samping untuk menambahkan unit pertama.</p>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-                <div class="mt-4">{{ $organizationUnits->links() }}</div>
-        </section>
-    </div>
 @endsection

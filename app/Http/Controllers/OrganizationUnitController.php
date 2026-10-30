@@ -18,23 +18,28 @@ class OrganizationUnitController extends Controller
 {
     use HandlesSheets;
 
-    public function index(): View
+    public function index(Request $request): View
     {
+        $user = $request->user();
         $region = Region::query()->where('is_active', true)->orderBy('name')->first();
+        $isGlobal = $user->hasGlobalAccess('view-organization-units');
 
-        $villages = $region
+        $villagesQuery = $region
             ? Village::query()
                 ->where('region_id', $region->id)
                 ->where('is_active', true)
                 ->orderBy('name')
                 ->with(['groups' => fn ($query) => $query->where('is_active', true)->orderBy('name')])
-                ->get()
-            : collect();
+            : null;
+
+        if ($villagesQuery !== null && ! $isGlobal) {
+            $villagesQuery->whereIn('id', $user->scopedPlacementIds('view-organization-units')['village_id'] ?? []);
+        }
 
         return view('organization-units.index', [
-            'organizationUnits' => OrganizationUnit::latest()->paginate(25),
             'region' => $region,
-            'villages' => $villages,
+            'isGlobal' => $isGlobal,
+            'villages' => $villagesQuery?->get() ?? collect(),
             'pengurusDaerah' => $this->activePengurus('ppg', 'global'),
             'perwakilanDesa' => $this->activePengurus('perwakilan-ppg-desa', 'village'),
             'pelaksanaKelompok' => $this->activePengurus('pelaksana-ppg-kelompok', 'group'),
