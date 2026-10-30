@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Support\OrganizationRoleScopes;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -14,7 +15,14 @@ class ProfileController extends Controller
 {
     public function edit(Request $request): View
     {
-        return view('profile.edit', ['user' => $request->user()]);
+        $user = $request->user()->load('roles');
+        $heldSlugs = $user->roles->pluck('slug')->all();
+
+        return view('profile.edit', [
+            'user' => $user,
+            'pendingRoles' => $user->roles->filter(fn ($role) => ! $role->pivot->is_active)->values(),
+            'hasAvailableLowerRole' => array_diff(OrganizationRoleScopes::rolesBelowAll($heldSlugs), $heldSlugs) !== [],
+        ]);
     }
 
     public function update(Request $request): RedirectResponse

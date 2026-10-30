@@ -8,6 +8,7 @@ use App\Models\Group;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Village;
+use App\Support\OrganizationRoleScopes;
 use App\Support\Sheets\UserSheet;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,19 +22,6 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 class UserController extends Controller
 {
     use HandlesSheets;
-
-    /**
-     * Organisation roles whose scope is fixed by what the role means (PPG is daerah-wide,
-     * perwakilan-ppg-desa is one desa, pelaksana-ppg-kelompok is one kelompok): the admin form
-     * cannot override these, so a mismatched or missing submission falls back to this value.
-     *
-     * @var array<string, string>
-     */
-    private const FIXED_ROLE_SCOPES = [
-        'ppg' => 'global',
-        'perwakilan-ppg-desa' => 'village',
-        'pelaksana-ppg-kelompok' => 'group',
-    ];
 
     public function index(Request $request): View
     {
@@ -132,7 +120,7 @@ class UserController extends Controller
         return [
             'villages' => Village::where('is_active', true)->orderBy('name')->get(),
             'groups' => Group::with('village')->where('is_active', true)->orderBy('name')->get(),
-            'fixedRoleScopes' => self::FIXED_ROLE_SCOPES,
+            'fixedRoleScopes' => OrganizationRoleScopes::SCOPES,
             'dapukansByRole' => Dapukan::where('is_active', true)->orderBy('sort_order')->get()->groupBy('role_slug'),
         ];
     }
@@ -152,7 +140,7 @@ class UserController extends Controller
 
         foreach (array_filter($roleIds) as $roleId) {
             $roleSlug = $roleSlugs[$roleId] ?? null;
-            $fixedType = self::FIXED_ROLE_SCOPES[$roleSlug ?? ''] ?? null;
+            $fixedType = OrganizationRoleScopes::SCOPES[$roleSlug ?? ''] ?? null;
             $type = $fixedType ?? $request->input("role_scopes.{$roleId}.type");
             $scopeId = $request->input("role_scopes.{$roleId}.id");
             $dapukanId = $roleSlug !== null ? $this->resolveDapukanId($request, (int) $roleId, $roleSlug) : null;
@@ -181,7 +169,7 @@ class UserController extends Controller
      */
     private function resolveDapukanId(Request $request, int $roleId, string $roleSlug): ?int
     {
-        if (! array_key_exists($roleSlug, self::FIXED_ROLE_SCOPES)) {
+        if (! array_key_exists($roleSlug, OrganizationRoleScopes::SCOPES)) {
             return null;
         }
 

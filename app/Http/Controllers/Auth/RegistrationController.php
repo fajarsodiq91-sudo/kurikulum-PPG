@@ -9,6 +9,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\Village;
 use App\Notifications\RegistrationSubmitted;
+use App\Support\OrganizationRoleScopes;
 use App\Support\RegistrationApproval;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,17 +22,6 @@ use Throwable;
 
 class RegistrationController extends Controller
 {
-    /**
-     * The only roles a Google account may request for itself; each carries a fixed scope.
-     *
-     * @var array<string, string>
-     */
-    private const ROLE_SCOPES = [
-        'ppg' => 'global',
-        'perwakilan-ppg-desa' => 'village',
-        'pelaksana-ppg-kelompok' => 'group',
-    ];
-
     public function create(Request $request): View|RedirectResponse
     {
         $registration = $request->session()->get('google_registration');
@@ -42,8 +32,8 @@ class RegistrationController extends Controller
 
         return view('auth.register', [
             'registration' => $registration,
-            'roles' => Role::where('is_active', true)->whereIn('slug', array_keys(self::ROLE_SCOPES))->orderBy('name')->get(),
-            'roleScopes' => self::ROLE_SCOPES,
+            'roles' => Role::where('is_active', true)->whereIn('slug', array_keys(OrganizationRoleScopes::SCOPES))->orderBy('name')->get(),
+            'roleScopes' => OrganizationRoleScopes::SCOPES,
             'villages' => Village::where('is_active', true)->orderBy('name')->get(),
             'groups' => Group::with('village')->where('is_active', true)->orderBy('name')->get(),
             'dapukansByRole' => Dapukan::where('is_active', true)->orderBy('sort_order')->get()->groupBy('role_slug'),
@@ -71,7 +61,7 @@ class RegistrationController extends Controller
         ]);
 
         $role = Role::findOrFail($validated['role_id']);
-        $scopeType = self::ROLE_SCOPES[$role->slug] ?? null;
+        $scopeType = OrganizationRoleScopes::SCOPES[$role->slug] ?? null;
 
         if ($scopeType === null) {
             throw ValidationException::withMessages(['role_id' => 'Peran tidak tersedia untuk pendaftaran mandiri.']);

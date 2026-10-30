@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ActivityExecutionController;
 use App\Http\Controllers\ActivityScheduleController;
+use App\Http\Controllers\AdditionalRoleController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\AnnualAuditController;
 use App\Http\Controllers\AssignmentController;
@@ -66,6 +67,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::get('/users/{user}/photo', [ProfileController::class, 'photo'])->name('users.photo');
+    Route::get('/profile/additional-role', [AdditionalRoleController::class, 'create'])->name('profile.additional-role.create');
+    Route::post('/profile/additional-role', [AdditionalRoleController::class, 'store'])->name('profile.additional-role.store');
 });
 
 // Publicly reachable, read-only for anonymous visitors covered by the guest role permissions.
@@ -771,4 +774,8 @@ Route::middleware(['auth', 'permission:manage-users,approve-registrations'])->gr
         ->name('registrations.approve');
     Route::post('/registrations/{user}/reject', [RegistrationApprovalController::class, 'reject'])
         ->name('registrations.reject');
+    Route::post('/registrations/{user}/roles/{role}/approve', [RegistrationApprovalController::class, 'approveRole'])
+        ->name('registrations.roles.approve');
+    Route::post('/registrations/{user}/roles/{role}/reject', [RegistrationApprovalController::class, 'rejectRole'])
+        ->name('registrations.roles.reject');
 });

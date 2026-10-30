@@ -9,6 +9,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\Village;
 use App\Notifications\RegistrationDecided;
+use App\Support\RegistrationApproval;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
@@ -167,5 +168,93 @@ class RegistrationApprovalTest extends TestCase
             $pending,
             fn (RegistrationDecided $notification): bool => $notification->toMail($pending)->subject === 'Pendaftaran Anda Ditolak'
         );
+    }
+
+    /**
+     * An additional role an already-active member requested for themselves: a different pending
+     * state from pendingUser() above, since the account stays status=active throughout.
+     */
+    private function activeMemberWithPendingRole(string $heldRoleSlug, string $heldDapukanName, string $pendingRoleSlug, string $pendingScopeType, ?int $pendingScopeId, string $pendingDapukanName): User
+    {
+        $user = $this->activeUser($heldRoleSlug, 'global', null, $heldDapukanName);
+        $role = Role::where('slug', $pendingRoleSlug)->firstOrFail();
+        $dapukanId = Dapukan::where('role_slug', $pendingRoleSlug)->where('name', $pendingDapukanName)->value('id');
+        $user->roles()->attach($role->id, ['scope_type' => $pendingScopeType, 'scope_id' => $pendingScopeId, 'dapukan_id' => $dapukanId, 'is_active' => false]);
+
+        return $user;
+    }
+
+    public function test_additional_role_requests_are_listed_separately_and_do_not_affect_the_pending_accounts_list(): void
+    {
+        $admin = User::create(['name' => 'Admin', 'email' => 'admin-'.uniqid().'@ppg.test', 'status' => 'active']);
+        $admin->assignRole(Role::where('slug', 'super-admin')->firstOrFail()->id);
+        $member = $this->activeMemberWithPendingRole('ppg', 'Bidang Kurikulum', 'perwakilan-ppg-desa', 'village', $this->villageA->id, 'Pembina Desa');
+
+        $response = $this->actingAs($admin)->get('/registrations/pending')->assertOk();
+        $response->assertSee($member->name);
+        $this->assertSame(0, RegistrationApproval::pendingFor($admin)->count());
+    }
+
+    public function test_perwakilan_desa_approves_an_additional_role_request_in_their_own_desa(): void
+    {
+        // A perwakilan-ppg-desa approver may approve an additional "perwakilan-ppg-desa" request
+        // (peer-level approval, same rule as a brand-new registration) for the same desa.
+        $approver = $this->activeUser('perwakilan-ppg-desa', 'village', $this->villageA->id, 'Sekretaris');
+        $role = Role::where('slug', 'perwakilan-ppg-desa')->firstOrFail();
+        $member = $this->activeMemberWithPendingRole('ppg', 'Bidang Kurikulum', 'perwakilan-ppg-desa', 'village', $this->villageA->id, 'Pembina Desa');
+
+        $this->actingAs($approver)->post("/registrations/{$member->id}/roles/{$role->id}/approve")
+            ->assertRedirect(route('registrations.pending'));
+
+        $member->refresh();
+        $this->assertSame('active', $member->status);
+        $this->assertTrue((bool) $member->roles()->where('roles.id', $role->id)->first()->pivot->is_active);
+        // the role the member already held is untouched
+        $this->assertTrue((bool) $member->roles()->where('roles.slug', 'ppg')->first()->pivot->is_active);
+    }
+
+    public function test_approving_an_additional_role_request_does_not_touch_the_members_account_or_other_roles(): void
+    {
+        $admin = User::create(['name' => 'Admin', 'email' => 'admin-'.uniqid().'@ppg.test', 'status' => 'active']);
+        $admin->assignRole(Role::where('slug', 'super-admin')->firstOrFail()->id);
+        $role = Role::where('slug', 'perwakilan-ppg-desa')->firstOrFail();
+        $member = $this->activeMemberWithPendingRole('ppg', 'Bidang Kurikulum', 'perwakilan-ppg-desa', 'village', $this->villageA->id, 'Pembina Desa');
+
+        $this->actingAs($admin)->post("/registrations/{$member->id}/roles/{$role->id}/approve")
+            ->assertRedirect(route('registrations.pending'));
+
+        $this->assertModelExists($member);
+        $member->refresh();
+        $this->assertSame('active', $member->status);
+        $this->assertTrue((bool) $member->roles()->where('roles.id', $role->id)->first()->pivot->is_active);
+    }
+
+    public function test_rejecting_an_additional_role_request_only_detaches_that_role_and_keeps_the_account(): void
+    {
+        $admin = User::create(['name' => 'Admin', 'email' => 'admin-'.uniqid().'@ppg.test', 'status' => 'active']);
+        $admin->assignRole(Role::where('slug', 'super-admin')->firstOrFail()->id);
+        $role = Role::where('slug', 'perwakilan-ppg-desa')->firstOrFail();
+        $member = $this->activeMemberWithPendingRole('ppg', 'Bidang Kurikulum', 'perwakilan-ppg-desa', 'village', $this->villageA->id, 'Pembina Desa');
+
+        $this->actingAs($admin)->post("/registrations/{$member->id}/roles/{$role->id}/reject")
+            ->assertRedirect(route('registrations.pending'));
+
+        $this->assertModelExists($member);
+        $member->refresh();
+        $this->assertSame('active', $member->status);
+        $this->assertDatabaseMissing('user_roles', ['user_id' => $member->id, 'role_id' => $role->id]);
+        $this->assertTrue((bool) $member->roles()->where('roles.slug', 'ppg')->first()->pivot->is_active);
+    }
+
+    public function test_an_approver_outside_the_scope_cannot_approve_an_additional_role_request(): void
+    {
+        $unrelatedApprover = $this->activeUser('perwakilan-ppg-desa', 'village', $this->villageB->id, 'Pembina Desa');
+        $role = Role::where('slug', 'perwakilan-ppg-desa')->firstOrFail();
+        $member = $this->activeMemberWithPendingRole('ppg', 'Bidang Kurikulum', 'perwakilan-ppg-desa', 'village', $this->villageA->id, 'Pembina Desa');
+
+        $this->actingAs($unrelatedApprover)->post("/registrations/{$member->id}/roles/{$role->id}/approve")
+            ->assertForbidden();
+
+        $this->assertFalse((bool) $member->refresh()->roles()->where('roles.id', $role->id)->first()->pivot->is_active);
     }
 }

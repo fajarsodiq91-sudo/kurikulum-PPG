@@ -86,6 +86,100 @@ class RegistrationApproval
     }
 
     /**
+     * Active members (not a brand-new pending account) with one or more additional roles they
+     * requested for themselves, still awaiting approval (pivot is_active = false). Scoped the
+     * same way as pendingFor().
+     *
+     * @return Builder<User>
+     */
+    public static function pendingAdditionalRolesFor(User $approver): Builder
+    {
+        $query = User::query()
+            ->where('status', 'active')
+            ->whereHas('roles', fn (Builder $q) => $q->where('user_roles.is_active', false));
+
+        if ($approver->hasGlobalAccess('manage-users')) {
+            return $query;
+        }
+
+        $scopes = self::approvableRoleScopes($approver);
+
+        if ($scopes === []) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where(function (Builder $outer) use ($scopes): void {
+            foreach ($scopes as [$roleSlug, $scopeId]) {
+                $outer->orWhereHas('roles', function (Builder $roles) use ($roleSlug, $scopeId): void {
+                    $roles->where('roles.slug', $roleSlug)->where('user_roles.is_active', false);
+
+                    if ($scopeId !== null) {
+                        $roles->where('user_roles.scope_id', $scopeId);
+                    }
+                });
+            }
+        });
+    }
+
+    /**
+     * May $approver approve $member's inactive $role (an additional role an already-active
+     * member requested for themselves)?
+     */
+    public static function canApproveAdditionalRole(User $approver, User $member, Role $role): bool
+    {
+        if ($member->status !== 'active') {
+            return false;
+        }
+
+        $pivot = $member->roles->firstWhere('id', $role->id)?->pivot;
+
+        if ($pivot === null || (bool) $pivot->is_active) {
+            return false;
+        }
+
+        if ($approver->hasGlobalAccess('manage-users')) {
+            return true;
+        }
+
+        foreach (self::approvableRoleScopes($approver) as [$roleSlug, $scopeId]) {
+            if ($roleSlug === $role->slug && ($scopeId === null || $scopeId === $pivot->scope_id)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Every active user who may approve a pending additional-role request for the given role
+     * slug and scope, to notify about it. Used instead of approversFor() because, at the point
+     * the request is submitted, the pivot row and the User's loaded roles aren't a convenient
+     * single object to pass around.
+     *
+     * @return EloquentCollection<int, User>
+     */
+    public static function approversForRole(string $roleSlug, ?int $scopeId): EloquentCollection
+    {
+        return User::where('status', 'active')
+            ->with('roles.permissions')
+            ->get()
+            ->filter(function (User $approver) use ($roleSlug, $scopeId): bool {
+                if ($approver->hasGlobalAccess('manage-users')) {
+                    return true;
+                }
+
+                foreach (self::approvableRoleScopes($approver) as [$slug, $approverScopeId]) {
+                    if ($slug === $roleSlug && ($approverScopeId === null || $approverScopeId === $scopeId)) {
+                        return true;
+                    }
+                }
+
+                return false;
+            })
+            ->values();
+    }
+
+    /**
      * This approver's own active organisation memberships, translated into (role slug, scope id)
      * pairs they may approve pending registrations for. A null scope id means "any" (used only
      * for a PH PPG holder approving Daerah-wide).

@@ -58,4 +58,25 @@
             <button type="submit" class="w-full rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800">Simpan Profil</button>
         </form>
     </section>
+
+    <section class="mt-6 max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="text-lg font-bold text-slate-950">Peran Organisasi</h2>
+
+        @if ($user->roles->where('pivot.is_active', true)->isNotEmpty())
+            <p class="mt-2 text-sm text-slate-500">
+                Peran aktif Anda saat ini:
+                {{ $user->roles->where('pivot.is_active', true)->pluck('name')->join(', ') }}.
+            </p>
+        @endif
+
+        @if ($pendingRoles->isNotEmpty())
+            <p class="mt-3 text-sm text-amber-600">
+                Pengajuan peran tambahan Anda sedang menunggu persetujuan admin: {{ $pendingRoles->pluck('name')->join(', ') }}.
+            </p>
+        @elseif ($hasAvailableLowerRole)
+            <a href="{{ route('profile.additional-role.create') }}" class="mt-3 inline-block text-sm font-semibold text-brand-700 hover:text-brand-800">Ajukan Dapukan Tambahan &rarr;</a>
+        @else
+            <p class="mt-3 text-sm text-slate-500">Tidak ada peran tambahan yang tersedia untuk diajukan dari peran Anda saat ini.</p>
+        @endif
+    </section>
 @endsection
