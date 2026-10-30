@@ -89,12 +89,12 @@ class TaskHierarchy
         $downward = self::downwardReachIds($user);
 
         if ($downward === null) {
-            return self::holdersQuery()->with('roles')->orderBy('name')->get();
+            return self::holdersQuery()->with(['roles', 'teacher'])->orderBy('name')->get();
         }
 
         $ids = collect([...$downward, ...self::upwardReachIds($user), $user->id])->unique()->values()->all();
 
-        return User::query()->whereIn('id', $ids)->where('status', 'active')->with('roles')->orderBy('name')->get();
+        return User::query()->whereIn('id', $ids)->where('status', 'active')->with(['roles', 'teacher'])->orderBy('name')->get();
     }
 
     private static function usersWithScope(string $scopeType, int $scopeId): Builder

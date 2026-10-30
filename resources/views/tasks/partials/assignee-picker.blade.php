@@ -8,6 +8,7 @@
         'id' => $recipient->id,
         'name' => $recipient->name,
         'roles' => $recipient->roles->pluck('name')->join(', '),
+        'photo' => $recipient->teacher?->photo ? route('tasks.recipient-photo', $recipient) : null,
     ])->values();
 @endphp
 
@@ -49,6 +50,37 @@
                     return div.innerHTML;
                 }
 
+                function initialsOf(name) {
+                    const parts = name.trim().split(/\s+/).filter(Boolean);
+
+                    if (parts.length === 0) {
+                        return '';
+                    }
+
+                    if (parts.length === 1) {
+                        return parts[0].slice(0, 2).toUpperCase();
+                    }
+
+                    return (parts[0][0]+parts[parts.length - 1][0]).toUpperCase();
+                }
+
+                function avatarElement(recipient, sizeClass) {
+                    if (recipient.photo) {
+                        const img = document.createElement('img');
+                        img.src = recipient.photo;
+                        img.alt = recipient.name;
+                        img.className = sizeClass+' shrink-0 rounded-full object-cover';
+
+                        return img;
+                    }
+
+                    const span = document.createElement('span');
+                    span.className = sizeClass+' flex shrink-0 items-center justify-center rounded-full bg-brand-100 text-[10px] font-semibold text-brand-700';
+                    span.textContent = initialsOf(recipient.name);
+
+                    return span;
+                }
+
                 function renderChips() {
                     chipsEl.replaceChildren();
                     inputsEl.replaceChildren();
@@ -67,8 +99,10 @@
                         inputsEl.appendChild(hidden);
 
                         const chip = document.createElement('span');
-                        chip.className = 'inline-flex items-center gap-1 rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700';
-                        chip.textContent = recipient.name;
+                        chip.className = 'inline-flex items-center gap-1 rounded-full bg-brand-50 py-0.5 pl-0.5 pr-1.5';
+                        chip.title = recipient.name;
+
+                        chip.appendChild(avatarElement(recipient, 'h-6 w-6'));
 
                         const remove = document.createElement('button');
                         remove.type = 'button';
@@ -105,9 +139,15 @@
                     matches.forEach(function (recipient) {
                         const option = document.createElement('button');
                         option.type = 'button';
-                        option.className = 'flex w-full flex-col px-3 py-2 text-left text-sm hover:bg-slate-50';
-                        option.innerHTML = '<span class="font-medium text-slate-800">'+escapeHtml(recipient.name)+'</span>'
+                        option.className = 'flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-50';
+
+                        const label = document.createElement('span');
+                        label.className = 'flex min-w-0 flex-col';
+                        label.innerHTML = '<span class="font-medium text-slate-800">'+escapeHtml(recipient.name)+'</span>'
                             +(recipient.roles ? '<span class="text-xs text-slate-400">'+escapeHtml(recipient.roles)+'</span>' : '');
+
+                        option.appendChild(avatarElement(recipient, 'h-8 w-8'));
+                        option.appendChild(label);
                         option.addEventListener('click', function () {
                             selectedIds.add(recipient.id);
                             searchEl.value = '';

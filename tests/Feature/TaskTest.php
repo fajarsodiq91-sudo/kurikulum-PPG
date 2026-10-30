@@ -7,13 +7,16 @@ use App\Models\Permission;
 use App\Models\Region;
 use App\Models\Role;
 use App\Models\Task;
+use App\Models\Teacher;
 use App\Models\User;
 use App\Models\Village;
 use App\Notifications\TaskNotification;
 use App\Notifications\TaskStatusChanged;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class TaskTest extends TestCase
@@ -246,6 +249,31 @@ class TaskTest extends TestCase
 
         $this->actingAs($superAdmin)->delete("/tasks/{$task->id}")->assertRedirect('/tasks');
         $this->assertDatabaseMissing('tasks', ['id' => $task->id]);
+    }
+
+    public function test_recipient_photo_is_served_for_a_recipient_within_reach_but_not_for_one_outside_it(): void
+    {
+        Storage::fake();
+
+        $villageA = $this->makeVillage('Desa A');
+        $villageB = $this->makeVillage('Desa B');
+        $groupA1 = $this->makeGroup($villageA, 'Kelompok A1');
+
+        $desaAUser = $this->makeUser('Desa A', $this->desaRole, 'village', $villageA->id);
+        $desaBUser = $this->makeUser('Desa B', $this->desaRole, 'village', $villageB->id);
+
+        $photo = UploadedFile::fake()->createWithContent('foto.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='));
+        $kelompokTeacher = Teacher::create(['name' => 'Kelompok A1', 'photo' => $photo->store(Teacher::PHOTO_DIRECTORY)]);
+        $kelompokUser = $this->makeUser('Kelompok A1', $this->kelompokRole, 'group', $groupA1->id);
+        $kelompokUser->forceFill(['teacher_id' => $kelompokTeacher->id])->save();
+
+        $this->actingAs($desaAUser)
+            ->get(route('tasks.recipient-photo', $kelompokUser))
+            ->assertOk();
+
+        $this->actingAs($desaBUser)
+            ->get(route('tasks.recipient-photo', $kelompokUser))
+            ->assertNotFound();
     }
 
     public function test_edit_page_renders_the_assignee_picker_with_current_assignees_preselected(): void

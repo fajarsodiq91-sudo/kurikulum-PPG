@@ -10,8 +10,10 @@ use App\Support\TaskHierarchy;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TaskController extends Controller
 {
@@ -111,6 +113,21 @@ class TaskController extends Controller
         $task->delete();
 
         return redirect()->route('tasks.index')->with('success', 'Tugas berhasil dihapus.');
+    }
+
+    /**
+     * The assignee picker's avatar image - only for a recipient the current user could actually
+     * assign a task to, and only when their teacher profile has a photo on file.
+     */
+    public function recipientPhoto(Request $request, User $recipient): StreamedResponse
+    {
+        abort_unless(TaskHierarchy::assignableRecipients($request->user())->contains('id', $recipient->id), 404);
+
+        $photo = $recipient->teacher?->photo;
+
+        abort_if(blank($photo) || ! Storage::exists($photo), 404);
+
+        return Storage::response($photo);
     }
 
     /**
