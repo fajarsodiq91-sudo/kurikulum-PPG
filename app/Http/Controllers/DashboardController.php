@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Announcement;
+use App\Models\ClassGrade;
 use App\Models\Generus;
+use App\Models\GenerusAssignment;
 use App\Models\Group;
 use App\Models\LearningSession;
+use App\Models\Level;
 use App\Models\Munaqosah;
 use App\Models\Semester;
 use App\Models\Teacher;
@@ -16,6 +19,7 @@ use App\Models\Village;
 use App\Support\StudentScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -23,9 +27,10 @@ class DashboardController extends Controller
     public function index(Request $request): View
     {
         $user = $request->user();
+        $canSeeGenerus = $this->canSee($user, 'generus');
 
         return view('dashboard.index', [
-            'generusCount' => Generus::query()->when($this->canSee($user, 'generus'), fn ($query) => $query->visibleTo($user))->where('status', 'active')->count(),
+            'generusCount' => Generus::query()->when($canSeeGenerus, fn ($query) => $query->visibleTo($user))->where('status', 'active')->count(),
             'teacherCount' => Teacher::query()->when($this->canSee($user, 'teachers'), fn ($query) => $query->visibleTo($user))->where('status', 'active')->count(),
             'villageCount' => Village::query()->where('is_active', true)->count(),
             'groupCount' => Group::query()->where('is_active', true)->count(),
@@ -45,7 +50,128 @@ class DashboardController extends Controller
                 : collect(),
             'kontrolSemester' => $kontrolSemester = $this->canSee($user, 'ujian') ? Semester::where('is_active', true)->first() : null,
             'kontrolSummary' => $kontrolSemester ? $this->kontrolSummary($user, $kontrolSemester) : [],
-        ]);
+            'canSeeResume' => $canSeeGenerus,
+            'resumeLevels' => $canSeeGenerus ? Level::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get() : collect(),
+            'resumeFilters' => [
+                'gender' => $request->query('gender'),
+                'level_id' => $request->query('level_id'),
+            ],
+        ] + ($canSeeGenerus ? $this->generusResume($user, $request) : [
+            'resumeClassGrades' => collect(),
+            'resumeVillages' => collect(),
+            'resumeGrandCounts' => [],
+            'resumeGrandTotal' => 0,
+        ]));
+    }
+
+    /**
+     * Breakdown of active generus per desa/kelompok and kelas KBM (jenjang), honoring the
+     * same gender/jenjang filters the dashboard's resume table exposes and the same
+     * village/group scope the user's roles already grant them elsewhere.
+     *
+     * @return array{resumeClassGrades: Collection, resumeVillages: Collection, resumeGrandCounts: array<int, int>, resumeGrandTotal: int}
+     */
+    private function generusResume(?User $user, Request $request): array
+    {
+        $gender = $request->query('gender');
+        $levelId = $request->query('level_id');
+
+        $classGrades = ClassGrade::query()
+            ->join('levels', 'levels.id', '=', 'class_grades.level_id')
+            ->where('class_grades.is_active', true)
+            ->where('levels.is_active', true)
+            ->when($levelId, fn (Builder $query) => $query->where('class_grades.level_id', $levelId))
+            ->orderBy('levels.sort_order')
+            ->orderBy('levels.id')
+            ->orderBy('class_grades.sort_order')
+            ->orderBy('class_grades.id')
+            ->select('class_grades.id', 'class_grades.name', 'levels.name as level_name')
+            ->get();
+
+        $classGradeIds = $classGrades->pluck('id')->all();
+
+        $permissions = ['view-generus', Generus::MANAGE_PERMISSION];
+        $restricted = $user !== null && ! $user->hasGlobalAccessAny($permissions);
+        $placementIds = $restricted ? $user->scopedPlacementIdsAny($permissions) : [];
+
+        $groups = Group::query()
+            ->where('is_active', true)
+            ->when($restricted, function (Builder $query) use ($placementIds): void {
+                $query->where(function (Builder $scoped) use ($placementIds): void {
+                    $scoped->whereRaw('1 = 0');
+
+                    if (isset($placementIds['group_id'])) {
+                        $scoped->orWhereIn('id', $placementIds['group_id']);
+                    }
+
+                    if (isset($placementIds['village_id'])) {
+                        $scoped->orWhereIn('village_id', $placementIds['village_id']);
+                    }
+                });
+            })
+            ->orderBy('name')
+            ->get();
+
+        $villages = $groups->isEmpty()
+            ? collect()
+            : Village::query()->whereIn('id', $groups->pluck('village_id')->unique())->orderBy('name')->get();
+
+        $counts = $groups->isEmpty() || $classGradeIds === []
+            ? collect()
+            : GenerusAssignment::query()
+                ->join('generus', 'generus.id', '=', 'generus_assignments.generus_id')
+                ->whereNull('generus_assignments.ended_at')
+                ->whereNull('generus.deleted_at')
+                ->where('generus.status', 'active')
+                ->whereIn('generus.learning_class_id', $classGradeIds)
+                ->whereIn('generus_assignments.group_id', $groups->pluck('id'))
+                ->when($gender, fn (Builder $query) => $query->where('generus.gender', $gender))
+                ->selectRaw('generus_assignments.group_id as group_id, generus.learning_class_id as class_grade_id, count(*) as total')
+                ->groupBy('generus_assignments.group_id', 'generus.learning_class_id')
+                ->get();
+
+        $countsByGroup = $counts->groupBy('group_id');
+
+        $resumeVillages = $villages->map(function (Village $village) use ($groups, $countsByGroup, $classGradeIds): array {
+            $groupRows = $groups->where('village_id', $village->id)->values()->map(function (Group $group) use ($countsByGroup, $classGradeIds): array {
+                $classTotals = $countsByGroup->get($group->id, collect())->pluck('total', 'class_grade_id');
+
+                $counts = [];
+                foreach ($classGradeIds as $classGradeId) {
+                    $counts[$classGradeId] = (int) ($classTotals[$classGradeId] ?? 0);
+                }
+
+                return [
+                    'group' => $group,
+                    'counts' => $counts,
+                    'total' => array_sum($counts),
+                ];
+            });
+
+            $villageCounts = [];
+            foreach ($classGradeIds as $classGradeId) {
+                $villageCounts[$classGradeId] = $groupRows->sum(fn (array $row): int => $row['counts'][$classGradeId]);
+            }
+
+            return [
+                'village' => $village,
+                'groups' => $groupRows,
+                'counts' => $villageCounts,
+                'total' => array_sum($villageCounts),
+            ];
+        });
+
+        $grandCounts = [];
+        foreach ($classGradeIds as $classGradeId) {
+            $grandCounts[$classGradeId] = $resumeVillages->sum(fn (array $row): int => $row['counts'][$classGradeId]);
+        }
+
+        return [
+            'resumeClassGrades' => $classGrades,
+            'resumeVillages' => $resumeVillages,
+            'resumeGrandCounts' => $grandCounts,
+            'resumeGrandTotal' => array_sum($grandCounts),
+        ];
     }
 
     /**

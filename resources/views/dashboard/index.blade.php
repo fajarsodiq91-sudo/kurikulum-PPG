@@ -53,7 +53,7 @@
         @endif
     </div>
 
-    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
         @foreach ([
             ['label' => 'Generus Aktif', 'value' => $generusCount, 'badge' => 'bg-brand-50 text-brand-600', 'icon' => 'group'],
             ['label' => 'Guru Aktif', 'value' => $teacherCount, 'badge' => 'bg-brand-50 text-brand-600', 'icon' => 'person'],
@@ -63,37 +63,124 @@
             ['label' => 'Munaqosah', 'value' => $munaqosahCount, 'badge' => 'bg-amber-50 text-amber-600', 'icon' => 'check-badge'],
             ['label' => 'Pelatihan Aktif', 'value' => $trainingCount, 'badge' => 'bg-amber-50 text-amber-600', 'icon' => 'bolt'],
         ] as $card)
-            <x-card padding="p-5">
-                <div class="flex h-10 w-10 items-center justify-center rounded-xl {{ $card['badge'] }}">
-                    @switch($card['icon'])
-                        @case('group')
-                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M3.5 19.25a5.5 5.5 0 0 1 11 0"/><path stroke-linecap="round" stroke-linejoin="round" d="M14.5 14.5c2.761 0 5.5 1.5 5.5 4.75"/></svg>
-                            @break
-                        @case('person')
-                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 20.25a7.5 7.5 0 0 1 15 0"/></svg>
-                            @break
-                        @case('map-pin')
-                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 6-7.5 11.25-7.5 11.25S4.5 16.5 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/></svg>
-                            @break
-                        @case('squares')
-                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6a2.25 2.25 0 0 1 2.25-2.25h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6a2.25 2.25 0 0 1 2.25-2.25h2.25A2.25 2.25 0 0 1 20.25 6v2.25a2.25 2.25 0 0 1-2.25 2.25h-2.25a2.25 2.25 0 0 1-2.25-2.25V6Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 16.5a2.25 2.25 0 0 1 2.25-2.25h2.25a2.25 2.25 0 0 1 2.25 2.25v2.25A2.25 2.25 0 0 1 8.25 21H6a2.25 2.25 0 0 1-2.25-2.25V16.5Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 16.5a2.25 2.25 0 0 1 2.25-2.25h2.25a2.25 2.25 0 0 1 2.25 2.25v2.25A2.25 2.25 0 0 1 18 21h-2.25a2.25 2.25 0 0 1-2.25-2.25V16.5Z"/></svg>
-                            @break
-                        @case('book-open')
-                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/></svg>
-                            @break
-                        @case('check-badge')
-                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z"/></svg>
-                            @break
-                        @case('bolt')
-                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5 14.25 2.25 12 10.5h8.25L9.75 21.75 12 13.5H3.75Z"/></svg>
-                            @break
-                    @endswitch
+            <x-card padding="p-3">
+                <div class="flex items-center gap-3">
+                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg {{ $card['badge'] }}">
+                        @switch($card['icon'])
+                            @case('group')
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M3.5 19.25a5.5 5.5 0 0 1 11 0"/><path stroke-linecap="round" stroke-linejoin="round" d="M14.5 14.5c2.761 0 5.5 1.5 5.5 4.75"/></svg>
+                                @break
+                            @case('person')
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 20.25a7.5 7.5 0 0 1 15 0"/></svg>
+                                @break
+                            @case('map-pin')
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 6-7.5 11.25-7.5 11.25S4.5 16.5 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/></svg>
+                                @break
+                            @case('squares')
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6a2.25 2.25 0 0 1 2.25-2.25h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6a2.25 2.25 0 0 1 2.25-2.25h2.25A2.25 2.25 0 0 1 20.25 6v2.25a2.25 2.25 0 0 1-2.25 2.25h-2.25a2.25 2.25 0 0 1-2.25-2.25V6Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 16.5a2.25 2.25 0 0 1 2.25-2.25h2.25a2.25 2.25 0 0 1 2.25 2.25v2.25A2.25 2.25 0 0 1 8.25 21H6a2.25 2.25 0 0 1-2.25-2.25V16.5Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 16.5a2.25 2.25 0 0 1 2.25-2.25h2.25a2.25 2.25 0 0 1 2.25 2.25v2.25A2.25 2.25 0 0 1 18 21h-2.25a2.25 2.25 0 0 1-2.25-2.25V16.5Z"/></svg>
+                                @break
+                            @case('book-open')
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/></svg>
+                                @break
+                            @case('check-badge')
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z"/></svg>
+                                @break
+                            @case('bolt')
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5 14.25 2.25 12 10.5h8.25L9.75 21.75 12 13.5H3.75Z"/></svg>
+                                @break
+                        @endswitch
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-lg font-bold leading-tight tracking-tight text-slate-950">{{ $card['value'] }}</p>
+                        <p class="truncate text-xs font-medium text-slate-500">{{ $card['label'] }}</p>
+                    </div>
                 </div>
-                <p class="mt-4 text-3xl font-bold tracking-tight text-slate-950">{{ $card['value'] }}</p>
-                <p class="mt-1 text-sm font-medium text-slate-500">{{ $card['label'] }}</p>
             </x-card>
         @endforeach
     </div>
+
+    @if ($canSeeResume)
+        <div class="mt-8" id="resume-generus">
+            <div class="mb-4 flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
+                <div>
+                    <h2 class="text-lg font-bold tracking-tight text-slate-950">Resume Jumlah Generus</h2>
+                    <p class="mt-1 text-sm text-slate-500">Rekap generus aktif per desa, kelompok, dan kelas KBM, sesuai area yang Anda kelola/monitor.</p>
+                </div>
+            </div>
+
+            <form method="GET" action="{{ route('dashboard') }}#resume-generus" class="mb-4 flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <x-filter-select name="gender" label="Jenis Kelamin" :options="['laki-laki' => 'Laki-laki', 'perempuan' => 'Perempuan']" />
+                <x-filter-select name="level_id" label="Jenjang" :options="$resumeLevels" />
+
+                <div class="flex gap-2">
+                    <button type="submit" class="rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800">Terapkan</button>
+                    <a href="{{ route('dashboard') }}#resume-generus" class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Reset</a>
+                </div>
+            </form>
+
+            <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                @if ($resumeClassGrades->isEmpty() || $resumeVillages->isEmpty())
+                    <x-empty-state title="Belum ada data untuk ditampilkan" description="Tidak ada generus aktif yang cocok dengan filter yang dipilih, atau belum ada data kelas KBM/desa yang bisa Anda lihat." />
+                @else
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-left text-sm">
+                            <thead class="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-400">
+                                <tr>
+                                    <th rowspan="2" class="py-3 pr-4 align-bottom font-semibold">No</th>
+                                    <th rowspan="2" class="py-3 pr-4 align-bottom font-semibold">Desa</th>
+                                    <th rowspan="2" class="py-3 pr-4 align-bottom font-semibold">Kelompok</th>
+                                    @foreach ($resumeClassGrades->groupBy('level_name') as $levelName => $levelClassGrades)
+                                        <th colspan="{{ $levelClassGrades->count() }}" class="py-2 pr-4 text-center font-semibold text-slate-500">{{ $levelName }}</th>
+                                    @endforeach
+                                    <th rowspan="2" class="py-3 pl-4 align-bottom text-right font-semibold">Total</th>
+                                </tr>
+                                <tr>
+                                    @foreach ($resumeClassGrades as $classGrade)
+                                        <th class="py-2 pr-4 text-center font-semibold">{{ $classGrade->name }}</th>
+                                    @endforeach
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @php $rowNumber = 0; @endphp
+                                @foreach ($resumeVillages as $villageRow)
+                                    @foreach ($villageRow['groups'] as $groupRow)
+                                        @php $rowNumber++; @endphp
+                                        <tr class="border-b border-slate-100">
+                                            <td class="py-3 pr-4 text-slate-500">{{ $rowNumber }}</td>
+                                            <td class="py-3 pr-4 font-medium text-slate-900">{{ $villageRow['village']->name }}</td>
+                                            <td class="py-3 pr-4">{{ $groupRow['group']->name }}</td>
+                                            @foreach ($resumeClassGrades as $classGrade)
+                                                <td class="py-3 pr-4 text-center">{{ $groupRow['counts'][$classGrade->id] }}</td>
+                                            @endforeach
+                                            <td class="py-3 pl-4 text-right font-semibold text-slate-900">{{ $groupRow['total'] }}</td>
+                                        </tr>
+                                    @endforeach
+                                    <tr class="border-b border-slate-200 bg-slate-50 font-semibold text-slate-700">
+                                        <td class="py-2 pr-4"></td>
+                                        <td colspan="2" class="py-2 pr-4">Subtotal Desa {{ $villageRow['village']->name }}</td>
+                                        @foreach ($resumeClassGrades as $classGrade)
+                                            <td class="py-2 pr-4 text-center">{{ $villageRow['counts'][$classGrade->id] }}</td>
+                                        @endforeach
+                                        <td class="py-2 pl-4 text-right">{{ $villageRow['total'] }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                            <tfoot>
+                                <tr class="border-t-2 border-slate-300 bg-slate-100 font-bold text-slate-950">
+                                    <td class="py-3 pr-4"></td>
+                                    <td colspan="2" class="py-3 pr-4">Grand Total</td>
+                                    @foreach ($resumeClassGrades as $classGrade)
+                                        <td class="py-3 pr-4 text-center">{{ $resumeGrandCounts[$classGrade->id] }}</td>
+                                    @endforeach
+                                    <td class="py-3 pl-4 text-right">{{ $resumeGrandTotal }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                @endif
+            </section>
+        </div>
+    @endif
 
     @if (! empty($kontrolSummary))
         <div class="mt-8">
