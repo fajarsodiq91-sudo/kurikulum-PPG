@@ -64,13 +64,19 @@
                     <input id="due_date" name="due_date" type="date" class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('due_date') }}">
                 </div>
                 <div class="md:col-span-2">
-                    <label class="block text-sm font-medium mb-2" for="assignees">Ditugaskan Kepada</label>
-                    <select id="assignees" name="assignees[]" multiple required size="6" class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                        @foreach ($recipients as $recipient)
-                            <option value="{{ $recipient->id }}">{{ $recipient->name }}@if ($recipient->roles->isNotEmpty()) ({{ $recipient->roles->pluck('name')->join(', ') }})@endif</option>
-                        @endforeach
-                    </select>
-                    <p class="mt-1 text-xs text-slate-500">Tahan Ctrl/Cmd untuk memilih lebih dari satu penerima. Hanya pengurus di jalur vertikal Anda (atasan dan cabang Anda sendiri) yang bisa dipilih.</p>
+                    <span class="mb-2 block text-sm font-medium text-slate-700">Ditugaskan Kepada</span>
+                    <div class="max-h-56 space-y-2 overflow-y-auto rounded-lg border border-slate-300 p-3">
+                        @php $selectedAssigneeIds = old('assignees', []); @endphp
+                        @forelse ($recipients as $recipient)
+                            <label class="flex items-center gap-2 text-sm text-slate-700">
+                                <input type="checkbox" name="assignees[]" value="{{ $recipient->id }}" @checked(in_array($recipient->id, $selectedAssigneeIds))>
+                                <span>{{ $recipient->name }}@if ($recipient->roles->isNotEmpty()) <span class="text-xs text-slate-400">({{ $recipient->roles->pluck('name')->join(', ') }})</span>@endif</span>
+                            </label>
+                        @empty
+                            <p class="text-sm text-slate-400">Tidak ada penerima yang tersedia.</p>
+                        @endforelse
+                    </div>
+                    <p class="mt-1 text-xs text-slate-500">Hanya pengurus di jalur vertikal Anda (atasan dan cabang Anda sendiri) yang bisa dipilih.</p>
                 </div>
                 <div class="md:col-span-2">
                     <button type="submit" class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Simpan Tugas</button>
