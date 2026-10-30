@@ -73,6 +73,29 @@ class UserManagementTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_set_a_users_whatsapp_number_from_user_management(): void
+    {
+        $adminRole = Role::create(['name' => 'Super Admin', 'slug' => 'super-admin', 'is_active' => true]);
+        $permission = Permission::create(['name' => 'Manage Users', 'slug' => 'manage-users', 'module' => 'users', 'is_active' => true]);
+        $adminRole->permissions()->attach($permission->id);
+
+        $admin = User::create(['name' => 'Admin PPG', 'email' => 'admin@ppg.test', 'password' => Hash::make('password123'), 'status' => 'active']);
+        $admin->assignRole($adminRole->id, 'global', null);
+
+        $target = User::create(['name' => 'Fajar Sodiq', 'email' => 'fajar@ppg.test', 'password' => Hash::make('password123'), 'status' => 'active']);
+
+        $this->actingAs($admin)
+            ->put("/users/{$target->id}", [
+                'name' => $target->name,
+                'email' => $target->email,
+                'status' => 'active',
+                'whatsapp' => '081234567890',
+            ])
+            ->assertRedirect('/users');
+
+        $this->assertDatabaseHas('users', ['id' => $target->id, 'whatsapp' => '081234567890']);
+    }
+
     public function test_roles_can_be_assigned_with_village_or_group_scope_and_scope_is_kept_on_edit(): void
     {
         $adminRole = Role::create(['name' => 'Super Admin', 'slug' => 'super-admin', 'is_active' => true]);

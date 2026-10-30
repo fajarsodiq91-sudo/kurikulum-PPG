@@ -15,6 +15,12 @@
     </div>
 
     <div>
+        <label class="mb-2 block text-sm font-medium text-slate-700" for="whatsapp">Nomor WhatsApp</label>
+        <input id="whatsapp" name="whatsapp" type="text" placeholder="08xxxxxxxxxx" value="{{ old('whatsapp', $user?->whatsapp) }}" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
+        <p class="mt-1 text-xs text-slate-500">Dipakai sebagai tombol WhatsApp pada bagan struktur organisasi.</p>
+    </div>
+
+    <div>
         <label class="mb-2 block text-sm font-medium text-slate-700" for="status">Status</label>
         <select id="status" name="status" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
             <option value="active" @selected(old('status', $user?->status ?? 'active') === 'active')>Aktif</option>

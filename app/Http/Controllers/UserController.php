@@ -54,6 +54,7 @@ class UserController extends Controller
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
                 'status' => $validated['status'],
+                'whatsapp' => $validated['whatsapp'] ?? null,
             ]);
 
             $this->syncRoles($request, $user, $validated['roles'] ?? []);
@@ -80,6 +81,7 @@ class UserController extends Controller
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'status' => $validated['status'],
+                'whatsapp' => $validated['whatsapp'] ?? null,
             ];
 
             if ($request->filled('password')) {
@@ -191,6 +193,7 @@ class UserController extends Controller
                 'min:8',
             ],
             'status' => ['required', 'in:active,inactive,pending'],
+            'whatsapp' => ['nullable', 'string', 'max:20'],
             'roles' => ['nullable', 'array'],
             'roles.*' => ['nullable', 'integer', 'exists:roles,id'],
         ]);
