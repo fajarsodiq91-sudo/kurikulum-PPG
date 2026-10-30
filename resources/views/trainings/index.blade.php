@@ -13,6 +13,12 @@
 
         @include('layouts.partials.spreadsheet-tools', ['exportUrl' => route('trainings.export'), 'importUrl' => \App\Support\Access::can('manage-training') ? route('trainings.import') : null])
 
+        <x-filter-bar :action="route('trainings.index')" search-placeholder="Cari judul pelatihan...">
+            <x-filter-select name="type" label="Tipe" :options="['workshop' => 'Workshop', 'seminar' => 'Seminar', 'training' => 'Pelatihan']" />
+            <x-filter-select name="status" label="Status" :options="['scheduled' => 'Terjadwal', 'completed' => 'Selesai', 'cancelled' => 'Dibatalkan']" />
+            <x-filter-select name="academic_year_id" label="Tahun" :options="$academicYears" />
+        </x-filter-bar>
+
         <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">
             @if (\App\Support\Access::can('manage-training'))
             <div class="lg:col-span-1 rounded-xl bg-white p-6 shadow-sm border border-slate-200">

@@ -16,8 +16,21 @@ class GuardianController extends Controller
 
     public function index(Request $request): View
     {
+        $search = trim((string) $request->query('q', ''));
+        $relationship = $request->query('relationship', '');
+        $status = $request->query('status', '');
+
+        $guardians = Guardian::visibleTo($request->user())
+            ->with('generus:id,full_name')
+            ->when($search !== '', fn ($query) => $query->where('full_name', 'like', '%'.addcslashes($search, '%_\\').'%'))
+            ->when($relationship !== '', fn ($query) => $query->where('relationship', $relationship))
+            ->when($status !== '', fn ($query) => $query->where('status', $status))
+            ->latest()
+            ->paginate(25)
+            ->withQueryString();
+
         return view('guardians.index', [
-            'guardians' => Guardian::visibleTo($request->user())->with('generus:id,full_name')->latest()->paginate(25),
+            'guardians' => $guardians,
         ]);
     }
 

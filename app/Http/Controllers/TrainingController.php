@@ -15,10 +15,24 @@ class TrainingController extends Controller
 {
     use HandlesSheets;
 
-    public function index(): View
+    public function index(Request $request): View
     {
+        $search = trim((string) $request->query('q', ''));
+        $type = $request->query('type', '');
+        $status = $request->query('status', '');
+        $academicYearId = $request->query('academic_year_id', '');
+
+        $trainings = Training::with('academicYear')
+            ->when($search !== '', fn ($query) => $query->where('title', 'like', '%'.addcslashes($search, '%_\\').'%'))
+            ->when($type !== '', fn ($query) => $query->where('type', $type))
+            ->when($status !== '', fn ($query) => $query->where('status', $status))
+            ->when($academicYearId !== '', fn ($query) => $query->where('academic_year_id', $academicYearId))
+            ->latest()
+            ->paginate(25)
+            ->withQueryString();
+
         return view('trainings.index', [
-            'trainings' => Training::with('academicYear')->latest()->paginate(25),
+            'trainings' => $trainings,
             'academicYears' => AcademicYear::where('is_active', true)->get(),
         ]);
     }

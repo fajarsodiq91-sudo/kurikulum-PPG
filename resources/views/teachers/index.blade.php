@@ -15,6 +15,10 @@
         @include('layouts.partials.spreadsheet-tools', ['exportUrl' => route('teachers.export'), 'importUrl' => route('teachers.import')])
     @endif
 
+    <x-filter-bar :action="route('teachers.index')" search-placeholder="Cari nama atau no. induk...">
+        <x-filter-select name="status" label="Status" :options="['active' => 'Aktif', 'inactive' => 'Nonaktif']" />
+    </x-filter-bar>
+
     <div class="grid gap-6 {{ \App\Support\Access::can('manage-teachers') ? 'lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]' : '' }}">
         @if (\App\Support\Access::can('manage-teachers'))
             <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

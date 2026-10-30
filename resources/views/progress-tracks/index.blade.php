@@ -13,6 +13,12 @@
 
         @include('layouts.partials.spreadsheet-tools', ['exportUrl' => route('progress-tracks.export'), 'importUrl' => \App\Support\Access::can('manage-progress-tracking') ? route('progress-tracks.import') : null])
 
+        <x-filter-bar :action="route('progress-tracks.index')" search-placeholder="Cari nama generus...">
+            <x-filter-select name="academic_year_id" label="Tahun" :options="$academicYears" />
+            <x-filter-select name="semester_id" label="Semester" :options="$semesters" />
+            <x-filter-select name="overall_status" label="Status" :options="['good' => 'Baik', 'average' => 'Cukup', 'needs_attention' => 'Perlu Perhatian']" />
+        </x-filter-bar>
+
         <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">
             @if (\App\Support\Access::can('manage-progress-tracking'))
             <div class="lg:col-span-1 rounded-xl bg-white p-6 shadow-sm border border-slate-200">

@@ -18,10 +18,25 @@ class ProgressTrackController extends Controller
 {
     use HandlesSheets;
 
-    public function index(): View
+    public function index(Request $request): View
     {
+        $search = trim((string) $request->query('q', ''));
+        $academicYearId = $request->query('academic_year_id', '');
+        $semesterId = $request->query('semester_id', '');
+        $status = $request->query('overall_status', '');
+
+        $progressTracks = StudentScope::limit(
+            ProgressTrack::with(['generus', 'academicYear', 'semester'])
+                ->when($search !== '', fn ($query) => $query->whereHas('generus', fn ($query) => $query->where('full_name', 'like', '%'.addcslashes($search, '%_\\').'%')))
+                ->when($academicYearId !== '', fn ($query) => $query->where('academic_year_id', $academicYearId))
+                ->when($semesterId !== '', fn ($query) => $query->where('semester_id', $semesterId))
+                ->when($status !== '', fn ($query) => $query->where('overall_status', $status))
+                ->latest(),
+            StudentScope::viewIds($request->user(), 'manage-progress-tracking')
+        )->paginate(25)->withQueryString();
+
         return view('progress-tracks.index', [
-            'progressTracks' => StudentScope::limit(ProgressTrack::with(['generus', 'academicYear', 'semester'])->latest(), StudentScope::viewIds(request()->user(), 'manage-progress-tracking'))->paginate(25),
+            'progressTracks' => $progressTracks,
             'generus' => StudentScope::limit(Generus::query(), $this->studentIds(), 'id')->get(),
             'academicYears' => AcademicYear::where('is_active', true)->get(),
             'semesters' => Semester::where('is_active', true)->get(),

@@ -36,6 +36,11 @@
         </section>
     @endif
 
+    <x-filter-bar :action="route('learning-materials.index')" search-placeholder="Cari judul atau kode materi...">
+        <x-filter-select name="material_chapter_id" label="Bab" :options="$chapters" option-label="name" />
+        <x-filter-select name="academic_year_id" label="Tahun" :options="$academicYears" />
+    </x-filter-bar>
+
     <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">
         @if (\App\Support\Access::can('manage-learning-materials'))
             <div class="lg:col-span-1 rounded-xl bg-white p-6 shadow-sm border border-slate-200">

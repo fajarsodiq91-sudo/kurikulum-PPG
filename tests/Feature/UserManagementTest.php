@@ -174,6 +174,59 @@ class UserManagementTest extends TestCase
         $this->assertDatabaseHas('user_roles', ['user_id' => $user->id, 'role_id' => $groupRole->id, 'dapukan_id' => $dapukan->id]);
     }
 
+    public function test_user_management_index_can_be_searched_and_filtered_by_status(): void
+    {
+        $adminRole = Role::create([
+            'name' => 'Super Admin',
+            'slug' => 'super-admin',
+            'is_active' => true,
+        ]);
+
+        $permission = Permission::create([
+            'name' => 'Manage Users',
+            'slug' => 'manage-users',
+            'module' => 'users',
+            'is_active' => true,
+        ]);
+
+        $adminRole->permissions()->attach($permission->id);
+
+        $admin = User::create([
+            'name' => 'Admin PPG',
+            'email' => 'admin@ppg.test',
+            'password' => Hash::make('password123'),
+            'status' => 'active',
+        ]);
+
+        $admin->assignRole($adminRole->id, 'global', null);
+
+        User::create([
+            'name' => 'Budi Santoso',
+            'email' => 'budi@ppg.test',
+            'password' => Hash::make('password123'),
+            'status' => 'inactive',
+        ]);
+
+        User::create([
+            'name' => 'Citra Lestari',
+            'email' => 'citra@ppg.test',
+            'password' => Hash::make('password123'),
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($admin)
+            ->get('/users?q=Budi')
+            ->assertOk()
+            ->assertSee('Budi Santoso')
+            ->assertDontSee('Citra Lestari');
+
+        $this->actingAs($admin)
+            ->get('/users?status=inactive')
+            ->assertOk()
+            ->assertSee('Budi Santoso')
+            ->assertDontSee('Citra Lestari');
+    }
+
     public function test_user_without_manage_users_permission_cannot_access_user_management(): void
     {
         $role = Role::create([

@@ -34,8 +34,22 @@ class TeacherController extends Controller
 
     public function index(Request $request): View
     {
+        $search = trim((string) $request->query('q', ''));
+        $status = $request->query('status', '');
+
+        $teachers = Teacher::visibleTo($request->user())
+            ->with(['village', 'group'])
+            ->when($search !== '', function ($query) use ($search): void {
+                $like = '%'.addcslashes($search, '%_\\').'%';
+                $query->where(fn ($query) => $query->where('name', 'like', $like)->orWhere('registration_number', 'like', $like));
+            })
+            ->when($status !== '', fn ($query) => $query->where('status', $status))
+            ->latest()
+            ->paginate(25)
+            ->withQueryString();
+
         return view('teachers.index', [
-            'teachers' => Teacher::visibleTo($request->user())->with(['village', 'group'])->latest()->paginate(25),
+            'teachers' => $teachers,
             'classGrades' => ClassGrade::where('is_active', true)->orderBy('sort_order')->get(),
             ...$this->placementOptions($request->user()),
         ]);

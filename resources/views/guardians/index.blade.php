@@ -15,6 +15,11 @@
         @include('layouts.partials.spreadsheet-tools', ['exportUrl' => route('guardians.export'), 'importUrl' => route('guardians.import')])
     @endif
 
+    <x-filter-bar :action="route('guardians.index')" search-placeholder="Cari nama wali...">
+        <x-filter-select name="relationship" label="Hubungan" :options="['ayah' => 'Ayah', 'ibu' => 'Ibu', 'wali' => 'Wali']" />
+        <x-filter-select name="status" label="Status" :options="['active' => 'Aktif', 'inactive' => 'Nonaktif']" />
+    </x-filter-bar>
+
     <div class="grid gap-6 {{ \App\Support\Access::can('manage-guardians') ? 'lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]' : '' }}">
         @if (\App\Support\Access::can('manage-guardians'))
             <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

@@ -13,6 +13,11 @@
 
     @include('layouts.partials.spreadsheet-tools', ['exportUrl' => route('material-categories.export'), 'importUrl' => \App\Support\Access::can('manage-learning-materials') ? route('material-categories.import') : null])
 
+    <x-filter-bar :action="route('material-categories.index')" search-placeholder="Cari nama atau kode kategori...">
+        <x-filter-select name="class_grade_id" label="Kelas" :options="$classGrades" />
+        <x-filter-select name="semester_id" label="Semester" :options="$semesters" />
+    </x-filter-bar>
+
     <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">
         @if (\App\Support\Access::can('manage-learning-materials'))
             <div class="lg:col-span-1 rounded-xl bg-white p-6 shadow-sm border border-slate-200">

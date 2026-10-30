@@ -64,16 +64,27 @@ class GenerusController extends Controller
 
     public function index(Request $request): View
     {
+        $search = trim((string) $request->query('q', ''));
+        $status = $request->query('status', '');
+
+        $generus = Generus::visibleTo($request->user())
+            ->with([
+                'assignments' => fn ($query) => $query->whereNull('ended_at'),
+                'assignments.region',
+                'assignments.village',
+                'assignments.group',
+            ])
+            ->when($search !== '', function ($query) use ($search): void {
+                $like = '%'.addcslashes($search, '%_\\').'%';
+                $query->where(fn ($query) => $query->where('full_name', 'like', $like)->orWhere('registration_number', 'like', $like));
+            })
+            ->when($status !== '', fn ($query) => $query->where('status', $status))
+            ->latest()
+            ->paginate(25)
+            ->withQueryString();
+
         return view('generus.index', [
-            'generus' => Generus::visibleTo($request->user())
-                ->with([
-                    'assignments' => fn ($query) => $query->whereNull('ended_at'),
-                    'assignments.region',
-                    'assignments.village',
-                    'assignments.group',
-                ])
-                ->latest()
-                ->paginate(25),
+            'generus' => $generus,
         ]);
     }
 

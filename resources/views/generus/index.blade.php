@@ -34,6 +34,10 @@
         </section>
     @endif
 
+    <x-filter-bar :action="route('generus.index')" search-placeholder="Cari nama atau nomor induk...">
+        <x-filter-select name="status" label="Status" :options="['active' => 'Aktif', 'pindah_sambung' => 'Pindah Sambung', 'married' => 'Sudah Menikah']" />
+    </x-filter-bar>
+
     <section class="min-w-0 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div class="flex items-center justify-between gap-4">
             <div>

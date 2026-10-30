@@ -177,6 +177,25 @@ class TeacherAndGuardianTest extends TestCase
         $this->assertModelMissing($guardian);
     }
 
+    public function test_guardian_index_can_be_searched_and_filtered_by_relationship(): void
+    {
+        $user = $this->createAdmin();
+        Guardian::create(['full_name' => 'Wali Satu', 'relationship' => 'ayah', 'status' => 'active']);
+        Guardian::create(['full_name' => 'Wali Dua', 'relationship' => 'ibu', 'status' => 'active']);
+
+        $this->actingAs($user)
+            ->get('/guardians?q=Wali Satu')
+            ->assertOk()
+            ->assertSee('Wali Satu')
+            ->assertDontSee('Wali Dua');
+
+        $this->actingAs($user)
+            ->get('/guardians?relationship=ibu')
+            ->assertOk()
+            ->assertSee('Wali Dua')
+            ->assertDontSee('Wali Satu');
+    }
+
     public function test_new_teacher_gets_next_monthly_registration_number_and_stored_photo(): void
     {
         Storage::fake();

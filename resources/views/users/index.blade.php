@@ -13,6 +13,11 @@
 
     @include('layouts.partials.spreadsheet-tools', ['exportUrl' => route('users.export'), 'importUrl' => route('users.import')])
 
+    <x-filter-bar :action="route('users.index')" search-placeholder="Cari nama atau email...">
+        <x-filter-select name="status" label="Status" :options="['active' => 'Aktif', 'pending' => 'Menunggu Persetujuan', 'inactive' => 'Nonaktif']" />
+        <x-filter-select name="role" label="Peran" :options="$roles" option-value="slug" option-label="name" />
+    </x-filter-bar>
+
     <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 class="text-lg font-bold text-slate-950">Tambah Pengguna</h2>

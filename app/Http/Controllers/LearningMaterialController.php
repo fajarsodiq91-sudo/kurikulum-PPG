@@ -17,14 +17,27 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class LearningMaterialController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $search = trim((string) $request->query('q', ''));
+        $chapterId = $request->query('material_chapter_id', '');
+        $academicYearId = $request->query('academic_year_id', '');
+
+        $materials = LearningMaterial::with(['materialChapter.materialCategory.classGrade', 'materialChapter.materialCategory.semester', 'academicYear'])
+            ->when($search !== '', function ($query) use ($search): void {
+                $like = '%'.addcslashes($search, '%_\\').'%';
+                $query->where(fn ($query) => $query->where('title', 'like', $like)->orWhere('code', 'like', $like));
+            })
+            ->when($chapterId !== '', fn ($query) => $query->where('material_chapter_id', $chapterId))
+            ->when($academicYearId !== '', fn ($query) => $query->where('academic_year_id', $academicYearId))
+            ->orderBy('material_chapter_id')
+            ->orderBy('week_number')
+            ->orderBy('sort_order')
+            ->paginate(25)
+            ->withQueryString();
+
         return view('learning-materials.index', [
-            'materials' => LearningMaterial::with(['materialChapter.materialCategory.classGrade', 'materialChapter.materialCategory.semester', 'academicYear'])
-                ->orderBy('material_chapter_id')
-                ->orderBy('week_number')
-                ->orderBy('sort_order')
-                ->paginate(25),
+            'materials' => $materials,
             'chapters' => MaterialChapter::with(['materialCategory.classGrade', 'materialCategory.semester'])
                 ->where('is_active', true)
                 ->orderBy('material_category_id')

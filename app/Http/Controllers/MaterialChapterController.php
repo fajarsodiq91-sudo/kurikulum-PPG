@@ -16,13 +16,24 @@ class MaterialChapterController extends Controller
 {
     use HandlesSheets;
 
-    public function index(): View
+    public function index(Request $request): View
     {
+        $search = trim((string) $request->query('q', ''));
+        $categoryId = $request->query('material_category_id', '');
+
+        $chapters = MaterialChapter::with(['materialCategory.classGrade', 'materialCategory.semester'])
+            ->when($search !== '', function ($query) use ($search): void {
+                $like = '%'.addcslashes($search, '%_\\').'%';
+                $query->where(fn ($query) => $query->where('name', 'like', $like)->orWhere('code', 'like', $like));
+            })
+            ->when($categoryId !== '', fn ($query) => $query->where('material_category_id', $categoryId))
+            ->orderBy('material_category_id')
+            ->orderBy('sort_order')
+            ->paginate(25)
+            ->withQueryString();
+
         return view('material-chapters.index', [
-            'chapters' => MaterialChapter::with(['materialCategory.classGrade', 'materialCategory.semester'])
-                ->orderBy('material_category_id')
-                ->orderBy('sort_order')
-                ->paginate(25),
+            'chapters' => $chapters,
             'categories' => MaterialCategory::with(['classGrade', 'semester'])
                 ->where('is_active', true)
                 ->orderBy('class_grade_id')

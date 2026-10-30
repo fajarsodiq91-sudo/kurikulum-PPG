@@ -35,10 +35,25 @@ class UserController extends Controller
         'pelaksana-ppg-kelompok' => 'group',
     ];
 
-    public function index(): View
+    public function index(Request $request): View
     {
+        $search = trim((string) $request->query('q', ''));
+        $status = $request->query('status', '');
+        $role = $request->query('role', '');
+
+        $users = User::with('roles')
+            ->when($search !== '', function ($query) use ($search): void {
+                $like = '%'.addcslashes($search, '%_\\').'%';
+                $query->where(fn ($query) => $query->where('name', 'like', $like)->orWhere('email', 'like', $like));
+            })
+            ->when($status !== '', fn ($query) => $query->where('status', $status))
+            ->when($role !== '', fn ($query) => $query->whereHas('roles', fn ($query) => $query->where('slug', $role)))
+            ->latest()
+            ->paginate(25)
+            ->withQueryString();
+
         return view('users.index', [
-            'users' => User::with('roles')->latest()->paginate(25),
+            'users' => $users,
             'roles' => Role::query()->where('is_active', true)->orderBy('name')->get(),
             ...$this->scopeOptions(),
         ]);

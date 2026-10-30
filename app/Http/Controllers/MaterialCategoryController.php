@@ -17,14 +17,27 @@ class MaterialCategoryController extends Controller
 {
     use HandlesSheets;
 
-    public function index(): View
+    public function index(Request $request): View
     {
+        $search = trim((string) $request->query('q', ''));
+        $classGradeId = $request->query('class_grade_id', '');
+        $semesterId = $request->query('semester_id', '');
+
+        $categories = MaterialCategory::with(['classGrade', 'semester'])
+            ->when($search !== '', function ($query) use ($search): void {
+                $like = '%'.addcslashes($search, '%_\\').'%';
+                $query->where(fn ($query) => $query->where('name', 'like', $like)->orWhere('code', 'like', $like));
+            })
+            ->when($classGradeId !== '', fn ($query) => $query->where('class_grade_id', $classGradeId))
+            ->when($semesterId !== '', fn ($query) => $query->where('semester_id', $semesterId))
+            ->orderBy('class_grade_id')
+            ->orderBy('semester_id')
+            ->orderBy('sort_order')
+            ->paginate(25)
+            ->withQueryString();
+
         return view('material-categories.index', [
-            'categories' => MaterialCategory::with(['classGrade', 'semester'])
-                ->orderBy('class_grade_id')
-                ->orderBy('semester_id')
-                ->orderBy('sort_order')
-                ->paginate(25),
+            'categories' => $categories,
             'classGrades' => ClassGrade::where('is_active', true)->orderBy('sort_order')->get(),
             'semesters' => Semester::where('is_active', true)->orderBy('sort_order')->get(),
         ]);
