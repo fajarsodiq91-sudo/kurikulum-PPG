@@ -20,6 +20,53 @@ toggle?.addEventListener('click', () => {
 
 backdrop?.addEventListener('click', closeSidebar);
 
+let sidebarSearching = false;
+
+document.querySelectorAll('[data-sidebar-accordion]').forEach((details) => {
+	details.addEventListener('toggle', () => {
+		if (sidebarSearching || !details.open) {
+			return;
+		}
+
+		document.querySelectorAll('[data-sidebar-accordion]').forEach((other) => {
+			if (other !== details) {
+				other.open = false;
+			}
+		});
+	});
+});
+
+const sidebarSearch = document.querySelector('[data-sidebar-search]');
+const sidebarEmpty = document.querySelector('[data-sidebar-empty]');
+
+sidebarSearch?.addEventListener('input', () => {
+	const query = sidebarSearch.value.trim().toLowerCase();
+	sidebarSearching = query.length > 0;
+	let anyMatch = false;
+
+	document.querySelectorAll('[data-sidebar-group]').forEach((group) => {
+		let groupHasMatch = false;
+
+		group.querySelectorAll(':scope > [data-sidebar-section]').forEach((section) => {
+			const matches = !query || section.textContent.toLowerCase().includes(query);
+			section.classList.toggle('hidden', !matches);
+
+			if (matches) {
+				groupHasMatch = true;
+				anyMatch = true;
+			}
+
+			if (section.matches('[data-sidebar-accordion]')) {
+				section.open = query ? matches : section.dataset.initialOpen === '1';
+			}
+		});
+
+		group.classList.toggle('hidden', !groupHasMatch);
+	});
+
+	sidebarEmpty?.classList.toggle('hidden', anyMatch || !query);
+});
+
 const profileToggle = document.querySelector('[data-profile-toggle]');
 const profileMenu = document.querySelector('[data-profile-menu]');
 
