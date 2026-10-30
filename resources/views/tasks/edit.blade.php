@@ -16,7 +16,7 @@
     </div>
 
     <section class="max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <form method="POST" action="{{ route('tasks.update', $task) }}" class="grid gap-4">
+        <form method="POST" action="{{ route('tasks.update', $task) }}" enctype="multipart/form-data" class="grid gap-4">
             @csrf
             @method('PUT')
             <div>
@@ -47,6 +47,21 @@
             <div>
                 <label class="block text-sm font-medium mb-2" for="due_date">Jatuh Tempo</label>
                 <input id="due_date" name="due_date" type="date" class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('due_date', $task->due_date?->format('Y-m-d')) }}">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-2" for="link">Link (opsional)</label>
+                <input id="link" name="link" type="url" placeholder="https://drive.google.com/..." class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('link', $task->link) }}">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-2" for="attachment">Lampiran File (opsional)</label>
+                @if ($task->attachment)
+                    <p class="mb-2 text-xs text-slate-500">
+                        Lampiran saat ini: <a href="{{ route('tasks.attachment', $task) }}" target="_blank" class="font-medium text-brand-600 hover:underline">lihat berkas</a>.
+                        Unggah berkas baru di bawah untuk menggantinya.
+                    </p>
+                @endif
+                <input id="attachment" name="attachment" type="file" class="w-full rounded-lg border border-slate-300 px-3 py-2 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-sm file:font-medium">
+                <p class="mt-1 text-xs text-slate-500">PDF, Word, Excel, PowerPoint, atau gambar. Maks. 10 MB.</p>
             </div>
             <div>
                 <span class="mb-2 block text-sm font-medium text-slate-700">Ditugaskan Kepada</span>

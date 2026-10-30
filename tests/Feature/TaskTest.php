@@ -391,6 +391,57 @@ class TaskTest extends TestCase
         );
     }
 
+    public function test_due_date_defaults_to_fourteen_days_from_now_when_not_provided(): void
+    {
+        $village = $this->makeVillage('Desa A');
+        $group = $this->makeGroup($village, 'Kelompok A1');
+        $desaUser = $this->makeUser('Desa A', $this->desaRole, 'village', $village->id);
+        $kelompokUser = $this->makeUser('Kelompok A1', $this->kelompokRole, 'group', $group->id);
+
+        $this->actingAs($desaUser)->post('/tasks', [
+            'title' => 'Tugas Tanpa Jatuh Tempo',
+            'priority' => 'medium',
+            'assignees' => [$kelompokUser->id],
+        ])->assertRedirect('/tasks');
+
+        $this->assertSame(
+            now()->addDays(14)->toDateString(),
+            Task::where('title', 'Tugas Tanpa Jatuh Tempo')->first()->due_date->toDateString(),
+        );
+    }
+
+    public function test_task_can_be_created_with_a_link_and_an_uploaded_attachment(): void
+    {
+        Storage::fake();
+
+        $village = $this->makeVillage('Desa A');
+        $group = $this->makeGroup($village, 'Kelompok A1');
+        $desaUser = $this->makeUser('Desa A', $this->desaRole, 'village', $village->id);
+        $kelompokUser = $this->makeUser('Kelompok A1', $this->kelompokRole, 'group', $group->id);
+
+        $this->actingAs($desaUser)->post('/tasks', [
+            'title' => 'Tugas Dengan Lampiran',
+            'priority' => 'medium',
+            'link' => 'https://drive.google.com/drive/folders/15fW3PPfulvzjuiwENBDi2HwDSCR7CeJp',
+            'attachment' => UploadedFile::fake()->create('notulen.pdf', 100, 'application/pdf'),
+            'assignees' => [$kelompokUser->id],
+        ])->assertRedirect('/tasks');
+
+        $task = Task::where('title', 'Tugas Dengan Lampiran')->first();
+        $this->assertSame('https://drive.google.com/drive/folders/15fW3PPfulvzjuiwENBDi2HwDSCR7CeJp', $task->link);
+        $this->assertNotNull($task->attachment);
+        Storage::assertExists($task->attachment);
+
+        // Creator and assignee can fetch the attachment.
+        $this->actingAs($desaUser)->get(route('tasks.attachment', $task))->assertOk();
+        $this->actingAs($kelompokUser)->get(route('tasks.attachment', $task))->assertOk();
+
+        // An unrelated kelompok, who cannot even see this task, cannot fetch its attachment either.
+        $otherGroup = $this->makeGroup($village, 'Kelompok A2');
+        $outsider = $this->makeUser('Kelompok A2', $this->kelompokRole, 'group', $otherGroup->id);
+        $this->actingAs($outsider)->get(route('tasks.attachment', $task))->assertForbidden();
+    }
+
     public function test_bucket_suggestions_are_shared_within_a_role_but_not_across_roles(): void
     {
         $villageA = $this->makeVillage('Desa A');

@@ -9,6 +9,7 @@ use App\Notifications\TaskStatusChanged;
 use App\Support\TaskHierarchy;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
@@ -49,8 +50,10 @@ class TaskController extends Controller
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
             'bucket' => $validated['bucket'] ?? null,
+            'link' => $validated['link'] ?? null,
+            'attachment' => $this->storeAttachment($validated['attachment'] ?? null),
             'priority' => $validated['priority'],
-            'due_date' => $validated['due_date'] ?? null,
+            'due_date' => $validated['due_date'] ?? now()->addDays(Task::DEFAULT_DUE_DATE_DAYS)->toDateString(),
             'assigned_by_id' => $request->user()->id,
             'status' => 'todo',
         ]);
@@ -80,14 +83,22 @@ class TaskController extends Controller
         $actor = $request->user();
         $validated = $this->validateTask($request, $task->assignedBy);
         $previousAssigneeIds = $task->assignees()->pluck('users.id')->all();
+        $oldAttachmentPath = $task->attachment;
+        $newAttachmentPath = $this->storeAttachment($validated['attachment'] ?? null);
 
         $task->update([
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
             'bucket' => $validated['bucket'] ?? null,
+            'link' => $validated['link'] ?? null,
             'priority' => $validated['priority'],
             'due_date' => $validated['due_date'] ?? null,
+            ...($newAttachmentPath !== null ? ['attachment' => $newAttachmentPath] : []),
         ]);
+
+        if ($newAttachmentPath !== null && $oldAttachmentPath !== null) {
+            Storage::delete($oldAttachmentPath);
+        }
 
         $task->assignees()->sync($validated['assignees']);
         $task->load('assignees');
@@ -140,9 +151,25 @@ class TaskController extends Controller
     {
         abort_unless($task->isDeletableBy($request->user()), 403);
 
+        if ($task->attachment !== null) {
+            Storage::delete($task->attachment);
+        }
+
         $task->delete();
 
         return redirect()->route('tasks.index')->with('success', 'Tugas berhasil dihapus.');
+    }
+
+    /**
+     * A task's attachment - viewable by anyone the task is already visible to (its creator or
+     * any of its assignees), mirroring Task::isEditableBy()'s reach.
+     */
+    public function attachment(Request $request, Task $task): StreamedResponse
+    {
+        abort_unless($task->isEditableBy($request->user()), 403);
+        abort_if(blank($task->attachment) || ! Storage::exists($task->attachment), 404);
+
+        return Storage::response($task->attachment);
     }
 
     /**
@@ -175,10 +202,17 @@ class TaskController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'bucket' => ['nullable', 'string', 'max:255'],
+            'link' => ['nullable', 'url', 'max:2048'],
+            'attachment' => ['nullable', 'file', 'max:10240', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png'],
             'priority' => ['required', Rule::in(Task::PRIORITIES)],
             'due_date' => ['nullable', 'date'],
             'assignees' => ['required', 'array', 'min:1'],
             'assignees.*' => ['integer', Rule::in($recipientIds)],
         ]);
+    }
+
+    private function storeAttachment(?UploadedFile $attachment): ?string
+    {
+        return $attachment?->store(Task::ATTACHMENT_DIRECTORY);
     }
 }

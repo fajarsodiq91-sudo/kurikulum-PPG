@@ -20,10 +20,19 @@ class Task extends Model
      */
     public const PRIORITIES = ['low', 'medium', 'high'];
 
+    /**
+     * Default due date offset (H+14) applied when a new task is created without one.
+     */
+    public const DEFAULT_DUE_DATE_DAYS = 14;
+
+    public const ATTACHMENT_DIRECTORY = 'task-attachments';
+
     protected $fillable = [
         'title',
         'description',
         'bucket',
+        'link',
+        'attachment',
         'assigned_by_id',
         'priority',
         'status',

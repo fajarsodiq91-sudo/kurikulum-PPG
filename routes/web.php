@@ -744,6 +744,8 @@ Route::middleware(['auth', 'permission:manage-tasks'])->group(function () {
         ->name('tasks.destroy');
     Route::get('/tasks/recipients/{recipient}/photo', [TaskController::class, 'recipientPhoto'])
         ->name('tasks.recipient-photo');
+    Route::get('/tasks/{task}/attachment', [TaskController::class, 'attachment'])
+        ->name('tasks.attachment');
 });
 
 Route::middleware(['auth', 'permission:manage-users,approve-registrations'])->group(function () {

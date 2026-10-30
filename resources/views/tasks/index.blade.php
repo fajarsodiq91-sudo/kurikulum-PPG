@@ -64,7 +64,7 @@
                 <x-card class="relative">
                     <button type="button" class="absolute right-4 top-4 text-xl leading-none text-slate-400 hover:text-slate-700" aria-label="Tutup" data-create-task-close>&times;</button>
                     <h2 id="create-task-title" class="mb-4 text-xl font-semibold">Tambah Tugas</h2>
-                    <form method="POST" action="{{ route('tasks.store') }}" class="grid gap-4 md:grid-cols-2">
+                    <form method="POST" action="{{ route('tasks.store') }}" enctype="multipart/form-data" class="grid gap-4 md:grid-cols-2">
                         @csrf
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium mb-2" for="title">Judul Tugas</label>
@@ -93,7 +93,17 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-2" for="due_date">Jatuh Tempo</label>
-                            <input id="due_date" name="due_date" type="date" class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('due_date') }}">
+                            <input id="due_date" name="due_date" type="date" class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('due_date', now()->addDays(\App\Models\Task::DEFAULT_DUE_DATE_DAYS)->format('Y-m-d')) }}">
+                            <p class="mt-1 text-xs text-slate-500">Default H+{{ \App\Models\Task::DEFAULT_DUE_DATE_DAYS }} dari hari ini, bisa diubah.</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2" for="link">Link (opsional)</label>
+                            <input id="link" name="link" type="url" placeholder="https://drive.google.com/..." class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('link') }}">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium mb-2" for="attachment">Lampiran File (opsional)</label>
+                            <input id="attachment" name="attachment" type="file" class="w-full rounded-lg border border-slate-300 px-3 py-2 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-sm file:font-medium">
+                            <p class="mt-1 text-xs text-slate-500">PDF, Word, Excel, PowerPoint, atau gambar. Maks. 10 MB.</p>
                         </div>
                         <div class="md:col-span-2">
                             <span class="mb-2 block text-sm font-medium text-slate-700">Ditugaskan Kepada</span>
@@ -165,6 +175,16 @@
                             </div>
                             @if ($task->description)
                                 <p class="mt-2 text-xs leading-5 text-slate-500">{{ $task->description }}</p>
+                            @endif
+                            @if ($task->link || $task->attachment)
+                                <div class="mt-2 flex flex-wrap items-center gap-2">
+                                    @if ($task->link)
+                                        <a href="{{ $task->link }}" target="_blank" rel="noopener" class="text-xs font-medium text-brand-600 hover:underline">🔗 Link</a>
+                                    @endif
+                                    @if ($task->attachment)
+                                        <a href="{{ route('tasks.attachment', $task) }}" target="_blank" class="text-xs font-medium text-brand-600 hover:underline">📎 Lampiran</a>
+                                    @endif
+                                </div>
                             @endif
                             <p class="mt-3 text-xs text-slate-500">Untuk: <span class="font-medium text-slate-700">{{ $task->assignees->pluck('name')->join(', ') }}</span></p>
                             <p class="mt-1 text-xs text-slate-500">Dari: <span class="font-medium text-slate-700">{{ $task->assignedBy?->name ?? '-' }}</span></p>
