@@ -34,6 +34,7 @@ class TaskController extends Controller
             ->sortBy(fn (Collection $group, string $bucket): array => [$bucket === 'Tanpa Kategori' ? 1 : 0, $bucket]);
 
         return view('tasks.index', [
+            'tasks' => $tasks,
             'tasksByStatus' => $tasks->groupBy('status'),
             'tasksByBucket' => $tasksByBucket,
             'assigneeOptions' => $tasks->flatMap(fn (Task $task) => $task->assignees)->unique('id')->sortBy('name')->values(),

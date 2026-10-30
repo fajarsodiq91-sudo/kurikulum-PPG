@@ -140,10 +140,14 @@
                 </select>
             </label>
             <button type="button" id="filter-reset" class="text-sm font-medium text-slate-500 hover:text-slate-800 sm:ml-auto">Hapus Filter</button>
+            <div class="flex items-center gap-1 rounded-lg border border-slate-300 p-0.5 text-sm" role="group" aria-label="Mode tampilan">
+                <button type="button" id="view-mode-bucket" data-view-mode="bucket" class="rounded-md px-3 py-1 font-medium transition">Bucket</button>
+                <button type="button" id="view-mode-list" data-view-mode="list" class="rounded-md px-3 py-1 font-medium transition">Daftar</button>
+            </div>
         </x-card>
     @endif
 
-    <div class="space-y-8">
+    <div id="tasks-view-bucket" class="space-y-8">
         @forelse ($tasksByBucket as $bucket => $bucketTasks)
             <div data-bucket-section>
                 <h3 class="mb-3 flex items-center justify-between text-sm font-semibold text-slate-700">
@@ -152,75 +156,107 @@
                 </h3>
                 <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     @foreach ($bucketTasks as $task)
-                        @php
-                            $meta = $statusMeta[$task->status] ?? null;
-                            $isOverdue = $task->due_date && $task->status !== 'done' && $task->due_date->isPast();
-                        @endphp
-                        <x-card
-                            class="task-card p-4"
-                            data-priority="{{ $task->priority }}"
-                            data-assignee-ids="{{ $task->assignees->pluck('id')->implode(',') }}"
-                        >
-                            <div class="flex items-start justify-between gap-2">
-                                <h4 class="text-sm font-semibold text-slate-900">{{ $task->title }}</h4>
-                                <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium {{ $priorityMeta[$task->priority]['class'] ?? 'bg-slate-100 text-slate-600' }}">{{ $priorityMeta[$task->priority]['label'] ?? $task->priority }}</span>
-                            </div>
-                            <div class="mt-2 flex flex-wrap items-center gap-1.5">
-                                @if ($meta)
-                                    <span class="rounded-full px-2 py-0.5 text-[11px] font-medium {{ $meta['class'] }}">{{ $meta['label'] }}</span>
-                                @endif
-                                @if ($isOverdue)
-                                    <span class="rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-medium text-rose-700">Terlambat</span>
-                                @endif
-                            </div>
-                            @if ($task->description)
-                                <p class="mt-2 text-xs leading-5 text-slate-500">{{ $task->description }}</p>
-                            @endif
-                            @if ($task->link || $task->attachment)
-                                <div class="mt-2 flex flex-wrap items-center gap-2">
-                                    @if ($task->link)
-                                        <a href="{{ $task->link }}" target="_blank" rel="noopener" class="text-xs font-medium text-brand-600 hover:underline">🔗 Link</a>
-                                    @endif
-                                    @if ($task->attachment)
-                                        <a href="{{ route('tasks.attachment', $task) }}" target="_blank" class="text-xs font-medium text-brand-600 hover:underline">📎 Lampiran</a>
-                                    @endif
-                                </div>
-                            @endif
-                            <p class="mt-3 text-xs text-slate-500">Untuk: <span class="font-medium text-slate-700">{{ $task->assignees->pluck('name')->join(', ') }}</span></p>
-                            <p class="mt-1 text-xs text-slate-500">Dari: <span class="font-medium text-slate-700">{{ $task->assignedBy?->name ?? '-' }}</span></p>
-                            @if ($task->due_date)
-                                <p class="mt-1 text-xs {{ $isOverdue ? 'font-medium text-rose-600' : 'text-slate-500' }}">Jatuh tempo: {{ $task->due_date->translatedFormat('d M Y') }}</p>
-                            @endif
-
-                            <div class="mt-3 flex items-center gap-2 border-t border-slate-100 pt-3">
-                                @if ($task->isEditableBy($user) && $meta)
-                                    @if ($meta['next'])
-                                        <form method="POST" action="{{ route('tasks.update-status', $task) }}">
-                                            @csrf
-                                            @method('PATCH')
-                                            <input type="hidden" name="status" value="{{ $meta['next'] }}">
-                                            <button type="submit" class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">{{ $meta['nextLabel'] }}</button>
-                                        </form>
-                                    @else
-                                        <form method="POST" action="{{ route('tasks.update-status', $task) }}">
-                                            @csrf
-                                            @method('PATCH')
-                                            <input type="hidden" name="status" value="todo">
-                                            <button type="submit" class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Buka kembali</button>
-                                        </form>
-                                    @endif
-                                @endif
-                                @if ($task->isEditableBy($user))
-                                    <a href="{{ route('tasks.edit', $task) }}" class="ml-auto rounded-lg px-2 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-900">Ubah</a>
-                                @endif
-                            </div>
-                        </x-card>
+                        @include('tasks.partials.task-card', ['task' => $task, 'statusMeta' => $statusMeta, 'priorityMeta' => $priorityMeta, 'user' => $user])
                     @endforeach
                 </div>
             </div>
         @empty
             <x-empty-state title="Belum ada tugas." class="border-none bg-transparent" />
         @endforelse
+    </div>
+
+    <div id="tasks-view-list" class="hidden">
+        @if ($tasks->isEmpty())
+            <x-empty-state title="Belum ada tugas." class="border-none bg-transparent" />
+        @else
+            <x-card class="overflow-x-auto p-0" data-bucket-section>
+                <table class="min-w-full text-left text-sm">
+                    <thead class="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-400">
+                        <tr>
+                            <th class="px-4 py-3 font-semibold">Judul</th>
+                            <th class="px-4 py-3 font-semibold">Kategori</th>
+                            <th class="px-4 py-3 font-semibold">Prioritas</th>
+                            <th class="px-4 py-3 font-semibold">Status</th>
+                            <th class="px-4 py-3 font-semibold">Untuk</th>
+                            <th class="px-4 py-3 font-semibold">Dari</th>
+                            <th class="px-4 py-3 font-semibold">Jatuh Tempo</th>
+                            <th class="px-4 py-3"><span class="sr-only">Aksi</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($tasks as $task)
+                            @php
+                                $meta = $statusMeta[$task->status] ?? null;
+                                $isOverdue = $task->due_date && $task->status !== 'done' && $task->due_date->isPast();
+                            @endphp
+                            <tr
+                                class="task-card border-b border-slate-100 last:border-0"
+                                data-priority="{{ $task->priority }}"
+                                data-assignee-ids="{{ $task->assignees->pluck('id')->implode(',') }}"
+                            >
+                                <td class="px-4 py-3">
+                                    <p class="font-medium text-slate-900">{{ $task->title }}</p>
+                                    @if ($task->description)
+                                        <p class="mt-0.5 max-w-xs truncate text-xs text-slate-500">{{ $task->description }}</p>
+                                    @endif
+                                    @if ($task->link || $task->attachment)
+                                        <div class="mt-1 flex flex-wrap items-center gap-2">
+                                            @if ($task->link)
+                                                <a href="{{ $task->link }}" target="_blank" rel="noopener" class="text-xs font-medium text-brand-600 hover:underline">🔗 Link</a>
+                                            @endif
+                                            @if ($task->attachment)
+                                                <a href="{{ route('tasks.attachment', $task) }}" target="_blank" class="text-xs font-medium text-brand-600 hover:underline">📎 Lampiran</a>
+                                            @endif
+                                        </div>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3 text-slate-600">{{ $task->bucket ?: '-' }}</td>
+                                <td class="px-4 py-3">
+                                    <span class="rounded-full px-2 py-0.5 text-[11px] font-medium {{ $priorityMeta[$task->priority]['class'] ?? 'bg-slate-100 text-slate-600' }}">{{ $priorityMeta[$task->priority]['label'] ?? $task->priority }}</span>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <div class="flex flex-wrap items-center gap-1.5">
+                                        @if ($meta)
+                                            <span class="rounded-full px-2 py-0.5 text-[11px] font-medium {{ $meta['class'] }}">{{ $meta['label'] }}</span>
+                                        @endif
+                                        @if ($isOverdue)
+                                            <span class="rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-medium text-rose-700">Terlambat</span>
+                                        @endif
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 text-slate-600">{{ $task->assignees->pluck('name')->join(', ') }}</td>
+                                <td class="px-4 py-3 text-slate-600">{{ $task->assignedBy?->name ?? '-' }}</td>
+                                <td class="px-4 py-3 {{ $isOverdue ? 'font-medium text-rose-600' : 'text-slate-600' }}">{{ $task->due_date?->translatedFormat('d M Y') ?? '-' }}</td>
+                                <td class="px-4 py-3 text-right">
+                                    <div class="flex items-center justify-end gap-2">
+                                        @if ($task->isEditableBy($user) && $meta)
+                                            @if ($meta['next'])
+                                                <form method="POST" action="{{ route('tasks.update-status', $task) }}">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <input type="hidden" name="status" value="{{ $meta['next'] }}">
+                                                    <button type="submit" class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">{{ $meta['nextLabel'] }}</button>
+                                                </form>
+                                            @else
+                                                <form method="POST" action="{{ route('tasks.update-status', $task) }}">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <input type="hidden" name="status" value="todo">
+                                                    <button type="submit" class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Buka kembali</button>
+                                                </form>
+                                            @endif
+                                        @endif
+                                        @if ($task->isEditableBy($user))
+                                            <a href="{{ route('tasks.edit', $task) }}" class="rounded-lg px-2 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-900">Ubah</a>
+                                        @endif
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </x-card>
+        @endif
     </div>
 
     <script>
@@ -259,6 +295,53 @@
                     closeModal();
                 }
             });
+        })();
+
+        (function () {
+            const bucketButton = document.getElementById('view-mode-bucket');
+            const listButton = document.getElementById('view-mode-list');
+            const bucketView = document.getElementById('tasks-view-bucket');
+            const listView = document.getElementById('tasks-view-list');
+
+            if (!bucketButton || !listButton || !bucketView || !listView) {
+                return;
+            }
+
+            const storageKey = 'tasks-view-mode';
+            const activeClasses = ['bg-white', 'shadow-sm', 'text-slate-900'];
+            const inactiveClasses = ['text-slate-500'];
+
+            function setMode(mode) {
+                const isList = mode === 'list';
+                bucketView.classList.toggle('hidden', isList);
+                listView.classList.toggle('hidden', !isList);
+                bucketButton.classList.toggle('bg-white', !isList);
+                bucketButton.classList.toggle('shadow-sm', !isList);
+                bucketButton.classList.toggle('text-slate-900', !isList);
+                bucketButton.classList.toggle('text-slate-500', isList);
+                listButton.classList.toggle('bg-white', isList);
+                listButton.classList.toggle('shadow-sm', isList);
+                listButton.classList.toggle('text-slate-900', isList);
+                listButton.classList.toggle('text-slate-500', !isList);
+
+                try {
+                    localStorage.setItem(storageKey, mode);
+                } catch (error) {
+                    // Private browsing or blocked storage - the toggle still works for this page view.
+                }
+            }
+
+            bucketButton.addEventListener('click', () => setMode('bucket'));
+            listButton.addEventListener('click', () => setMode('list'));
+
+            let savedMode = 'bucket';
+            try {
+                savedMode = localStorage.getItem(storageKey) || 'bucket';
+            } catch (error) {
+                savedMode = 'bucket';
+            }
+
+            setMode(savedMode === 'list' ? 'list' : 'bucket');
         })();
 
         (function () {
