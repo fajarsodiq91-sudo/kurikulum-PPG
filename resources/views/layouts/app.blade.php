@@ -12,11 +12,11 @@
     <div class="min-h-screen lg:flex">
         <div id="sidebar-backdrop" class="fixed inset-0 z-30 hidden bg-brand-950/40 lg:hidden" data-sidebar-close></div>
 
-        <aside id="app-sidebar" class="fixed inset-y-0 left-0 z-40 flex w-72 -translate-x-full flex-col border-r border-slate-200 bg-white text-slate-600 shadow-sm transition-transform duration-200 lg:translate-x-0">
+        <aside id="app-sidebar" class="fixed inset-y-0 left-0 z-40 flex w-72 -translate-x-full flex-col border-r border-slate-200 bg-white text-slate-600 shadow-sm transition-all duration-200 lg:translate-x-0">
             @include('layouts.partials.sidebar')
         </aside>
 
-        <div class="flex min-h-screen min-w-0 flex-1 flex-col lg:ml-72">
+        <div id="app-main" class="flex min-h-screen min-w-0 flex-1 flex-col transition-all duration-200 lg:ml-72">
             @include('layouts.partials.topbar')
 
             <main class="flex-1 px-4 py-6 sm:px-6 lg:px-8">

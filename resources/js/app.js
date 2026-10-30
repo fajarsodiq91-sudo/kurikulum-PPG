@@ -67,6 +67,35 @@ sidebarSearch?.addEventListener('input', () => {
 	sidebarEmpty?.classList.toggle('hidden', anyMatch || !query);
 });
 
+const sidebarCollapseToggle = document.querySelector('[data-sidebar-collapse-toggle]');
+const appMain = document.querySelector('#app-main');
+const SIDEBAR_COLLAPSE_KEY = 'sidebar-collapsed';
+
+const applySidebarCollapsed = (collapsed) => {
+	sidebar?.classList.toggle('is-collapsed', collapsed);
+	appMain?.classList.toggle('is-collapsed', collapsed);
+	sidebarCollapseToggle?.setAttribute('aria-pressed', String(collapsed));
+};
+
+try {
+	if (window.localStorage.getItem(SIDEBAR_COLLAPSE_KEY) === '1') {
+		applySidebarCollapsed(true);
+	}
+} catch {
+	// localStorage unavailable (e.g. private browsing) — default to expanded.
+}
+
+sidebarCollapseToggle?.addEventListener('click', () => {
+	const collapsed = !sidebar?.classList.contains('is-collapsed');
+	applySidebarCollapsed(collapsed);
+
+	try {
+		window.localStorage.setItem(SIDEBAR_COLLAPSE_KEY, collapsed ? '1' : '0');
+	} catch {
+		// localStorage unavailable (e.g. private browsing) — state just won't persist.
+	}
+});
+
 const profileToggle = document.querySelector('[data-profile-toggle]');
 const profileMenu = document.querySelector('[data-profile-menu]');
 
