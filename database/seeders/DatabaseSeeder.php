@@ -59,6 +59,7 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Manage My Students', 'slug' => 'manage-my-students', 'module' => 'teachers'],
             ['name' => 'Manage Parent Communications', 'slug' => 'manage-parent-communications', 'module' => 'parent-communications'],
             ['name' => 'Manage Announcements', 'slug' => 'manage-announcements', 'module' => 'announcements'],
+            ['name' => 'Manage Download Files', 'slug' => 'manage-download-files', 'module' => 'download-files'],
         ])->map(fn (array $permission) => Permission::updateOrCreate(
             ['slug' => $permission['slug']],
             [...$permission, 'is_active' => true],
@@ -91,6 +92,13 @@ class DatabaseSeeder extends Seeder
         );
 
         $guestRole->permissions()->syncWithoutDetaching([$viewAnnouncements->id]);
+
+        $viewDownloadFiles = Permission::firstOrCreate(
+            ['slug' => 'view-download-files'],
+            ['name' => 'View Download Files', 'module' => 'download-files', 'is_active' => true],
+        );
+
+        $guestRole->permissions()->syncWithoutDetaching([$viewDownloadFiles->id]);
 
         $admin = User::updateOrCreate(
             ['email' => 'admin@ppg.test'],

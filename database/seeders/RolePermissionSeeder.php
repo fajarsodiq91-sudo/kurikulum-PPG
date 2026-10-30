@@ -21,7 +21,7 @@ class RolePermissionSeeder extends Seeder
         'curriculum', 'learning-materials', 'learning-sessions', 'learning-attendance', 'evaluations',
         'training', 'communication', 'munaqosah', 'ujian', 'report-cards', 'follow-ups', 'progress-tracking',
         'milestones', 'annual-audit', 'organization-units', 'assignments', 'activity-schedules',
-        'activity-executions', 'announcements', 'tasks',
+        'activity-executions', 'announcements', 'tasks', 'download-files',
     ];
 
     /**

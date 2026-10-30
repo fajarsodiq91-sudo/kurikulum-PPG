@@ -11,6 +11,7 @@ use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\CommunicationController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DownloadFileController;
 use App\Http\Controllers\EvaluationController;
 use App\Http\Controllers\EvaluationScoreController;
 use App\Http\Controllers\FaceEnrollmentController;
@@ -343,6 +344,20 @@ Route::middleware(['auth', 'permission:view-learning-materials,manage-learning-m
         ->name('learning-materials.index');
     Route::get('/learning-materials/export', [LearningMaterialController::class, 'export'])
         ->name('learning-materials.export');
+});
+
+Route::middleware(['permission:view-download-files,manage-download-files'])->group(function () {
+    Route::get('/download-files', [DownloadFileController::class, 'index'])
+        ->name('download-files.index');
+});
+
+Route::middleware(['auth', 'permission:manage-download-files'])->group(function () {
+    Route::post('/download-files', [DownloadFileController::class, 'store'])
+        ->name('download-files.store');
+    Route::put('/download-files/{download_file}', [DownloadFileController::class, 'update'])
+        ->name('download-files.update');
+    Route::delete('/download-files/{download_file}', [DownloadFileController::class, 'destroy'])
+        ->name('download-files.destroy');
 });
 
 Route::middleware(['auth', 'permission:manage-learning-materials'])->group(function () {

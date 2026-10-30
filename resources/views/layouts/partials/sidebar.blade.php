@@ -65,6 +65,7 @@
                     ['label' => 'Bab Materi', 'route' => 'material-chapters.index'],
                     ['label' => 'Materi', 'route' => 'learning-materials.index'],
                     ['label' => 'Progress Tracking', 'route' => 'progress-tracks.index', 'permission' => ['view-progress-tracking', 'manage-progress-tracking']],
+                    ['label' => 'Download File', 'route' => 'download-files.index', 'permission' => ['view-download-files', 'manage-download-files']],
                 ]],
                 ['label' => 'Kegiatan Pembinaan', 'icon' => 'clock', 'items' => [
                     ['label' => 'Jadwal Program', 'route' => 'activity-schedules.index', 'permission' => ['view-activity-schedules', 'manage-activity-schedules']],
