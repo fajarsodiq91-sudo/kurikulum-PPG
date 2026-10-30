@@ -87,8 +87,20 @@ class RegistrationController extends Controller
             throw ValidationException::withMessages(['village_id' => 'Pilih desa untuk peran Perwakilan Desa.']);
         }
 
-        if ($scopeType === 'group' && empty($validated['group_id'])) {
-            throw ValidationException::withMessages(['group_id' => 'Pilih kelompok untuk peran Pelaksana Kelompok.']);
+        if ($scopeType === 'group') {
+            if (empty($validated['village_id'])) {
+                throw ValidationException::withMessages(['village_id' => 'Pilih desa untuk peran Pelaksana Kelompok.']);
+            }
+
+            if (empty($validated['group_id'])) {
+                throw ValidationException::withMessages(['group_id' => 'Pilih kelompok untuk peran Pelaksana Kelompok.']);
+            }
+
+            $group = Group::findOrFail($validated['group_id']);
+
+            if ($group->village_id !== (int) $validated['village_id']) {
+                throw ValidationException::withMessages(['group_id' => 'Kelompok yang dipilih tidak sesuai dengan desa.']);
+            }
         }
 
         $scopeId = match ($scopeType) {

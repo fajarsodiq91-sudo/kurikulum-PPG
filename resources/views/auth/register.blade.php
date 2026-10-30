@@ -72,7 +72,7 @@
                     </div>
                 @endforeach
 
-                <div class="mb-4 hidden" data-register-scope="village">
+                <div class="mb-4 hidden" data-register-scope="village group">
                     <label class="block text-sm font-medium text-slate-700 mb-2" for="village_id">Desa</label>
                     <select id="village_id" name="village_id" class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-brand-500 focus:outline-none">
                         <option value="">-- Pilih desa --</option>
@@ -85,9 +85,9 @@
                 <div class="mb-6 hidden" data-register-scope="group">
                     <label class="block text-sm font-medium text-slate-700 mb-2" for="group_id">Kelompok</label>
                     <select id="group_id" name="group_id" class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-brand-500 focus:outline-none">
-                        <option value="">-- Pilih kelompok --</option>
+                        <option value="">-- Pilih desa terlebih dahulu --</option>
                         @foreach ($groups as $group)
-                            <option value="{{ $group->id }}" @selected((string) old('group_id') === (string) $group->id)>{{ $group->village?->name }} / {{ $group->name }}</option>
+                            <option value="{{ $group->id }}" data-village-id="{{ $group->village_id }}" @selected((string) old('group_id') === (string) $group->id)>{{ $group->name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -104,6 +104,27 @@
         const roleSelect = document.querySelector('[data-register-role]');
         const scopeFields = document.querySelectorAll('[data-register-scope]');
         const dapukanFields = document.querySelectorAll('[data-register-dapukan]');
+        const villageSelect = document.getElementById('village_id');
+        const groupSelect = document.getElementById('group_id');
+        const groupOptions = groupSelect ? Array.from(groupSelect.options).filter((option) => option.value !== '') : [];
+
+        function refreshGroupOptions() {
+            if (!groupSelect) {
+                return;
+            }
+
+            const villageId = villageSelect ? villageSelect.value : '';
+            const currentValue = groupSelect.value;
+
+            groupSelect.innerHTML = '';
+            groupSelect.appendChild(new Option(villageId ? '-- Pilih kelompok --' : '-- Pilih desa terlebih dahulu --', ''));
+
+            groupOptions
+                .filter((option) => option.dataset.villageId === villageId)
+                .forEach((option) => groupSelect.appendChild(new Option(option.text, option.value)));
+
+            groupSelect.value = Array.from(groupSelect.options).some((option) => option.value === currentValue) ? currentValue : '';
+        }
 
         function refreshScope() {
             const selected = roleSelect.options[roleSelect.selectedIndex];
@@ -111,7 +132,7 @@
             const roleSlug = selected ? selected.dataset.roleSlug : null;
 
             scopeFields.forEach((field) => {
-                const matches = field.dataset.registerScope === scope;
+                const matches = (field.dataset.registerScope || '').split(' ').includes(scope);
                 field.classList.toggle('hidden', !matches);
                 field.querySelector('select').disabled = !matches;
             });
@@ -121,9 +142,18 @@
                 field.classList.toggle('hidden', !matches);
                 field.querySelector('select').disabled = !matches;
             });
+
+            if (groupSelect) {
+                groupSelect.disabled = groupSelect.disabled || !villageSelect.value;
+            }
+
+            refreshGroupOptions();
         }
 
         roleSelect.addEventListener('change', refreshScope);
+        if (villageSelect) {
+            villageSelect.addEventListener('change', refreshGroupOptions);
+        }
         refreshScope();
     </script>
 </body>

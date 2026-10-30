@@ -184,13 +184,14 @@ class GoogleRegistrationTest extends TestCase
 
     public function test_a_pending_account_is_told_to_wait_and_an_approved_account_can_then_sign_in(): void
     {
-        $group = Group::create(['village_id' => Village::create(['region_id' => Region::karawangTimur()->id, 'name' => 'Desa Dua', 'is_active' => true])->id, 'name' => 'Kelompok Dua', 'is_active' => true]);
+        $village = Village::create(['region_id' => Region::karawangTimur()->id, 'name' => 'Desa Dua', 'is_active' => true]);
+        $group = Group::create(['village_id' => $village->id, 'name' => 'Kelompok Dua', 'is_active' => true]);
         $role = $this->selfRegisterableRole('pelaksana-ppg-kelompok', 'Pelaksana PPG Kelompok');
         $dapukan = $this->selfRegisterableDapukan('pelaksana-ppg-kelompok', 'Unsur Pembina Generus');
 
         $this->mockGoogleUser('kelompok@gmail.com', 'Pelaksana Kelompok');
         $this->get('/login/google/callback');
-        $this->post('/register', ['name' => 'Pelaksana Kelompok', 'role_id' => $role->id, 'dapukan_id' => $dapukan->id, 'group_id' => $group->id]);
+        $this->post('/register', ['name' => 'Pelaksana Kelompok', 'role_id' => $role->id, 'dapukan_id' => $dapukan->id, 'village_id' => $village->id, 'group_id' => $group->id]);
 
         $this->mockGoogleUser('kelompok@gmail.com', 'Pelaksana Kelompok');
         $this->get('/login/google/callback')->assertRedirect('/login')->assertSessionHasErrors('login');
