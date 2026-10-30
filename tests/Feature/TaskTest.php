@@ -248,6 +248,29 @@ class TaskTest extends TestCase
         $this->assertDatabaseMissing('tasks', ['id' => $task->id]);
     }
 
+    public function test_edit_page_renders_the_assignee_picker_with_current_assignees_preselected(): void
+    {
+        $village = $this->makeVillage('Desa A');
+        $group = $this->makeGroup($village, 'Kelompok A1');
+        $desaUser = $this->makeUser('Desa A', $this->desaRole, 'village', $village->id);
+        $kelompokUser = $this->makeUser('Kelompok A1', $this->kelompokRole, 'group', $group->id);
+
+        $task = Task::create([
+            'title' => 'Tugas Rapat',
+            'priority' => 'medium',
+            'status' => 'todo',
+            'assigned_by_id' => $desaUser->id,
+        ]);
+        $task->assignees()->attach($kelompokUser->id);
+
+        $this->actingAs($desaUser)
+            ->get("/tasks/{$task->id}/edit")
+            ->assertOk()
+            ->assertSee('data-assignee-picker', false)
+            ->assertSee($kelompokUser->name)
+            ->assertSee('data-selected="['.$kelompokUser->id.']"', false);
+    }
+
     public function test_creating_a_task_emails_its_assignees(): void
     {
         Notification::fake();

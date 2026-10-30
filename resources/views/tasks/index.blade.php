@@ -65,17 +65,7 @@
                 </div>
                 <div class="md:col-span-2">
                     <span class="mb-2 block text-sm font-medium text-slate-700">Ditugaskan Kepada</span>
-                    <div class="max-h-56 space-y-2 overflow-y-auto rounded-lg border border-slate-300 p-3">
-                        @php $selectedAssigneeIds = old('assignees', []); @endphp
-                        @forelse ($recipients as $recipient)
-                            <label class="flex items-center gap-2 text-sm text-slate-700">
-                                <input type="checkbox" name="assignees[]" value="{{ $recipient->id }}" @checked(in_array($recipient->id, $selectedAssigneeIds))>
-                                <span>{{ $recipient->name }}@if ($recipient->roles->isNotEmpty()) <span class="text-xs text-slate-400">({{ $recipient->roles->pluck('name')->join(', ') }})</span>@endif</span>
-                            </label>
-                        @empty
-                            <p class="text-sm text-slate-400">Tidak ada penerima yang tersedia.</p>
-                        @endforelse
-                    </div>
+                    @include('tasks.partials.assignee-picker', ['recipients' => $recipients, 'selectedIds' => old('assignees', [])])
                     <p class="mt-1 text-xs text-slate-500">Hanya pengurus di jalur vertikal Anda (atasan dan cabang Anda sendiri) yang bisa dipilih.</p>
                 </div>
                 <div class="md:col-span-2">
