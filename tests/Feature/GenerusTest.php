@@ -377,6 +377,43 @@ class GenerusTest extends TestCase
         ]);
     }
 
+    public function test_import_allows_blank_level_code_while_keeping_other_placement_fields_required(): void
+    {
+        [$user, $region, $village, $group] = $this->createGenerusImportContext();
+
+        $xlsx = Excel::raw(new class($region, $village, $group) implements FromArray, WithHeadings
+        {
+            public function __construct(private Region $region, private Village $village, private Group $group) {}
+
+            public function headings(): array
+            {
+                return ['registration_number', 'full_name', 'status', 'region_code', 'village_code', 'group_code', 'level_code'];
+            }
+
+            public function array(): array
+            {
+                return [
+                    ['PPG-NOLEVEL-001', 'Generus Tanpa Jenjang', 'active', $this->region->code, $this->village->code, $this->group->code, ''],
+                ];
+            }
+        }, ExcelWriter::XLSX);
+
+        $this->actingAs($user)
+            ->post('/generus/import', [
+                'file' => UploadedFile::fake()->createWithContent('generus.xlsx', $xlsx),
+            ])
+            ->assertRedirect('/generus')
+            ->assertSessionHasNoErrors();
+
+        $generus = Generus::where('registration_number', 'PPG-NOLEVEL-001')->first();
+        $this->assertNotNull($generus);
+        $this->assertDatabaseHas('generus_assignments', [
+            'generus_id' => $generus->id,
+            'group_id' => $group->id,
+            'level_id' => null,
+        ]);
+    }
+
     public function test_group_scoped_user_only_sees_generus_in_own_group(): void
     {
         [, , $village, $group] = $this->createGenerusImportContext();

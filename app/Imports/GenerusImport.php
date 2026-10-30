@@ -110,6 +110,7 @@ class GenerusImport implements OnEachRow, WithChunkReading, WithHeadingRow
             'group_code',
             'level_code',
         ]);
+        $requiredPlacementFields = collect(['region_code', 'village_code', 'group_code']);
         $hasAssignment = $assignmentFields->contains(fn (string $field): bool => filled($validated[$field] ?? null));
 
         if (Generus::onlyTrashed()->where('registration_number', $validated['registration_number'])->exists()) {
@@ -140,8 +141,8 @@ class GenerusImport implements OnEachRow, WithChunkReading, WithHeadingRow
             return;
         }
 
-        if ($assignmentFields->contains(fn (string $field): bool => blank($validated[$field] ?? null))) {
-            $this->addErrors($row->getIndex(), ['Kolom penempatan harus diisi lengkap atau seluruhnya dikosongkan.']);
+        if ($requiredPlacementFields->contains(fn (string $field): bool => blank($validated[$field] ?? null))) {
+            $this->addErrors($row->getIndex(), ['Kolom wilayah, kelompok, dan desa harus diisi lengkap atau seluruhnya dikosongkan.']);
 
             return;
         }
@@ -149,12 +150,23 @@ class GenerusImport implements OnEachRow, WithChunkReading, WithHeadingRow
         $region = $this->findRegion($validated['region_code']);
         $village = $this->findVillage($validated['region_code'], $validated['village_code'], $region?->id);
         $group = $this->findGroup($validated['village_code'], $validated['group_code'], $village?->id);
-        $level = $this->findLevel($validated['level_code']);
 
-        if (! $region || ! $village || ! $group || ! $level) {
-            $this->addErrors($row->getIndex(), ['Kode wilayah atau jenjang tidak ditemukan atau tidak aktif.']);
+        if (! $region || ! $village || ! $group) {
+            $this->addErrors($row->getIndex(), ['Kode wilayah tidak ditemukan atau tidak aktif.']);
 
             return;
+        }
+
+        $level = null;
+
+        if (filled($validated['level_code'] ?? null)) {
+            $level = $this->findLevel($validated['level_code']);
+
+            if (! $level) {
+                $this->addErrors($row->getIndex(), ['Kode jenjang tidak ditemukan atau tidak aktif.']);
+
+                return;
+            }
         }
 
         if ($this->isScopedUser() && ! $this->user->coversPlacement(Generus::MANAGE_PERMISSION, $region->id, $village->id, $group->id)) {
@@ -175,7 +187,7 @@ class GenerusImport implements OnEachRow, WithChunkReading, WithHeadingRow
                     'region_id' => $region->id,
                     'village_id' => $village->id,
                     'group_id' => $group->id,
-                    'level_id' => $level->id,
+                    'level_id' => $level?->id,
                     'assigned_at' => now()->toDateString(),
                     'notes' => $validated['assignment_notes'] ?? null,
                 ],
