@@ -6,6 +6,7 @@ use App\Models\Dapukan;
 use App\Models\Group;
 use App\Models\User;
 use App\Models\Village;
+use App\Notifications\RegistrationDecided;
 use App\Support\RegistrationApproval;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -32,12 +33,16 @@ class RegistrationApprovalController extends Controller
         $user->update(['status' => 'active']);
         $user->roles()->updateExistingPivot($role->id, ['is_active' => true]);
 
+        $user->notify(new RegistrationDecided(approved: true));
+
         return redirect()->route('registrations.pending')->with('success', 'Pendaftaran berhasil disetujui.');
     }
 
     public function reject(Request $request, User $user): RedirectResponse
     {
         abort_unless(RegistrationApproval::canApprove($request->user(), $user), 403);
+
+        $user->notify(new RegistrationDecided(approved: false));
 
         $user->roles()->detach();
         $user->delete();

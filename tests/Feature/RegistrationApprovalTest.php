@@ -8,7 +8,9 @@ use App\Models\Region;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Village;
+use App\Notifications\RegistrationDecided;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class RegistrationApprovalTest extends TestCase
@@ -135,5 +137,35 @@ class RegistrationApprovalTest extends TestCase
         $this->actingAs($approver)->post("/registrations/{$pending->id}/reject")->assertRedirect(route('registrations.pending'));
 
         $this->assertModelMissing($pending);
+    }
+
+    public function test_approving_a_registration_emails_the_applicant(): void
+    {
+        Notification::fake();
+
+        $approver = $this->activeUser('pelaksana-ppg-kelompok', 'group', $this->groupA1->id, 'Unsur Pembina Generus');
+        $pending = $this->pendingUser('pelaksana-ppg-kelompok', 'group', $this->groupA1->id, 'Bidang BK');
+
+        $this->actingAs($approver)->post("/registrations/{$pending->id}/approve")->assertRedirect(route('registrations.pending'));
+
+        Notification::assertSentTo(
+            $pending,
+            fn (RegistrationDecided $notification): bool => $notification->toMail($pending)->subject === 'Pendaftaran Anda Disetujui'
+        );
+    }
+
+    public function test_rejecting_a_registration_emails_the_applicant_before_deleting_it(): void
+    {
+        Notification::fake();
+
+        $approver = $this->activeUser('pelaksana-ppg-kelompok', 'group', $this->groupA1->id, 'Unsur Pembina Generus');
+        $pending = $this->pendingUser('pelaksana-ppg-kelompok', 'group', $this->groupA1->id, 'Bidang BK');
+
+        $this->actingAs($approver)->post("/registrations/{$pending->id}/reject")->assertRedirect(route('registrations.pending'));
+
+        Notification::assertSentTo(
+            $pending,
+            fn (RegistrationDecided $notification): bool => $notification->toMail($pending)->subject === 'Pendaftaran Anda Ditolak'
+        );
     }
 }

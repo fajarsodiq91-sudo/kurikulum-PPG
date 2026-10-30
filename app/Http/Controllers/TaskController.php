@@ -4,9 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Task;
 use App\Models\User;
+use App\Notifications\TaskNotification;
+use App\Notifications\TaskStatusChanged;
 use App\Support\TaskHierarchy;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -45,6 +48,8 @@ class TaskController extends Controller
 
         $task->assignees()->sync($validated['assignees']);
 
+        Notification::send($task->assignees, new TaskNotification($task, 'created'));
+
         return redirect()->route('tasks.index')->with('success', 'Tugas berhasil dibuat.');
     }
 
@@ -74,6 +79,8 @@ class TaskController extends Controller
 
         $task->assignees()->sync($validated['assignees']);
 
+        Notification::send($task->assignees, new TaskNotification($task, 'updated'));
+
         return redirect()->route('tasks.index')->with('success', 'Tugas berhasil diperbarui.');
     }
 
@@ -89,6 +96,10 @@ class TaskController extends Controller
             'status' => $validated['status'],
             'completed_at' => $validated['status'] === 'done' ? now() : null,
         ]);
+
+        if (! $task->assignedBy->is($request->user())) {
+            $task->assignedBy->notify(new TaskStatusChanged($task, $request->user()));
+        }
 
         return back()->with('success', 'Status tugas berhasil diperbarui.');
     }

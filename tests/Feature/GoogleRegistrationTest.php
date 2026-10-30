@@ -9,7 +9,9 @@ use App\Models\Region;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Village;
+use App\Notifications\RegistrationSubmitted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Laravel\Socialite\Contracts\User as SocialiteUser;
 use Laravel\Socialite\Facades\Socialite;
 use Mockery;
@@ -89,6 +91,35 @@ class GoogleRegistrationTest extends TestCase
         $this->assertSame($dapukan->id, $pivot->dapukan_id);
         $this->assertFalse((bool) $pivot->is_active);
         $this->assertFalse($user->hasPermission('view-generus'));
+    }
+
+    public function test_registering_emails_the_approver_for_that_scope_but_not_an_unrelated_desa_approver(): void
+    {
+        Notification::fake();
+
+        $village = Village::create(['region_id' => Region::karawangTimur()->id, 'name' => 'Desa Satu', 'is_active' => true]);
+        $otherVillage = Village::create(['region_id' => Region::karawangTimur()->id, 'name' => 'Desa Lain', 'is_active' => true]);
+        $role = $this->selfRegisterableRole('perwakilan-ppg-desa', 'Perwakilan PPG Desa');
+        $dapukan = $this->selfRegisterableDapukan('perwakilan-ppg-desa', 'Pembina Desa');
+
+        $approver = User::create(['name' => 'Approver Desa Satu', 'email' => 'approver-satu@ppg.test', 'status' => 'active']);
+        $approver->assignRole($role->id, 'village', $village->id, $dapukan->id);
+
+        $unrelatedApprover = User::create(['name' => 'Approver Desa Lain', 'email' => 'approver-lain@ppg.test', 'status' => 'active']);
+        $unrelatedApprover->assignRole($role->id, 'village', $otherVillage->id, $dapukan->id);
+
+        $this->mockGoogleUser('desa@gmail.com', 'Perwakilan Desa');
+        $this->get('/login/google/callback');
+
+        $this->post('/register', [
+            'name' => 'Perwakilan Desa',
+            'role_id' => $role->id,
+            'dapukan_id' => $dapukan->id,
+            'village_id' => $village->id,
+        ])->assertRedirect('/login');
+
+        Notification::assertSentTo($approver, RegistrationSubmitted::class);
+        Notification::assertNotSentTo($unrelatedApprover, RegistrationSubmitted::class);
     }
 
     public function test_registering_as_perwakilan_desa_or_pelaksana_kelompok_requires_the_matching_scope(): void

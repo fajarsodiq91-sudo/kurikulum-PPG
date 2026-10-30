@@ -6,6 +6,7 @@ use App\Models\Dapukan;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 
 /**
  * Who may approve a pending self-registration, following the organisation hierarchy: a
@@ -43,6 +44,20 @@ class RegistrationApproval
                 });
             }
         });
+    }
+
+    /**
+     * Every active user who may approve this pending registration, to notify about it.
+     *
+     * @return EloquentCollection<int, User>
+     */
+    public static function approversFor(User $pending): EloquentCollection
+    {
+        return User::where('status', 'active')
+            ->with('roles.permissions')
+            ->get()
+            ->filter(fn (User $approver): bool => self::canApprove($approver, $pending))
+            ->values();
     }
 
     public static function canApprove(User $approver, User $pending): bool

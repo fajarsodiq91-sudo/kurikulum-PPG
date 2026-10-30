@@ -8,8 +8,11 @@ use App\Models\Group;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Village;
+use App\Notifications\RegistrationSubmitted;
+use App\Support\RegistrationApproval;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -106,6 +109,9 @@ class RegistrationController extends Controller
         ]);
 
         $request->session()->forget('google_registration');
+
+        $user->load('roles');
+        Notification::send(RegistrationApproval::approversFor($user), new RegistrationSubmitted($user));
 
         return redirect()->route('login')->with('success', 'Pendaftaran Anda telah terkirim dan menunggu persetujuan admin.');
     }

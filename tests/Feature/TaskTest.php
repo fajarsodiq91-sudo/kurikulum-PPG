@@ -9,8 +9,11 @@ use App\Models\Role;
 use App\Models\Task;
 use App\Models\User;
 use App\Models\Village;
+use App\Notifications\TaskNotification;
+use App\Notifications\TaskStatusChanged;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class TaskTest extends TestCase
@@ -243,5 +246,58 @@ class TaskTest extends TestCase
 
         $this->actingAs($superAdmin)->delete("/tasks/{$task->id}")->assertRedirect('/tasks');
         $this->assertDatabaseMissing('tasks', ['id' => $task->id]);
+    }
+
+    public function test_creating_a_task_emails_its_assignees(): void
+    {
+        Notification::fake();
+
+        $village = $this->makeVillage('Desa A');
+        $group = $this->makeGroup($village, 'Kelompok A1');
+        $desaUser = $this->makeUser('Desa A', $this->desaRole, 'village', $village->id);
+        $kelompokUser = $this->makeUser('Kelompok A1', $this->kelompokRole, 'group', $group->id);
+
+        $this->actingAs($desaUser)->post('/tasks', [
+            'title' => 'Tugas Baru',
+            'priority' => 'medium',
+            'assignees' => [$kelompokUser->id],
+        ])->assertRedirect('/tasks');
+
+        Notification::assertSentTo(
+            $kelompokUser,
+            fn (TaskNotification $notification): bool => $notification->toMail($kelompokUser)->subject === 'Tugas Baru: Tugas Baru'
+        );
+        Notification::assertNotSentTo($desaUser, TaskNotification::class);
+    }
+
+    public function test_updating_task_status_emails_the_assigner_unless_the_assigner_made_the_change(): void
+    {
+        $village = $this->makeVillage('Desa A');
+        $group = $this->makeGroup($village, 'Kelompok A1');
+        $desaUser = $this->makeUser('Desa A', $this->desaRole, 'village', $village->id);
+        $kelompokUser = $this->makeUser('Kelompok A1', $this->kelompokRole, 'group', $group->id);
+
+        $task = Task::create([
+            'title' => 'Tugas Rapat',
+            'priority' => 'medium',
+            'status' => 'todo',
+            'assigned_by_id' => $desaUser->id,
+        ]);
+        $task->assignees()->attach($kelompokUser->id);
+
+        Notification::fake();
+
+        $this->actingAs($kelompokUser)
+            ->patch("/tasks/{$task->id}/status", ['status' => 'done'])
+            ->assertRedirect();
+
+        Notification::assertSentToTimes($desaUser, TaskStatusChanged::class, 1);
+
+        $this->actingAs($desaUser)
+            ->patch("/tasks/{$task->id}/status", ['status' => 'in_progress'])
+            ->assertRedirect();
+
+        // Desa changed the status itself, so the notification count to it stays at 1 (no self-notification).
+        Notification::assertSentToTimes($desaUser, TaskStatusChanged::class, 1);
     }
 }
