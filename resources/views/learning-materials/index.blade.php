@@ -5,6 +5,10 @@
 @section('breadcrumb', 'Kurikulum / Materi')
 
 @section('content')
+    @php
+        $formShouldOpen = $errors->any();
+    @endphp
+
     <div class="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
             <p class="text-sm font-semibold text-amber-600">Kurikulum</p>
@@ -14,6 +18,9 @@
         @if (\App\Support\Access::can('manage-learning-materials'))
             <div class="flex flex-wrap gap-3">
                 <a href="{{ route('learning-materials.export') }}" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Export XLSX</a>
+                <button type="button" id="open-create-learning-material" class="inline-flex shrink-0 items-center justify-center rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">
+                    + Tambah Materi
+                </button>
             </div>
         @endif
     </div>
@@ -41,63 +48,70 @@
         <x-filter-select name="academic_year_id" label="Tahun" :options="$academicYears" />
     </x-filter-bar>
 
-    <div class="grid gap-6 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.5fr)]">
-        @if (\App\Support\Access::can('manage-learning-materials'))
-            <div class="lg:col-span-1 rounded-xl bg-white p-6 shadow-sm border border-slate-200">
-                <h2 class="text-xl font-semibold mb-4">Tambah Materi</h2>
-                <form method="POST" action="{{ route('learning-materials.store') }}">
-                    @csrf
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="material_chapter_id">Bab</label>
-                        <select id="material_chapter_id" name="material_chapter_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                            <option value="">-- Pilih --</option>
-                            @foreach($chapters as $chapter)
-                                <option value="{{ $chapter->id }}">
-                                    {{ $chapter->materialCategory->classGrade?->name }} - {{ $chapter->materialCategory->semester?->name }} - {{ $chapter->materialCategory->name }} - {{ $chapter->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="title">Judul Materi</label>
-                        <input id="title" name="title" type="text" required class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="code">Kode</label>
-                        <input id="code" name="code" type="text" required class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="week_number">Minggu ke- (dalam semester)</label>
-                        <input id="week_number" name="week_number" type="number" min="1" max="52" class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                        <p class="mt-1 text-xs text-slate-500">Dipakai untuk membuat jadwal KBM mingguan yang sama di seluruh kelompok.</p>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="academic_year_id">Tahun (opsional)</label>
-                        <select id="academic_year_id" name="academic_year_id" class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                            <option value="">-- Semua Tahun --</option>
-                            @foreach($academicYears as $year)
-                                <option value="{{ $year->id }}">{{ $year->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="description">Deskripsi</label>
-                        <textarea id="description" name="description" rows="3" class="w-full rounded-lg border border-slate-300 px-3 py-2"></textarea>
-                    </div>
-                    <div class="mb-4">
-                        <label class="inline-flex items-center gap-2 text-sm">
-                            <input type="checkbox" name="is_active" value="1" checked>
-                            Aktif
-                        </label>
-                    </div>
-                    <button type="submit" class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">
-                        Simpan
-                    </button>
-                </form>
-            </div>
-        @endif
+    @if (\App\Support\Access::can('manage-learning-materials'))
+        <div id="create-learning-material-backdrop" class="fixed inset-0 z-40 bg-slate-900/50 {{ $formShouldOpen ? '' : 'hidden' }}" data-create-learning-material-close></div>
 
-        <div class="lg:col-span-2 rounded-xl bg-white p-6 shadow-sm border border-slate-200">
+        <div id="create-learning-material-modal" class="fixed inset-0 z-50 overflow-y-auto p-4 sm:p-6 {{ $formShouldOpen ? '' : 'hidden' }}" role="dialog" aria-modal="true" aria-labelledby="create-learning-material-title">
+            <div class="mx-auto my-6 w-full max-w-lg">
+                <x-card class="relative">
+                    <button type="button" class="absolute right-4 top-4 text-xl leading-none text-slate-400 hover:text-slate-700" aria-label="Tutup" data-create-learning-material-close>&times;</button>
+                    <h2 id="create-learning-material-title" class="mb-4 text-xl font-semibold">Tambah Materi</h2>
+                    <form method="POST" action="{{ route('learning-materials.store') }}">
+                        @csrf
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-2" for="material_chapter_id">Bab</label>
+                            <select id="material_chapter_id" name="material_chapter_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                                <option value="">-- Pilih --</option>
+                                @foreach($chapters as $chapter)
+                                    <option value="{{ $chapter->id }}" @selected(old('material_chapter_id') == $chapter->id)>
+                                        {{ $chapter->materialCategory->classGrade?->name }} - {{ $chapter->materialCategory->semester?->name }} - {{ $chapter->materialCategory->name }} - {{ $chapter->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-2" for="title">Judul Materi</label>
+                            <input id="title" name="title" type="text" required class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('title') }}">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-2" for="code">Kode</label>
+                            <input id="code" name="code" type="text" required class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('code') }}">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-2" for="week_number">Minggu ke- (dalam semester)</label>
+                            <input id="week_number" name="week_number" type="number" min="1" max="52" class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('week_number') }}">
+                            <p class="mt-1 text-xs text-slate-500">Dipakai untuk membuat jadwal KBM mingguan yang sama di seluruh kelompok.</p>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-2" for="academic_year_id">Tahun (opsional)</label>
+                            <select id="academic_year_id" name="academic_year_id" class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                                <option value="">-- Semua Tahun --</option>
+                                @foreach($academicYears as $year)
+                                    <option value="{{ $year->id }}" @selected(old('academic_year_id') == $year->id)>{{ $year->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-2" for="description">Deskripsi</label>
+                            <textarea id="description" name="description" rows="3" class="w-full rounded-lg border border-slate-300 px-3 py-2">{{ old('description') }}</textarea>
+                        </div>
+                        <div class="mb-4">
+                            <label class="inline-flex items-center gap-2 text-sm">
+                                <input type="checkbox" name="is_active" value="1" @checked(old('is_active', true))>
+                                Aktif
+                            </label>
+                        </div>
+                        <button type="submit" class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">
+                            Simpan
+                        </button>
+                    </form>
+                </x-card>
+            </div>
+        </div>
+    @endif
+
+    <div class="grid gap-6">
+        <div class="rounded-xl bg-white p-6 shadow-sm border border-slate-200">
             <h2 class="text-xl font-semibold mb-4">Daftar Materi</h2>
             <div class="overflow-x-auto">
                 <table class="min-w-full text-left text-sm">
@@ -144,4 +158,43 @@
             <div class="mt-4">{{ $materials->links() }}</div>
         </div>
     </div>
+
+    <script>
+        (function () {
+            const openButton = document.getElementById('open-create-learning-material');
+            const backdrop = document.getElementById('create-learning-material-backdrop');
+            const modal = document.getElementById('create-learning-material-modal');
+
+            if (!openButton || !backdrop || !modal) {
+                return;
+            }
+
+            function openModal() {
+                backdrop.classList.remove('hidden');
+                modal.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden');
+            }
+
+            function closeModal() {
+                backdrop.classList.add('hidden');
+                modal.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+            }
+
+            openButton.addEventListener('click', openModal);
+            document.querySelectorAll('[data-create-learning-material-close]').forEach(function (el) {
+                el.addEventListener('click', closeModal);
+            });
+            modal.addEventListener('click', function (event) {
+                if (event.target === modal) {
+                    closeModal();
+                }
+            });
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
+                    closeModal();
+                }
+            });
+        })();
+    </script>
 @endsection
