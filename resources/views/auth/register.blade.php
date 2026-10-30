@@ -15,7 +15,7 @@
                 <img src="{{ asset('images/logo-ppg-karawang-timur.png') }}" alt="Logo PPG Karawang Timur" class="h-12 w-12 object-contain">
                 <div>
                     <p class="text-sm font-bold text-slate-800">PPG Karawang Timur</p>
-                    <p class="text-xs text-slate-500">Management & Learning Monitoring System</p>
+                    <p class="text-xs text-slate-500">Bidang Pendidikan</p>
                 </div>
             </div>
 
