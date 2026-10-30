@@ -122,6 +122,27 @@ class GoogleRegistrationTest extends TestCase
         Notification::assertNotSentTo($unrelatedApprover, RegistrationSubmitted::class);
     }
 
+    public function test_registering_still_succeeds_even_if_notifying_the_approver_fails(): void
+    {
+        Notification::shouldReceive('send')->once()->andThrow(new \RuntimeException('SMTP down'));
+
+        $village = Village::create(['region_id' => Region::karawangTimur()->id, 'name' => 'Desa Satu', 'is_active' => true]);
+        $role = $this->selfRegisterableRole('perwakilan-ppg-desa', 'Perwakilan PPG Desa');
+        $dapukan = $this->selfRegisterableDapukan('perwakilan-ppg-desa', 'Pembina Desa');
+
+        $this->mockGoogleUser('desa@gmail.com', 'Perwakilan Desa');
+        $this->get('/login/google/callback');
+
+        $this->post('/register', [
+            'name' => 'Perwakilan Desa',
+            'role_id' => $role->id,
+            'dapukan_id' => $dapukan->id,
+            'village_id' => $village->id,
+        ])->assertRedirect('/login');
+
+        $this->assertDatabaseHas('users', ['email' => 'desa@gmail.com', 'status' => 'pending']);
+    }
+
     public function test_registering_as_perwakilan_desa_or_pelaksana_kelompok_requires_the_matching_scope(): void
     {
         $role = $this->selfRegisterableRole('perwakilan-ppg-desa', 'Perwakilan PPG Desa');

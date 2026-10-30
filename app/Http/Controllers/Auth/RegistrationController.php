@@ -12,10 +12,12 @@ use App\Notifications\RegistrationSubmitted;
 use App\Support\RegistrationApproval;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Throwable;
 
 class RegistrationController extends Controller
 {
@@ -111,7 +113,15 @@ class RegistrationController extends Controller
         $request->session()->forget('google_registration');
 
         $user->load('roles');
-        Notification::send(RegistrationApproval::approversFor($user), new RegistrationSubmitted($user));
+
+        try {
+            Notification::send(RegistrationApproval::approversFor($user), new RegistrationSubmitted($user));
+        } catch (Throwable $e) {
+            Log::error('Gagal mengirim notifikasi pendaftaran baru ke approver.', [
+                'user_id' => $user->id,
+                'exception' => $e,
+            ]);
+        }
 
         return redirect()->route('login')->with('success', 'Pendaftaran Anda telah terkirim dan menunggu persetujuan admin.');
     }
