@@ -8,6 +8,7 @@ class GradeScale extends Model
 {
     protected $fillable = [
         'grade',
+        'predikat',
         'min_score',
         'max_score',
         'description',

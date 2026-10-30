@@ -13,13 +13,13 @@ class GradeScaleSheet extends Sheet
 
     public function headings(): array
     {
-        return ['grade', 'min_score', 'max_score', 'description', 'sort_order', 'status'];
+        return ['grade', 'predikat', 'min_score', 'max_score', 'description', 'sort_order', 'status'];
     }
 
     public function rows(): iterable
     {
         foreach (GradeScale::orderBy('sort_order')->orderByDesc('min_score')->cursor() as $scale) {
-            yield [$scale->grade, $scale->min_score, $scale->max_score, $scale->description, $scale->sort_order, self::activeLabel($scale->is_active)];
+            yield [$scale->grade, $scale->predikat, $scale->min_score, $scale->max_score, $scale->description, $scale->sort_order, self::activeLabel($scale->is_active)];
         }
     }
 
@@ -27,6 +27,7 @@ class GradeScaleSheet extends Sheet
     {
         [$data, $error] = $this->validated($row, [
             'grade' => ['required', 'string', 'max:10'],
+            'predikat' => ['nullable', 'string', 'max:50'],
             'min_score' => ['required', 'integer', 'min:0', 'max:100'],
             'max_score' => ['required', 'integer', 'min:0', 'max:100', 'gte:min_score'],
             'description' => ['nullable', 'string'],
@@ -39,6 +40,7 @@ class GradeScaleSheet extends Sheet
         }
 
         GradeScale::updateOrCreate(['grade' => trim($data['grade'])], [
+            'predikat' => $data['predikat'] ?? null,
             'min_score' => (int) $data['min_score'],
             'max_score' => (int) $data['max_score'],
             'description' => $data['description'] ?? null,

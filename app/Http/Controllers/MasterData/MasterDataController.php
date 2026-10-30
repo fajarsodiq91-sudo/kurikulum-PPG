@@ -283,6 +283,7 @@ class MasterDataController extends Controller
     {
         $validated = $request->validate([
             'grade' => ['required', 'string', 'max:10', 'unique:grade_scales,grade'],
+            'predikat' => ['nullable', 'string', 'max:50'],
             'min_score' => ['required', 'integer', 'min:0', 'max:100'],
             'max_score' => ['required', 'integer', 'min:0', 'max:100', 'gte:min_score'],
             'description' => ['nullable', 'string'],
@@ -298,6 +299,7 @@ class MasterDataController extends Controller
     {
         $validated = $request->validate([
             'grade' => ['required', 'string', 'max:10', Rule::unique('grade_scales', 'grade')->ignore($gradeScale->id)],
+            'predikat' => ['nullable', 'string', 'max:50'],
             'min_score' => ['required', 'integer', 'min:0', 'max:100'],
             'max_score' => ['required', 'integer', 'min:0', 'max:100', 'gte:min_score'],
             'description' => ['nullable', 'string'],
