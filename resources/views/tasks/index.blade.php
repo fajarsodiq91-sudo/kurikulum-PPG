@@ -7,9 +7,9 @@
 @section('content')
     @php
         $statusMeta = [
-            'todo' => ['label' => 'Belum Dikerjakan', 'next' => 'in_progress', 'nextLabel' => 'Mulai →'],
-            'in_progress' => ['label' => 'Sedang Dikerjakan', 'next' => 'done', 'nextLabel' => 'Selesai →'],
-            'done' => ['label' => 'Selesai', 'next' => null, 'nextLabel' => null],
+            'todo' => ['label' => 'Belum Dikerjakan', 'next' => 'in_progress', 'nextLabel' => 'Mulai →', 'class' => 'bg-slate-100 text-slate-600'],
+            'in_progress' => ['label' => 'Sedang Dikerjakan', 'next' => 'done', 'nextLabel' => 'Selesai →', 'class' => 'bg-sky-100 text-sky-700'],
+            'done' => ['label' => 'Selesai', 'next' => null, 'nextLabel' => null, 'class' => 'bg-emerald-100 text-emerald-700'],
         ];
         $priorityMeta = [
             'high' => ['label' => 'Tinggi', 'class' => 'bg-rose-100 text-rose-700'],
@@ -17,12 +17,23 @@
             'low' => ['label' => 'Rendah', 'class' => 'bg-slate-100 text-slate-600'],
         ];
         $user = auth()->user();
+        $totalTasks = $tasksByStatus->flatten()->count();
+        $doneCount = $tasksByStatus->get('done', collect())->count();
+        $progressPercent = $totalTasks > 0 ? (int) round($doneCount / $totalTasks * 100) : 0;
+        $formShouldOpen = $errors->any();
     @endphp
 
-    <div class="mb-6">
-        <p class="text-sm font-semibold text-amber-600">Tugas</p>
-        <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Papan Tugas</h2>
-        <p class="mt-2 text-sm text-slate-500">Catat dan pantau tugas atau action plan hasil musyawarah/rapat pengurus, sesuai hirarki kepengurusan.</p>
+    <div class="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        <div>
+            <p class="text-sm font-semibold text-amber-600">Tugas</p>
+            <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Papan Tugas</h2>
+            <p class="mt-2 text-sm text-slate-500">Catat dan pantau tugas atau action plan hasil musyawarah/rapat pengurus, sesuai hirarki kepengurusan.</p>
+        </div>
+        @if (\App\Support\Access::can('manage-tasks'))
+            <button type="button" id="toggle-create-task" class="inline-flex shrink-0 items-center justify-center rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">
+                {{ $formShouldOpen ? 'Tutup Form' : '+ Tambah Tugas' }}
+            </button>
+        @endif
     </div>
 
     <div class="mb-6 grid gap-4 sm:grid-cols-3">
@@ -34,8 +45,18 @@
         @endforeach
     </div>
 
+    <x-card class="mb-6 p-4">
+        <div class="flex items-center justify-between text-xs font-medium text-slate-500">
+            <span>Progres Keseluruhan</span>
+            <span>{{ $doneCount }} / {{ $totalTasks }} selesai ({{ $progressPercent }}%)</span>
+        </div>
+        <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+            <div class="h-full rounded-full bg-emerald-500" style="width: {{ $progressPercent }}%"></div>
+        </div>
+    </x-card>
+
     @if (\App\Support\Access::can('manage-tasks'))
-        <x-card class="mb-6">
+        <x-card id="create-task-panel" class="mb-6 {{ $formShouldOpen ? '' : 'hidden' }}">
             <h2 class="mb-4 text-xl font-semibold">Tambah Tugas</h2>
             <form method="POST" action="{{ route('tasks.store') }}" class="grid gap-4 md:grid-cols-2">
                 @csrf
@@ -75,34 +96,71 @@
         </x-card>
     @endif
 
-    <div class="grid gap-6 lg:grid-cols-3">
-        @foreach ($statusMeta as $statusKey => $meta)
-            <div>
+    @if ($totalTasks > 0)
+        <x-card class="mb-6 flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+            <label class="flex items-center gap-2 text-sm text-slate-600">
+                Prioritas
+                <select id="filter-priority" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm">
+                    <option value="">Semua</option>
+                    @foreach ($priorityMeta as $key => $meta)
+                        <option value="{{ $key }}">{{ $meta['label'] }}</option>
+                    @endforeach
+                </select>
+            </label>
+            <label class="flex items-center gap-2 text-sm text-slate-600">
+                Petugas
+                <select id="filter-assignee" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm">
+                    <option value="">Semua</option>
+                    @foreach ($assigneeOptions as $assignee)
+                        <option value="{{ $assignee->id }}">{{ $assignee->name }}</option>
+                    @endforeach
+                </select>
+            </label>
+            <button type="button" id="filter-reset" class="text-sm font-medium text-slate-500 hover:text-slate-800 sm:ml-auto">Hapus Filter</button>
+        </x-card>
+    @endif
+
+    <div class="space-y-8">
+        @forelse ($tasksByBucket as $bucket => $bucketTasks)
+            <div data-bucket-section>
                 <h3 class="mb-3 flex items-center justify-between text-sm font-semibold text-slate-700">
-                    <span>{{ $meta['label'] }}</span>
-                    <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">{{ $tasksByStatus->get($statusKey, collect())->count() }}</span>
+                    <span>{{ $bucket }}</span>
+                    <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">{{ $bucketTasks->count() }}</span>
                 </h3>
-                <div class="space-y-3">
-                    @forelse ($tasksByStatus->get($statusKey, collect()) as $task)
-                        <x-card class="p-4">
+                <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    @foreach ($bucketTasks as $task)
+                        @php
+                            $meta = $statusMeta[$task->status] ?? null;
+                            $isOverdue = $task->due_date && $task->status !== 'done' && $task->due_date->isPast();
+                        @endphp
+                        <x-card
+                            class="task-card p-4"
+                            data-priority="{{ $task->priority }}"
+                            data-assignee-ids="{{ $task->assignees->pluck('id')->implode(',') }}"
+                        >
                             <div class="flex items-start justify-between gap-2">
                                 <h4 class="text-sm font-semibold text-slate-900">{{ $task->title }}</h4>
                                 <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium {{ $priorityMeta[$task->priority]['class'] ?? 'bg-slate-100 text-slate-600' }}">{{ $priorityMeta[$task->priority]['label'] ?? $task->priority }}</span>
                             </div>
-                            @if ($task->bucket)
-                                <p class="mt-1 text-xs font-medium text-amber-600">{{ $task->bucket }}</p>
-                            @endif
+                            <div class="mt-2 flex flex-wrap items-center gap-1.5">
+                                @if ($meta)
+                                    <span class="rounded-full px-2 py-0.5 text-[11px] font-medium {{ $meta['class'] }}">{{ $meta['label'] }}</span>
+                                @endif
+                                @if ($isOverdue)
+                                    <span class="rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-medium text-rose-700">Terlambat</span>
+                                @endif
+                            </div>
                             @if ($task->description)
                                 <p class="mt-2 text-xs leading-5 text-slate-500">{{ $task->description }}</p>
                             @endif
                             <p class="mt-3 text-xs text-slate-500">Untuk: <span class="font-medium text-slate-700">{{ $task->assignees->pluck('name')->join(', ') }}</span></p>
                             <p class="mt-1 text-xs text-slate-500">Dari: <span class="font-medium text-slate-700">{{ $task->assignedBy?->name ?? '-' }}</span></p>
                             @if ($task->due_date)
-                                <p class="mt-1 text-xs text-slate-500">Jatuh tempo: {{ $task->due_date->translatedFormat('d M Y') }}</p>
+                                <p class="mt-1 text-xs {{ $isOverdue ? 'font-medium text-rose-600' : 'text-slate-500' }}">Jatuh tempo: {{ $task->due_date->translatedFormat('d M Y') }}</p>
                             @endif
 
                             <div class="mt-3 flex items-center gap-2 border-t border-slate-100 pt-3">
-                                @if ($task->isEditableBy($user))
+                                @if ($task->isEditableBy($user) && $meta)
                                     @if ($meta['next'])
                                         <form method="POST" action="{{ route('tasks.update-status', $task) }}">
                                             @csrf
@@ -124,11 +182,60 @@
                                 @endif
                             </div>
                         </x-card>
-                    @empty
-                        <x-empty-state title="Belum ada tugas." class="border-none bg-transparent" />
-                    @endforelse
+                    @endforeach
                 </div>
             </div>
-        @endforeach
+        @empty
+            <x-empty-state title="Belum ada tugas." class="border-none bg-transparent" />
+        @endforelse
     </div>
+
+    <script>
+        (function () {
+            const toggle = document.getElementById('toggle-create-task');
+            const panel = document.getElementById('create-task-panel');
+
+            toggle?.addEventListener('click', function () {
+                const isHidden = panel.classList.toggle('hidden');
+                toggle.textContent = isHidden ? '+ Tambah Tugas' : 'Tutup Form';
+            });
+        })();
+
+        (function () {
+            const priorityFilter = document.getElementById('filter-priority');
+            const assigneeFilter = document.getElementById('filter-assignee');
+            const resetButton = document.getElementById('filter-reset');
+
+            if (!priorityFilter || !assigneeFilter) {
+                return;
+            }
+
+            const cards = Array.from(document.querySelectorAll('.task-card'));
+            const sections = Array.from(document.querySelectorAll('[data-bucket-section]'));
+
+            function applyFilters() {
+                const priority = priorityFilter.value;
+                const assignee = assigneeFilter.value;
+
+                cards.forEach(function (card) {
+                    const matchesPriority = priority === '' || card.dataset.priority === priority;
+                    const assigneeIds = (card.dataset.assigneeIds || '').split(',');
+                    const matchesAssignee = assignee === '' || assigneeIds.includes(assignee);
+                    card.hidden = !(matchesPriority && matchesAssignee);
+                });
+
+                sections.forEach(function (section) {
+                    section.hidden = section.querySelectorAll('.task-card:not([hidden])').length === 0;
+                });
+            }
+
+            priorityFilter.addEventListener('change', applyFilters);
+            assigneeFilter.addEventListener('change', applyFilters);
+            resetButton?.addEventListener('click', function () {
+                priorityFilter.value = '';
+                assigneeFilter.value = '';
+                applyFilters();
+            });
+        })();
+    </script>
 @endsection

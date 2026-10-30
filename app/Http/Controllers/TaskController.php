@@ -9,6 +9,7 @@ use App\Notifications\TaskStatusChanged;
 use App\Support\TaskHierarchy;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -25,11 +26,16 @@ class TaskController extends Controller
             ->with(['assignedBy', 'assignees'])
             ->orderByRaw('due_date is null, due_date')
             ->latest('id')
-            ->get()
-            ->groupBy('status');
+            ->get();
+
+        $tasksByBucket = $tasks
+            ->groupBy(fn (Task $task): string => $task->bucket ?: 'Tanpa Kategori')
+            ->sortBy(fn (Collection $group, string $bucket): array => [$bucket === 'Tanpa Kategori' ? 1 : 0, $bucket]);
 
         return view('tasks.index', [
-            'tasksByStatus' => $tasks,
+            'tasksByStatus' => $tasks->groupBy('status'),
+            'tasksByBucket' => $tasksByBucket,
+            'assigneeOptions' => $tasks->flatMap(fn (Task $task) => $task->assignees)->unique('id')->sortBy('name')->values(),
             'recipients' => TaskHierarchy::assignableRecipients($user),
         ]);
     }
@@ -50,7 +56,7 @@ class TaskController extends Controller
 
         $task->assignees()->sync($validated['assignees']);
 
-        Notification::send($task->assignees, new TaskNotification($task, 'created'));
+        Notification::send($task->assignees, new TaskNotification($task, 'created', $request->user()));
 
         return redirect()->route('tasks.index')->with('success', 'Tugas berhasil dibuat.');
     }
@@ -69,7 +75,9 @@ class TaskController extends Controller
     {
         abort_unless($task->isEditableBy($request->user()), 403);
 
+        $actor = $request->user();
         $validated = $this->validateTask($request, $task->assignedBy);
+        $previousAssigneeIds = $task->assignees()->pluck('users.id')->all();
 
         $task->update([
             'title' => $validated['title'],
@@ -80,8 +88,28 @@ class TaskController extends Controller
         ]);
 
         $task->assignees()->sync($validated['assignees']);
+        $task->load('assignees');
 
-        Notification::send($task->assignees, new TaskNotification($task, 'updated'));
+        $newlyAssignedIds = array_diff($validated['assignees'], $previousAssigneeIds);
+        $removedAssigneeIds = array_diff($previousAssigneeIds, $validated['assignees']);
+
+        $notifiableAssignees = $task->assignees->reject(fn (User $assignee): bool => $assignee->is($actor));
+        Notification::send(
+            $notifiableAssignees->whereIn('id', $newlyAssignedIds),
+            new TaskNotification($task, 'created', $actor)
+        );
+        Notification::send(
+            $notifiableAssignees->whereNotIn('id', $newlyAssignedIds),
+            new TaskNotification($task, 'updated', $actor)
+        );
+
+        if ($removedAssigneeIds !== []) {
+            Notification::send(User::whereIn('id', $removedAssigneeIds)->get(), new TaskNotification($task, 'unassigned', $actor));
+        }
+
+        if (! $task->assignedBy->is($actor)) {
+            $task->assignedBy->notify(new TaskNotification($task, 'updated', $actor));
+        }
 
         return redirect()->route('tasks.index')->with('success', 'Tugas berhasil diperbarui.');
     }

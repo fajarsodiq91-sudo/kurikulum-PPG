@@ -351,4 +351,76 @@ class TaskTest extends TestCase
         // Desa changed the status itself, so the notification count to it stays at 1 (no self-notification).
         Notification::assertSentToTimes($desaUser, TaskStatusChanged::class, 1);
     }
+
+    public function test_updating_a_task_notifies_newly_added_and_still_assigned_people_but_not_the_editor_themselves(): void
+    {
+        $village = $this->makeVillage('Desa A');
+        $group = $this->makeGroup($village, 'Kelompok A1');
+        $desaUser = $this->makeUser('Desa A', $this->desaRole, 'village', $village->id);
+        $kelompokUser = $this->makeUser('Kelompok A1', $this->kelompokRole, 'group', $group->id);
+        $kelompokPeer = $this->makeUser('Kelompok A1 Peer', $this->kelompokRole, 'group', $group->id);
+
+        $task = Task::create([
+            'title' => 'Tugas Rapat',
+            'priority' => 'medium',
+            'status' => 'todo',
+            'assigned_by_id' => $desaUser->id,
+        ]);
+        $task->assignees()->attach($kelompokUser->id);
+
+        Notification::fake();
+
+        // kelompokUser (an existing assignee) edits the task and adds a peer alongside themselves.
+        $this->actingAs($kelompokUser)->put("/tasks/{$task->id}", [
+            'title' => 'Tugas Rapat (diubah)',
+            'priority' => 'high',
+            'assignees' => [$kelompokUser->id, $kelompokPeer->id],
+        ])->assertRedirect('/tasks');
+
+        // The editor does not get a notification about their own edit.
+        Notification::assertNotSentTo($kelompokUser, TaskNotification::class);
+        // The newly added peer gets a "new task" style notification.
+        Notification::assertSentTo(
+            $kelompokPeer,
+            fn (TaskNotification $notification): bool => $notification->toMail($kelompokPeer)->subject === 'Tugas Baru: Tugas Rapat (diubah)'
+        );
+        // The creator, who did not make this edit, is informed.
+        Notification::assertSentTo(
+            $desaUser,
+            fn (TaskNotification $notification): bool => $notification->toMail($desaUser)->subject === 'Tugas Diperbarui: Tugas Rapat (diubah)'
+        );
+    }
+
+    public function test_removing_an_assignee_notifies_them_they_are_no_longer_on_the_task(): void
+    {
+        $village = $this->makeVillage('Desa A');
+        $group = $this->makeGroup($village, 'Kelompok A1');
+        $desaUser = $this->makeUser('Desa A', $this->desaRole, 'village', $village->id);
+        $kelompokUser = $this->makeUser('Kelompok A1', $this->kelompokRole, 'group', $group->id);
+        $kelompokPeer = $this->makeUser('Kelompok A1 Peer', $this->kelompokRole, 'group', $group->id);
+
+        $task = Task::create([
+            'title' => 'Tugas Rapat',
+            'priority' => 'medium',
+            'status' => 'todo',
+            'assigned_by_id' => $desaUser->id,
+        ]);
+        $task->assignees()->attach([$kelompokUser->id, $kelompokPeer->id]);
+
+        Notification::fake();
+
+        $this->actingAs($desaUser)->put("/tasks/{$task->id}", [
+            'title' => 'Tugas Rapat',
+            'priority' => 'medium',
+            'assignees' => [$kelompokPeer->id],
+        ])->assertRedirect('/tasks');
+
+        Notification::assertSentTo(
+            $kelompokUser,
+            fn (TaskNotification $notification): bool => $notification->toMail($kelompokUser)->subject === 'Tugas Dibatalkan: Tugas Rapat'
+        );
+        Notification::assertSentTo($kelompokPeer, TaskNotification::class);
+        // The creator made this edit themselves, so they are not notified of their own change.
+        Notification::assertNotSentTo($desaUser, TaskNotification::class);
+    }
 }
