@@ -29,6 +29,7 @@ class Task extends Model
         'status',
         'due_date',
         'completed_at',
+        'due_reminder_sent_on',
     ];
 
     protected function casts(): array
@@ -36,6 +37,7 @@ class Task extends Model
         return [
             'due_date' => 'date',
             'completed_at' => 'datetime',
+            'due_reminder_sent_on' => 'date',
         ];
     }
 
