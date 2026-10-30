@@ -119,3 +119,48 @@ document.addEventListener('click', (event) => {
 		closeProfileMenu();
 	}
 });
+
+document.querySelectorAll('[data-multiselect]').forEach((container) => {
+	const multiselectToggle = container.querySelector('[data-multiselect-toggle]');
+	const panel = container.querySelector('[data-multiselect-panel]');
+	const label = container.querySelector('[data-multiselect-label]');
+	const placeholder = container.dataset.multiselectPlaceholder ?? '';
+	const checkboxes = container.querySelectorAll('[data-multiselect-option]');
+
+	const closeMultiselect = () => {
+		panel?.classList.add('hidden');
+		multiselectToggle?.setAttribute('aria-expanded', 'false');
+	};
+
+	const openMultiselect = () => {
+		panel?.classList.remove('hidden');
+		multiselectToggle?.setAttribute('aria-expanded', 'true');
+	};
+
+	const updateMultiselectLabel = () => {
+		if (!label) {
+			return;
+		}
+
+		const checkedLabels = Array.from(checkboxes)
+			.filter((checkbox) => checkbox.checked)
+			.map((checkbox) => checkbox.closest('[data-multiselect-item]')?.dataset.multiselectItemLabel ?? '');
+
+		label.textContent = checkedLabels.length ? checkedLabels.join(', ') : placeholder;
+	};
+
+	multiselectToggle?.addEventListener('click', (event) => {
+		event.stopPropagation();
+		panel?.classList.contains('hidden') ? openMultiselect() : closeMultiselect();
+	});
+
+	checkboxes.forEach((checkbox) => {
+		checkbox.addEventListener('change', updateMultiselectLabel);
+	});
+
+	document.addEventListener('click', (event) => {
+		if (panel && !panel.classList.contains('hidden') && !container.contains(event.target)) {
+			closeMultiselect();
+		}
+	});
+});

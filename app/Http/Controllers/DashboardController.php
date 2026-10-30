@@ -54,7 +54,7 @@ class DashboardController extends Controller
             'resumeLevels' => $canSeeGenerus ? Level::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get() : collect(),
             'resumeFilters' => [
                 'gender' => $request->query('gender'),
-                'level_id' => $request->query('level_id'),
+                'level_id' => $this->resumeLevelIds($request),
             ],
         ] + ($canSeeGenerus ? $this->generusResume($user, $request) : [
             'resumeClassGrades' => collect(),
@@ -74,13 +74,13 @@ class DashboardController extends Controller
     private function generusResume(?User $user, Request $request): array
     {
         $gender = $request->query('gender');
-        $levelId = $request->query('level_id');
+        $levelIds = $this->resumeLevelIds($request);
 
         $classGrades = ClassGrade::query()
             ->join('levels', 'levels.id', '=', 'class_grades.level_id')
             ->where('class_grades.is_active', true)
             ->where('levels.is_active', true)
-            ->when($levelId, fn (Builder $query) => $query->where('class_grades.level_id', $levelId))
+            ->when($levelIds !== [], fn (Builder $query) => $query->whereIn('class_grades.level_id', $levelIds))
             ->orderBy('levels.sort_order')
             ->orderBy('levels.id')
             ->orderBy('class_grades.sort_order')
@@ -201,6 +201,21 @@ class DashboardController extends Controller
                 'average' => $categoryQuery($code)->avg('score'),
                 'count' => $categoryQuery($code)->count(),
             ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * The jenjang filter accepts several levels at once (`level_id[]=1&level_id[]=2`).
+     *
+     * @return list<int>
+     */
+    private function resumeLevelIds(Request $request): array
+    {
+        return collect($request->query('level_id', []))
+            ->filter(fn (mixed $value): bool => $value !== null && $value !== '')
+            ->map(fn (mixed $value): int => (int) $value)
+            ->unique()
             ->values()
             ->all();
     }

@@ -115,9 +115,15 @@ class DashboardGenerusResumeTest extends TestCase
         $this->placeGenerus($girl, $group, $classGradeRemaja);
 
         $this->actingAs($user)
-            ->get('/dashboard?gender=laki-laki&level_id='.$levelPaud->id)
+            ->get('/dashboard?gender=laki-laki&level_id[]='.$levelPaud->id)
             ->assertOk()
             ->assertViewHas('resumeGrandTotal', 1)
             ->assertViewHas('resumeClassGrades', fn ($classGrades) => $classGrades->pluck('id')->all() === [$classGradePaud->id]);
+
+        $this->actingAs($user)
+            ->get('/dashboard?level_id[]='.$levelPaud->id.'&level_id[]='.$levelRemaja->id)
+            ->assertOk()
+            ->assertViewHas('resumeGrandTotal', 2)
+            ->assertViewHas('resumeClassGrades', fn ($classGrades) => $classGrades->pluck('id')->sort()->values()->all() === [$classGradePaud->id, $classGradeRemaja->id]);
     }
 }

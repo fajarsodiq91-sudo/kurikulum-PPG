@@ -110,7 +110,7 @@
 
             <form method="GET" action="{{ route('dashboard') }}#resume-generus" class="mb-4 flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                 <x-filter-select name="gender" label="Jenis Kelamin" :options="['laki-laki' => 'Laki-laki', 'perempuan' => 'Perempuan']" />
-                <x-filter-select name="level_id" label="Jenjang" :options="$resumeLevels" />
+                <x-filter-multiselect name="level_id" label="Jenjang" :options="$resumeLevels" />
 
                 <div class="flex gap-2">
                     <button type="submit" class="rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800">Terapkan</button>
@@ -122,21 +122,28 @@
                 @if ($resumeClassGrades->isEmpty() || $resumeVillages->isEmpty())
                     <x-empty-state title="Belum ada data untuk ditampilkan" description="Tidak ada generus aktif yang cocok dengan filter yang dipilih, atau belum ada data kelas KBM/desa yang bisa Anda lihat." />
                 @else
-                    <div class="overflow-x-auto">
+                    @php
+                        $levelBandColors = ['bg-slate-50', 'bg-white'];
+                        $levelBandByName = [];
+                        foreach ($resumeClassGrades->groupBy('level_name') as $levelName => $levelClassGrades) {
+                            $levelBandByName[$levelName] = $levelBandColors[count($levelBandByName) % 2];
+                        }
+                    @endphp
+                    <div class="overflow-x-auto rounded-xl border border-slate-200">
                         <table class="min-w-full text-left text-sm">
-                            <thead class="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-400">
-                                <tr>
-                                    <th rowspan="2" class="py-3 pr-4 align-bottom font-semibold">No</th>
-                                    <th rowspan="2" class="py-3 pr-4 align-bottom font-semibold">Desa</th>
-                                    <th rowspan="2" class="py-3 pr-4 align-bottom font-semibold">Kelompok</th>
+                            <thead class="text-xs uppercase tracking-wide">
+                                <tr class="bg-slate-100 text-slate-600">
+                                    <th rowspan="2" class="py-3 pl-4 pr-4 align-bottom font-bold">No</th>
+                                    <th rowspan="2" class="py-3 pr-4 align-bottom font-bold">Desa</th>
+                                    <th rowspan="2" class="py-3 pr-4 align-bottom font-bold">Kelompok</th>
                                     @foreach ($resumeClassGrades->groupBy('level_name') as $levelName => $levelClassGrades)
-                                        <th colspan="{{ $levelClassGrades->count() }}" class="py-2 pr-4 text-center font-semibold text-slate-500">{{ $levelName }}</th>
+                                        <th colspan="{{ $levelClassGrades->count() }}" class="border-x border-white py-2 pr-4 text-center font-bold text-slate-700">{{ $levelName }}</th>
                                     @endforeach
-                                    <th rowspan="2" class="py-3 pl-4 align-bottom text-right font-semibold">Total</th>
+                                    <th rowspan="2" class="py-3 pl-4 pr-4 align-bottom text-right font-bold">Total</th>
                                 </tr>
-                                <tr>
+                                <tr class="border-b-2 border-slate-300 bg-slate-50 text-slate-500">
                                     @foreach ($resumeClassGrades as $classGrade)
-                                        <th class="py-2 pr-4 text-center font-semibold">{{ $classGrade->name }}</th>
+                                        <th class="{{ $levelBandByName[$classGrade->level_name] }} py-2 pr-4 text-center font-semibold">{{ $classGrade->name }}</th>
                                     @endforeach
                                 </tr>
                             </thead>
@@ -145,34 +152,34 @@
                                 @foreach ($resumeVillages as $villageRow)
                                     @foreach ($villageRow['groups'] as $groupRow)
                                         @php $rowNumber++; @endphp
-                                        <tr class="border-b border-slate-100">
-                                            <td class="py-3 pr-4 text-slate-500">{{ $rowNumber }}</td>
+                                        <tr class="border-b border-slate-100 transition hover:bg-slate-50">
+                                            <td class="py-3 pl-4 pr-4 text-slate-500">{{ $rowNumber }}</td>
                                             <td class="py-3 pr-4 font-medium text-slate-900">{{ $villageRow['village']->name }}</td>
-                                            <td class="py-3 pr-4">{{ $groupRow['group']->name }}</td>
+                                            <td class="py-3 pr-4 text-slate-700">{{ $groupRow['group']->name }}</td>
                                             @foreach ($resumeClassGrades as $classGrade)
-                                                <td class="py-3 pr-4 text-center">{{ $groupRow['counts'][$classGrade->id] }}</td>
+                                                <td class="{{ $levelBandByName[$classGrade->level_name] }} py-3 pr-4 text-center text-slate-700">{{ $groupRow['counts'][$classGrade->id] }}</td>
                                             @endforeach
-                                            <td class="py-3 pl-4 text-right font-semibold text-slate-900">{{ $groupRow['total'] }}</td>
+                                            <td class="py-3 pl-4 pr-4 text-right font-semibold text-slate-900">{{ $groupRow['total'] }}</td>
                                         </tr>
                                     @endforeach
-                                    <tr class="border-b border-slate-200 bg-slate-50 font-semibold text-slate-700">
-                                        <td class="py-2 pr-4"></td>
+                                    <tr class="border-b border-amber-200 bg-amber-100 font-semibold text-amber-900">
+                                        <td class="py-2 pl-4 pr-4"></td>
                                         <td colspan="2" class="py-2 pr-4">Subtotal Desa {{ $villageRow['village']->name }}</td>
                                         @foreach ($resumeClassGrades as $classGrade)
                                             <td class="py-2 pr-4 text-center">{{ $villageRow['counts'][$classGrade->id] }}</td>
                                         @endforeach
-                                        <td class="py-2 pl-4 text-right">{{ $villageRow['total'] }}</td>
+                                        <td class="py-2 pl-4 pr-4 text-right">{{ $villageRow['total'] }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>
                             <tfoot>
-                                <tr class="border-t-2 border-slate-300 bg-slate-100 font-bold text-slate-950">
-                                    <td class="py-3 pr-4"></td>
-                                    <td colspan="2" class="py-3 pr-4">Grand Total</td>
+                                <tr class="bg-brand-950 font-bold text-white">
+                                    <td class="py-3 pl-4 pr-4"></td>
+                                    <td colspan="2" class="py-3 pr-4 uppercase tracking-wide">Grand Total</td>
                                     @foreach ($resumeClassGrades as $classGrade)
                                         <td class="py-3 pr-4 text-center">{{ $resumeGrandCounts[$classGrade->id] }}</td>
                                     @endforeach
-                                    <td class="py-3 pl-4 text-right">{{ $resumeGrandTotal }}</td>
+                                    <td class="py-3 pl-4 pr-4 text-right">{{ $resumeGrandTotal }}</td>
                                 </tr>
                             </tfoot>
                         </table>
