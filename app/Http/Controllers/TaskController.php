@@ -37,6 +37,7 @@ class TaskController extends Controller
             'tasksByBucket' => $tasksByBucket,
             'assigneeOptions' => $tasks->flatMap(fn (Task $task) => $task->assignees)->unique('id')->sortBy('name')->values(),
             'recipients' => TaskHierarchy::assignableRecipients($user),
+            'bucketSuggestions' => TaskHierarchy::bucketSuggestionsFor($user),
         ]);
     }
 
@@ -68,6 +69,7 @@ class TaskController extends Controller
         return view('tasks.edit', [
             'task' => $task->load('assignees'),
             'recipients' => TaskHierarchy::assignableRecipients($task->assignedBy),
+            'bucketSuggestions' => TaskHierarchy::bucketSuggestionsFor($request->user()),
         ]);
     }
 

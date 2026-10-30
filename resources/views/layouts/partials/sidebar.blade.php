@@ -10,7 +10,7 @@
     @php
         $navigation = [
             ['label' => 'Dashboard', 'permission' => 'view-dashboard', 'route' => 'dashboard', 'icon' => '◈'],
-            ['label' => 'Tugas', 'permission' => ['view-tasks', 'manage-tasks'], 'route' => 'tasks.index', 'icon' => '☑'],
+            ['label' => 'Musyawaroh', 'permission' => ['view-tasks', 'manage-tasks'], 'route' => 'tasks.index', 'icon' => '☑'],
             ['label' => 'Persetujuan Pendaftaran', 'permission' => ['manage-users', 'approve-registrations'], 'route' => 'registrations.pending', 'icon' => '✓'],
             ['label' => 'Manajemen Pengguna', 'permission' => 'manage-users', 'icon' => '⚙', 'items' => [
                 ['label' => 'Data Pengguna', 'route' => 'users.index'],

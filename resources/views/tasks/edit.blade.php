@@ -2,7 +2,7 @@
 
 @section('title', 'Ubah Tugas')
 @section('page-title', 'Ubah Tugas')
-@section('breadcrumb', 'Tugas / Ubah Tugas')
+@section('breadcrumb', 'Musyawaroh / Ubah Tugas')
 
 @section('content')
     @php $assigneeIds = $task->assignees->pluck('id')->all(); @endphp
@@ -24,12 +24,17 @@
                 <input id="title" name="title" type="text" required class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('title', $task->title) }}">
             </div>
             <div>
-                <label class="block text-sm font-medium mb-2" for="description">Deskripsi / Catatan Rapat</label>
+                <label class="block text-sm font-medium mb-2" for="description">Deskripsi / Catatan Musyawaroh</label>
                 <textarea id="description" name="description" rows="3" class="w-full rounded-lg border border-slate-300 px-3 py-2">{{ old('description', $task->description) }}</textarea>
             </div>
             <div>
-                <label class="block text-sm font-medium mb-2" for="bucket">Kategori / Sumber</label>
-                <input id="bucket" name="bucket" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('bucket', $task->bucket) }}">
+                <label class="block text-sm font-medium mb-2" for="bucket">Kategori / Sumber (misal nama musyawaroh)</label>
+                <input id="bucket" name="bucket" type="text" list="bucket-suggestions" class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('bucket', $task->bucket) }}">
+                <datalist id="bucket-suggestions">
+                    @foreach ($bucketSuggestions as $suggestion)
+                        <option value="{{ $suggestion }}"></option>
+                    @endforeach
+                </datalist>
             </div>
             <div>
                 <label class="block text-sm font-medium mb-2" for="priority">Prioritas</label>

@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
-@section('title', 'Tugas')
-@section('page-title', 'Tugas')
-@section('breadcrumb', 'Tugas')
+@section('title', 'Musyawaroh')
+@section('page-title', 'Musyawaroh')
+@section('breadcrumb', 'Musyawaroh')
 
 @section('content')
     @php
@@ -71,12 +71,17 @@
                             <input id="title" name="title" type="text" required class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('title') }}">
                         </div>
                         <div class="md:col-span-2">
-                            <label class="block text-sm font-medium mb-2" for="description">Deskripsi / Catatan Rapat</label>
+                            <label class="block text-sm font-medium mb-2" for="description">Deskripsi / Catatan Musyawaroh</label>
                             <textarea id="description" name="description" rows="2" class="w-full rounded-lg border border-slate-300 px-3 py-2">{{ old('description') }}</textarea>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium mb-2" for="bucket">Kategori / Sumber (misal nama rapat)</label>
-                            <input id="bucket" name="bucket" type="text" placeholder="Hasil Rapat Pengurus Oktober 2026" class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('bucket') }}">
+                            <label class="block text-sm font-medium mb-2" for="bucket">Kategori / Sumber (misal nama musyawaroh)</label>
+                            <input id="bucket" name="bucket" type="text" list="bucket-suggestions" placeholder="Hasil Musyawaroh Pengurus Oktober 2026" class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('bucket') }}">
+                            <datalist id="bucket-suggestions">
+                                @foreach ($bucketSuggestions as $suggestion)
+                                    <option value="{{ $suggestion }}"></option>
+                                @endforeach
+                            </datalist>
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-2" for="priority">Prioritas</label>

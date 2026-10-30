@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\Group;
 use App\Models\Role;
+use App\Models\Task;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -95,6 +96,37 @@ class TaskHierarchy
         $ids = collect([...$downward, ...self::upwardReachIds($user), $user->id])->unique()->values()->all();
 
         return User::query()->whereIn('id', $ids)->where('status', 'active')->with(['roles', 'teacher'])->orderBy('name')->get();
+    }
+
+    /**
+     * Bucket (nama musyawaroh) values this user's management-role peers have typed before -
+     * shared only within the same role (e.g. every Perwakilan PPG Desa), never across levels,
+     * so a kelompok or daerah holder never sees a desa's suggestions and vice versa.
+     *
+     * @return list<string>
+     */
+    public static function bucketSuggestionsFor(User $user): array
+    {
+        $roleIds = $user->roles()
+            ->where('roles.is_active', true)
+            ->where('user_roles.is_active', true)
+            ->pluck('roles.id');
+
+        if ($roleIds->isEmpty()) {
+            return [];
+        }
+
+        return Task::query()
+            ->whereNotNull('bucket')
+            ->where('bucket', '!=', '')
+            ->whereHas('assignedBy.roles', fn (Builder $query) => $query
+                ->where('roles.is_active', true)
+                ->where('user_roles.is_active', true)
+                ->whereIn('roles.id', $roleIds))
+            ->distinct()
+            ->orderBy('bucket')
+            ->pluck('bucket')
+            ->all();
     }
 
     private static function usersWithScope(string $scopeType, int $scopeId): Builder

@@ -391,6 +391,40 @@ class TaskTest extends TestCase
         );
     }
 
+    public function test_bucket_suggestions_are_shared_within_a_role_but_not_across_roles(): void
+    {
+        $villageA = $this->makeVillage('Desa A');
+        $villageB = $this->makeVillage('Desa B');
+        $groupA1 = $this->makeGroup($villageA, 'Kelompok A1');
+
+        $desaAUser = $this->makeUser('Desa A', $this->desaRole, 'village', $villageA->id);
+        $desaBUser = $this->makeUser('Desa B', $this->desaRole, 'village', $villageB->id);
+        $kelompokUser = $this->makeUser('Kelompok A1', $this->kelompokRole, 'group', $groupA1->id);
+        $daerahUser = $this->makeUser('Daerah', $this->daerahRole, 'global', null);
+
+        Task::create([
+            'title' => 'Tugas Musyawaroh',
+            'bucket' => 'Musyawaroh 5 Unsur',
+            'priority' => 'medium',
+            'status' => 'todo',
+            'assigned_by_id' => $desaAUser->id,
+        ]);
+
+        // A peer holding the same role (another desa) sees the suggestion.
+        $this->actingAs($desaBUser)
+            ->get('/tasks')
+            ->assertSee('Musyawaroh 5 Unsur', false);
+
+        // Kelompok and daerah roles never see a desa's suggestion.
+        $this->actingAs($kelompokUser)
+            ->get('/tasks')
+            ->assertDontSee('Musyawaroh 5 Unsur', false);
+
+        $this->actingAs($daerahUser)
+            ->get('/tasks')
+            ->assertDontSee('Musyawaroh 5 Unsur', false);
+    }
+
     public function test_removing_an_assignee_notifies_them_they_are_no_longer_on_the_task(): void
     {
         $village = $this->makeVillage('Desa A');
