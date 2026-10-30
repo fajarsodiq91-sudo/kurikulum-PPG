@@ -30,8 +30,8 @@
             <p class="mt-2 text-sm text-slate-500">Catat dan pantau tugas atau action plan hasil musyawarah/rapat pengurus, sesuai hirarki kepengurusan.</p>
         </div>
         @if (\App\Support\Access::can('manage-tasks'))
-            <button type="button" id="toggle-create-task" class="inline-flex shrink-0 items-center justify-center rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">
-                {{ $formShouldOpen ? 'Tutup Form' : '+ Tambah Tugas' }}
+            <button type="button" id="open-create-task" class="inline-flex shrink-0 items-center justify-center rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">
+                + Tambah Tugas
             </button>
         @endif
     </div>
@@ -56,44 +56,51 @@
     </x-card>
 
     @if (\App\Support\Access::can('manage-tasks'))
-        <x-card id="create-task-panel" class="mb-6 {{ $formShouldOpen ? '' : 'hidden' }}">
-            <h2 class="mb-4 text-xl font-semibold">Tambah Tugas</h2>
-            <form method="POST" action="{{ route('tasks.store') }}" class="grid gap-4 md:grid-cols-2">
-                @csrf
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-medium mb-2" for="title">Judul Tugas</label>
-                    <input id="title" name="title" type="text" required class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('title') }}">
-                </div>
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-medium mb-2" for="description">Deskripsi / Catatan Rapat</label>
-                    <textarea id="description" name="description" rows="2" class="w-full rounded-lg border border-slate-300 px-3 py-2">{{ old('description') }}</textarea>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium mb-2" for="bucket">Kategori / Sumber (misal nama rapat)</label>
-                    <input id="bucket" name="bucket" type="text" placeholder="Hasil Rapat Pengurus Oktober 2026" class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('bucket') }}">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium mb-2" for="priority">Prioritas</label>
-                    <select id="priority" name="priority" class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                        <option value="low" @selected(old('priority') === 'low')>Rendah</option>
-                        <option value="medium" @selected(old('priority', 'medium') === 'medium')>Sedang</option>
-                        <option value="high" @selected(old('priority') === 'high')>Tinggi</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium mb-2" for="due_date">Jatuh Tempo</label>
-                    <input id="due_date" name="due_date" type="date" class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('due_date') }}">
-                </div>
-                <div class="md:col-span-2">
-                    <span class="mb-2 block text-sm font-medium text-slate-700">Ditugaskan Kepada</span>
-                    @include('tasks.partials.assignee-picker', ['recipients' => $recipients, 'selectedIds' => old('assignees', [])])
-                    <p class="mt-1 text-xs text-slate-500">Hanya pengurus di jalur vertikal Anda (atasan dan cabang Anda sendiri) yang bisa dipilih.</p>
-                </div>
-                <div class="md:col-span-2">
-                    <button type="submit" class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Simpan Tugas</button>
-                </div>
-            </form>
-        </x-card>
+        <div id="create-task-backdrop" class="fixed inset-0 z-40 bg-slate-900/50 {{ $formShouldOpen ? '' : 'hidden' }}" data-create-task-close></div>
+
+        <div id="create-task-modal" class="fixed inset-0 z-50 overflow-y-auto p-4 sm:p-6 {{ $formShouldOpen ? '' : 'hidden' }}" role="dialog" aria-modal="true" aria-labelledby="create-task-title">
+            <div class="mx-auto my-6 w-full max-w-2xl">
+                <x-card class="relative">
+                    <button type="button" class="absolute right-4 top-4 text-xl leading-none text-slate-400 hover:text-slate-700" aria-label="Tutup" data-create-task-close>&times;</button>
+                    <h2 id="create-task-title" class="mb-4 text-xl font-semibold">Tambah Tugas</h2>
+                    <form method="POST" action="{{ route('tasks.store') }}" class="grid gap-4 md:grid-cols-2">
+                        @csrf
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium mb-2" for="title">Judul Tugas</label>
+                            <input id="title" name="title" type="text" required class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('title') }}">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium mb-2" for="description">Deskripsi / Catatan Rapat</label>
+                            <textarea id="description" name="description" rows="2" class="w-full rounded-lg border border-slate-300 px-3 py-2">{{ old('description') }}</textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2" for="bucket">Kategori / Sumber (misal nama rapat)</label>
+                            <input id="bucket" name="bucket" type="text" placeholder="Hasil Rapat Pengurus Oktober 2026" class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('bucket') }}">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2" for="priority">Prioritas</label>
+                            <select id="priority" name="priority" class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                                <option value="low" @selected(old('priority') === 'low')>Rendah</option>
+                                <option value="medium" @selected(old('priority', 'medium') === 'medium')>Sedang</option>
+                                <option value="high" @selected(old('priority') === 'high')>Tinggi</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2" for="due_date">Jatuh Tempo</label>
+                            <input id="due_date" name="due_date" type="date" class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('due_date') }}">
+                        </div>
+                        <div class="md:col-span-2">
+                            <span class="mb-2 block text-sm font-medium text-slate-700">Ditugaskan Kepada</span>
+                            @include('tasks.partials.assignee-picker', ['recipients' => $recipients, 'selectedIds' => old('assignees', [])])
+                            <p class="mt-1 text-xs text-slate-500">Hanya pengurus di jalur vertikal Anda (atasan dan cabang Anda sendiri) yang bisa dipilih.</p>
+                        </div>
+                        <div class="md:col-span-2">
+                            <button type="submit" class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Simpan Tugas</button>
+                        </div>
+                    </form>
+                </x-card>
+            </div>
+        </div>
     @endif
 
     @if ($totalTasks > 0)
@@ -192,12 +199,39 @@
 
     <script>
         (function () {
-            const toggle = document.getElementById('toggle-create-task');
-            const panel = document.getElementById('create-task-panel');
+            const openButton = document.getElementById('open-create-task');
+            const backdrop = document.getElementById('create-task-backdrop');
+            const modal = document.getElementById('create-task-modal');
 
-            toggle?.addEventListener('click', function () {
-                const isHidden = panel.classList.toggle('hidden');
-                toggle.textContent = isHidden ? '+ Tambah Tugas' : 'Tutup Form';
+            if (!openButton || !backdrop || !modal) {
+                return;
+            }
+
+            function openModal() {
+                backdrop.classList.remove('hidden');
+                modal.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden');
+            }
+
+            function closeModal() {
+                backdrop.classList.add('hidden');
+                modal.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+            }
+
+            openButton.addEventListener('click', openModal);
+            document.querySelectorAll('[data-create-task-close]').forEach(function (el) {
+                el.addEventListener('click', closeModal);
+            });
+            modal.addEventListener('click', function (event) {
+                if (event.target === modal) {
+                    closeModal();
+                }
+            });
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
+                    closeModal();
+                }
             });
         })();
 
