@@ -26,6 +26,31 @@ class GenerusImport implements OnEachRow, WithChunkReading, WithHeadingRow
     private array $errors = [];
 
     /**
+     * @var array<string, Region|null>
+     */
+    private array $regionCache = [];
+
+    /**
+     * @var array<string, Village|null>
+     */
+    private array $villageCache = [];
+
+    /**
+     * @var array<string, Group|null>
+     */
+    private array $groupCache = [];
+
+    /**
+     * @var array<string, Level|null>
+     */
+    private array $levelCache = [];
+
+    /**
+     * @var array<string, int|null>
+     */
+    private array $classGradeCache = [];
+
+    /**
      * @param  User|null  $user  Importing user whose role scope limits the rows; null imports without scope checks.
      */
     public function __construct(private ?User $user = null) {}
@@ -120,10 +145,10 @@ class GenerusImport implements OnEachRow, WithChunkReading, WithHeadingRow
             return;
         }
 
-        $region = Region::query()->where('code', $validated['region_code'])->where('is_active', true)->first();
-        $village = Village::query()->where('code', $validated['village_code'])->where('region_id', $region?->id)->where('is_active', true)->first();
-        $group = Group::query()->where('code', $validated['group_code'])->where('village_id', $village?->id)->where('is_active', true)->first();
-        $level = Level::query()->where('code', $validated['level_code'])->where('is_active', true)->first();
+        $region = $this->findRegion($validated['region_code']);
+        $village = $this->findVillage($validated['region_code'], $validated['village_code'], $region?->id);
+        $group = $this->findGroup($validated['village_code'], $validated['group_code'], $village?->id);
+        $level = $this->findLevel($validated['level_code']);
 
         if (! $region || ! $village || ! $group || ! $level) {
             $this->addErrors($row->getIndex(), ['Kode wilayah atau jenjang tidak ditemukan atau tidak aktif.']);
@@ -196,7 +221,51 @@ class GenerusImport implements OnEachRow, WithChunkReading, WithHeadingRow
             return null;
         }
 
-        return ClassGrade::query()->where('code', $code)->where('is_active', true)->value('id');
+        if (! array_key_exists($code, $this->classGradeCache)) {
+            $this->classGradeCache[$code] = ClassGrade::query()->where('code', $code)->where('is_active', true)->value('id');
+        }
+
+        return $this->classGradeCache[$code];
+    }
+
+    private function findRegion(string $code): ?Region
+    {
+        if (! array_key_exists($code, $this->regionCache)) {
+            $this->regionCache[$code] = Region::query()->where('code', $code)->where('is_active', true)->first();
+        }
+
+        return $this->regionCache[$code];
+    }
+
+    private function findVillage(string $regionCode, string $villageCode, ?int $regionId): ?Village
+    {
+        $key = "{$regionCode}|{$villageCode}";
+
+        if (! array_key_exists($key, $this->villageCache)) {
+            $this->villageCache[$key] = Village::query()->where('code', $villageCode)->where('region_id', $regionId)->where('is_active', true)->first();
+        }
+
+        return $this->villageCache[$key];
+    }
+
+    private function findGroup(string $villageCode, string $groupCode, ?int $villageId): ?Group
+    {
+        $key = "{$villageCode}|{$groupCode}";
+
+        if (! array_key_exists($key, $this->groupCache)) {
+            $this->groupCache[$key] = Group::query()->where('code', $groupCode)->where('village_id', $villageId)->where('is_active', true)->first();
+        }
+
+        return $this->groupCache[$key];
+    }
+
+    private function findLevel(string $code): ?Level
+    {
+        if (! array_key_exists($code, $this->levelCache)) {
+            $this->levelCache[$code] = Level::query()->where('code', $code)->where('is_active', true)->first();
+        }
+
+        return $this->levelCache[$code];
     }
 
     private function isScopedUser(): bool

@@ -330,6 +330,8 @@ class GenerusController extends Controller
             'file' => ['required', 'file', 'mimes:xlsx', 'max:10240'],
         ]);
 
+        @set_time_limit(300);
+
         DB::transaction(function () use ($request, $validated): void {
             $import = new GenerusImport($request->user());
 
