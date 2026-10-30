@@ -11,11 +11,13 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 class TaskController extends Controller
 {
@@ -61,7 +63,14 @@ class TaskController extends Controller
 
         $task->assignees()->sync($validated['assignees']);
 
-        Notification::send($task->assignees, new TaskNotification($task, 'created', $request->user()));
+        try {
+            Notification::send($task->assignees, new TaskNotification($task, 'created', $request->user()));
+        } catch (Throwable $e) {
+            Log::error('Gagal mengirim notifikasi tugas baru ke penerima.', [
+                'task_id' => $task->id,
+                'exception' => $e,
+            ]);
+        }
 
         return redirect()->route('tasks.index')->with('success', 'Tugas berhasil dibuat.');
     }
@@ -107,22 +116,29 @@ class TaskController extends Controller
         $newlyAssignedIds = array_diff($validated['assignees'], $previousAssigneeIds);
         $removedAssigneeIds = array_diff($previousAssigneeIds, $validated['assignees']);
 
-        $notifiableAssignees = $task->assignees->reject(fn (User $assignee): bool => $assignee->is($actor));
-        Notification::send(
-            $notifiableAssignees->whereIn('id', $newlyAssignedIds),
-            new TaskNotification($task, 'created', $actor)
-        );
-        Notification::send(
-            $notifiableAssignees->whereNotIn('id', $newlyAssignedIds),
-            new TaskNotification($task, 'updated', $actor)
-        );
+        try {
+            $notifiableAssignees = $task->assignees->reject(fn (User $assignee): bool => $assignee->is($actor));
+            Notification::send(
+                $notifiableAssignees->whereIn('id', $newlyAssignedIds),
+                new TaskNotification($task, 'created', $actor)
+            );
+            Notification::send(
+                $notifiableAssignees->whereNotIn('id', $newlyAssignedIds),
+                new TaskNotification($task, 'updated', $actor)
+            );
 
-        if ($removedAssigneeIds !== []) {
-            Notification::send(User::whereIn('id', $removedAssigneeIds)->get(), new TaskNotification($task, 'unassigned', $actor));
-        }
+            if ($removedAssigneeIds !== []) {
+                Notification::send(User::whereIn('id', $removedAssigneeIds)->get(), new TaskNotification($task, 'unassigned', $actor));
+            }
 
-        if (! $task->assignedBy->is($actor)) {
-            $task->assignedBy->notify(new TaskNotification($task, 'updated', $actor));
+            if (! $task->assignedBy->is($actor)) {
+                $task->assignedBy->notify(new TaskNotification($task, 'updated', $actor));
+            }
+        } catch (Throwable $e) {
+            Log::error('Gagal mengirim notifikasi perubahan tugas.', [
+                'task_id' => $task->id,
+                'exception' => $e,
+            ]);
         }
 
         return redirect()->route('tasks.index')->with('success', 'Tugas berhasil diperbarui.');
@@ -141,8 +157,15 @@ class TaskController extends Controller
             'completed_at' => $validated['status'] === 'done' ? now() : null,
         ]);
 
-        if (! $task->assignedBy->is($request->user())) {
-            $task->assignedBy->notify(new TaskStatusChanged($task, $request->user()));
+        try {
+            if (! $task->assignedBy->is($request->user())) {
+                $task->assignedBy->notify(new TaskStatusChanged($task, $request->user()));
+            }
+        } catch (Throwable $e) {
+            Log::error('Gagal mengirim notifikasi perubahan status tugas.', [
+                'task_id' => $task->id,
+                'exception' => $e,
+            ]);
         }
 
         return back()->with('success', 'Status tugas berhasil diperbarui.');

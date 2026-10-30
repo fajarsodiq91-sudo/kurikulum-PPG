@@ -352,6 +352,30 @@ class TaskTest extends TestCase
         Notification::assertSentToTimes($desaUser, TaskStatusChanged::class, 1);
     }
 
+    public function test_updating_task_status_still_succeeds_even_if_notifying_the_assigner_fails(): void
+    {
+        $village = $this->makeVillage('Desa A');
+        $group = $this->makeGroup($village, 'Kelompok A1');
+        $desaUser = $this->makeUser('Desa A', $this->desaRole, 'village', $village->id);
+        $kelompokUser = $this->makeUser('Kelompok A1', $this->kelompokRole, 'group', $group->id);
+
+        $task = Task::create([
+            'title' => 'Tugas Rapat',
+            'priority' => 'medium',
+            'status' => 'todo',
+            'assigned_by_id' => $desaUser->id,
+        ]);
+        $task->assignees()->attach($kelompokUser->id);
+
+        Notification::shouldReceive('send')->andThrow(new \RuntimeException('SMTP down'));
+
+        $this->actingAs($kelompokUser)
+            ->patch("/tasks/{$task->id}/status", ['status' => 'in_progress'])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('tasks', ['id' => $task->id, 'status' => 'in_progress']);
+    }
+
     public function test_updating_a_task_notifies_newly_added_and_still_assigned_people_but_not_the_editor_themselves(): void
     {
         $village = $this->makeVillage('Desa A');
