@@ -57,7 +57,7 @@
         @foreach ([
             ['label' => 'Generus Aktif', 'value' => $generusCount, 'badge' => 'bg-brand-50 text-brand-600', 'icon' => 'group'],
             ['label' => 'Guru Aktif', 'value' => $teacherCount, 'badge' => 'bg-brand-50 text-brand-600', 'icon' => 'person'],
-            ['label' => 'Desa', 'value' => $regionCount, 'badge' => 'bg-emerald-50 text-emerald-600', 'icon' => 'map-pin'],
+            ['label' => 'Desa', 'value' => $villageCount, 'badge' => 'bg-emerald-50 text-emerald-600', 'icon' => 'map-pin'],
             ['label' => 'Kelompok', 'value' => $groupCount, 'badge' => 'bg-emerald-50 text-emerald-600', 'icon' => 'squares'],
             ['label' => 'Sesi KBM', 'value' => $learningSessionCount, 'badge' => 'bg-amber-50 text-amber-600', 'icon' => 'book-open'],
             ['label' => 'Munaqosah', 'value' => $munaqosahCount, 'badge' => 'bg-amber-50 text-amber-600', 'icon' => 'check-badge'],

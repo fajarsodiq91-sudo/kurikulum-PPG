@@ -7,12 +7,12 @@ use App\Models\Generus;
 use App\Models\Group;
 use App\Models\LearningSession;
 use App\Models\Munaqosah;
-use App\Models\Region;
 use App\Models\Semester;
 use App\Models\Teacher;
 use App\Models\Training;
 use App\Models\Ujian;
 use App\Models\User;
+use App\Models\Village;
 use App\Support\StudentScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -27,7 +27,7 @@ class DashboardController extends Controller
         return view('dashboard.index', [
             'generusCount' => Generus::query()->when($this->canSee($user, 'generus'), fn ($query) => $query->visibleTo($user))->where('status', 'active')->count(),
             'teacherCount' => Teacher::query()->when($this->canSee($user, 'teachers'), fn ($query) => $query->visibleTo($user))->where('status', 'active')->count(),
-            'regionCount' => Region::query()->where('is_active', true)->count(),
+            'villageCount' => Village::query()->where('is_active', true)->count(),
             'groupCount' => Group::query()->where('is_active', true)->count(),
             'learningSessionCount' => LearningSession::count(),
             'munaqosahCount' => Munaqosah::count(),

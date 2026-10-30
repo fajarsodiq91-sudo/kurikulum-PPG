@@ -6,10 +6,12 @@ use App\Models\AcademicYear;
 use App\Models\Communication;
 use App\Models\Generus;
 use App\Models\Permission;
+use App\Models\Region;
 use App\Models\Role;
 use App\Models\Teacher;
 use App\Models\Training;
 use App\Models\User;
+use App\Models\Village;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -103,6 +105,15 @@ class DashboardAndReportTest extends TestCase
             'status' => 'scheduled',
         ]);
 
+        $region = Region::create([
+            'name' => 'Karawang Timur',
+            'code' => 'KT',
+            'is_active' => true,
+        ]);
+
+        Village::create(['region_id' => $region->id, 'name' => 'Desa Satu', 'code' => 'D1', 'is_active' => true]);
+        Village::create(['region_id' => $region->id, 'name' => 'Desa Dua', 'code' => 'D2', 'is_active' => true]);
+
         Communication::create([
             'training_id' => $training->id,
             'channel' => 'whatsapp',
@@ -111,7 +122,7 @@ class DashboardAndReportTest extends TestCase
             'status' => 'sent',
         ]);
 
-        $this->actingAs($user)
+        $response = $this->actingAs($user)
             ->get('/dashboard')
             ->assertOk()
             ->assertSee('2')
@@ -119,7 +130,10 @@ class DashboardAndReportTest extends TestCase
             ->assertSee('Data Generus')
             ->assertSee(route('generus.index'))
             ->assertSee('2')
-            ->assertSee('Guru');
+            ->assertSee('Guru')
+            ->assertSee('Desa');
+
+        $response->assertViewHas('villageCount', 2);
 
         $this->actingAs($user)
             ->get('/reports')
