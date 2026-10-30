@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Notulen;
 use App\Models\Task;
 use App\Models\User;
 use App\Notifications\TaskNotification;
@@ -35,6 +36,12 @@ class TaskController extends Controller
             ->groupBy(fn (Task $task): string => $task->bucket ?: 'Tanpa Kategori')
             ->sortBy(fn (Collection $group, string $bucket): array => [$bucket === 'Tanpa Kategori' ? 1 : 0, $bucket]);
 
+        $notulens = Notulen::visibleTo($user)
+            ->with('createdBy')
+            ->latest('meeting_date')
+            ->latest('id')
+            ->get();
+
         return view('tasks.index', [
             'tasks' => $tasks,
             'tasksByStatus' => $tasks->groupBy('status'),
@@ -42,6 +49,7 @@ class TaskController extends Controller
             'assigneeOptions' => $tasks->flatMap(fn (Task $task) => $task->assignees)->unique('id')->sortBy('name')->values(),
             'recipients' => TaskHierarchy::assignableRecipients($user),
             'bucketSuggestions' => TaskHierarchy::bucketSuggestionsFor($user),
+            'notulens' => $notulens,
         ]);
     }
 

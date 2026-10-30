@@ -26,6 +26,7 @@ use App\Http\Controllers\MaterialCategoryController;
 use App\Http\Controllers\MaterialChapterController;
 use App\Http\Controllers\MilestoneController;
 use App\Http\Controllers\MunaqosahController;
+use App\Http\Controllers\NotulenController;
 use App\Http\Controllers\OrganizationUnitController;
 use App\Http\Controllers\ParentCommunicationController;
 use App\Http\Controllers\ProfileController;
@@ -780,6 +781,10 @@ Route::middleware(['auth', 'permission:manage-tasks'])->group(function () {
         ->name('tasks.recipient-photo');
     Route::get('/tasks/{task}/attachment', [TaskController::class, 'attachment'])
         ->name('tasks.attachment');
+    Route::post('/notulen', [NotulenController::class, 'store'])
+        ->name('notulen.store');
+    Route::delete('/notulen/{notulen}', [NotulenController::class, 'destroy'])
+        ->name('notulen.destroy');
 });
 
 Route::middleware(['auth', 'permission:manage-users,approve-registrations'])->group(function () {

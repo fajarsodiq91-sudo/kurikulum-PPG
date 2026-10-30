@@ -21,7 +21,8 @@
         $doneCount = $tasksByStatus->get('done', collect())->count();
         $progressPercent = $totalTasks > 0 ? (int) round($doneCount / $totalTasks * 100) : 0;
         $preselectedAssigneeId = request('assign_to');
-        $formShouldOpen = $errors->any() || $preselectedAssigneeId !== null;
+        $notulenFormShouldOpen = $errors->has('content');
+        $formShouldOpen = ($errors->any() && ! $notulenFormShouldOpen) || $preselectedAssigneeId !== null;
     @endphp
 
     <div class="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
@@ -31,9 +32,14 @@
             <p class="mt-2 text-sm text-slate-500">Catat dan pantau tugas atau action plan hasil musyawarah/rapat pengurus, sesuai hirarki kepengurusan.</p>
         </div>
         @if (\App\Support\Access::can('manage-tasks'))
-            <button type="button" id="open-create-task" class="inline-flex shrink-0 items-center justify-center rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">
-                + Tambah Tugas
-            </button>
+            <div class="flex shrink-0 gap-2">
+                <button type="button" id="open-create-notulen" class="inline-flex items-center justify-center rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                    + Tambah Notulen
+                </button>
+                <button type="button" id="open-create-task" class="inline-flex items-center justify-center rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">
+                    + Tambah Tugas
+                </button>
+            </div>
         @endif
     </div>
 
@@ -117,6 +123,72 @@
                 </x-card>
             </div>
         </div>
+
+        <div id="create-notulen-backdrop" class="fixed inset-0 z-40 bg-slate-900/50 {{ $notulenFormShouldOpen ? '' : 'hidden' }}" data-create-notulen-close></div>
+
+        <div id="create-notulen-modal" class="fixed inset-0 z-50 overflow-y-auto p-4 sm:p-6 {{ $notulenFormShouldOpen ? '' : 'hidden' }}" role="dialog" aria-modal="true" aria-labelledby="create-notulen-title">
+            <div class="mx-auto my-6 w-full max-w-2xl">
+                <x-card class="relative">
+                    <button type="button" class="absolute right-4 top-4 text-xl leading-none text-slate-400 hover:text-slate-700" aria-label="Tutup" data-create-notulen-close>&times;</button>
+                    <h2 id="create-notulen-title" class="mb-4 text-xl font-semibold">Tambah Notulen</h2>
+                    <p class="mb-4 text-sm text-slate-500">Catat hasil musyawaroh yang tidak perlu ditindaklanjuti sebagai tugas.</p>
+                    <form method="POST" action="{{ route('notulen.store') }}" class="grid gap-4 md:grid-cols-2">
+                        @csrf
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium mb-2" for="notulen-title">Judul</label>
+                            <input id="notulen-title" name="title" type="text" required class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('title') }}">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2" for="notulen-bucket">Kategori / Sumber (misal nama musyawaroh)</label>
+                            <input id="notulen-bucket" name="bucket" type="text" list="bucket-suggestions" placeholder="Hasil Musyawaroh Pengurus Oktober 2026" class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('bucket') }}">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2" for="notulen-meeting-date">Tanggal Musyawaroh</label>
+                            <input id="notulen-meeting-date" name="meeting_date" type="date" class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('meeting_date', now()->format('Y-m-d')) }}">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium mb-2" for="notulen-content">Isi Notulen</label>
+                            <textarea id="notulen-content" name="content" rows="5" required class="w-full rounded-lg border border-slate-300 px-3 py-2">{{ old('content') }}</textarea>
+                        </div>
+                        <div class="md:col-span-2">
+                            <button type="submit" class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Simpan Notulen</button>
+                        </div>
+                    </form>
+                </x-card>
+            </div>
+        </div>
+    @endif
+
+    @if ($notulens->isNotEmpty())
+        <x-card class="mb-6">
+            <h3 class="mb-4 text-sm font-semibold text-slate-700">Notulen Musyawaroh</h3>
+            <div class="space-y-4">
+                @foreach ($notulens as $notulen)
+                    <div class="rounded-lg border border-slate-200 p-4">
+                        <div class="flex flex-wrap items-start justify-between gap-2">
+                            <div>
+                                <p class="font-medium text-slate-900">{{ $notulen->title }}</p>
+                                <p class="mt-0.5 text-xs text-slate-500">
+                                    {{ $notulen->bucket ?: 'Tanpa Kategori' }}
+                                    @if ($notulen->meeting_date)
+                                        &middot; {{ $notulen->meeting_date->translatedFormat('d M Y') }}
+                                    @endif
+                                    &middot; oleh {{ $notulen->createdBy?->name ?? '-' }}
+                                </p>
+                            </div>
+                            @if ($notulen->isEditableBy($user))
+                                <form method="POST" action="{{ route('notulen.destroy', $notulen) }}" onsubmit="return confirm('Hapus notulen ini?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-xs font-medium text-rose-600 hover:underline">Hapus</button>
+                                </form>
+                            @endif
+                        </div>
+                        <p class="mt-2 whitespace-pre-line text-sm text-slate-600">{{ $notulen->content }}</p>
+                    </div>
+                @endforeach
+            </div>
+        </x-card>
     @endif
 
     @if ($totalTasks > 0)
@@ -283,6 +355,43 @@
 
             openButton.addEventListener('click', openModal);
             document.querySelectorAll('[data-create-task-close]').forEach(function (el) {
+                el.addEventListener('click', closeModal);
+            });
+            modal.addEventListener('click', function (event) {
+                if (event.target === modal) {
+                    closeModal();
+                }
+            });
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
+                    closeModal();
+                }
+            });
+        })();
+
+        (function () {
+            const openButton = document.getElementById('open-create-notulen');
+            const backdrop = document.getElementById('create-notulen-backdrop');
+            const modal = document.getElementById('create-notulen-modal');
+
+            if (!openButton || !backdrop || !modal) {
+                return;
+            }
+
+            function openModal() {
+                backdrop.classList.remove('hidden');
+                modal.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden');
+            }
+
+            function closeModal() {
+                backdrop.classList.add('hidden');
+                modal.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+            }
+
+            openButton.addEventListener('click', openModal);
+            document.querySelectorAll('[data-create-notulen-close]').forEach(function (el) {
                 el.addEventListener('click', closeModal);
             });
             modal.addEventListener('click', function (event) {
