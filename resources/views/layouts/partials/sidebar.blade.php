@@ -74,18 +74,20 @@
                     ['label' => 'Sesi KBM', 'route' => 'learning-sessions.index', 'permission' => ['view-learning-sessions', 'manage-learning-sessions']],
                     ['label' => 'Absensi Sesi', 'route' => 'session-attendances.index', 'permission' => ['view-learning-attendance', 'manage-learning-attendance']],
                 ]],
-                ['label' => 'Penilaian', 'icon' => 'check-circle', 'items' => [
+                ['label' => 'Evaluasi & Ujian', 'icon' => 'check-circle', 'items' => [
                     ['label' => 'Evaluasi', 'route' => 'evaluations.index', 'permission' => ['view-evaluations', 'manage-evaluations']],
                     ['label' => 'Nilai Evaluasi', 'route' => 'evaluation-scores.index', 'permission' => ['view-evaluations', 'manage-evaluations']],
                     ['label' => 'Daftar Munaqosah', 'route' => 'munaqosahs.index', 'permission' => ['view-munaqosah', 'manage-munaqosah']],
                     ['label' => 'Daftar Ujian', 'route' => 'ujians.index', 'permission' => ['view-ujian', 'manage-ujian']],
+                    ['label' => 'Rapor Generus', 'route' => 'report-cards.index', 'permission' => ['view-report-cards', 'manage-report-cards']],
+                ]],
+                ['label' => 'Kontrol Harian', 'icon' => 'clipboard-check', 'items' => [
                     ['label' => 'Kontrol Bacaan', 'route' => 'kontrol.bacaan', 'permission' => ['view-ujian', 'manage-ujian']],
                     ['label' => 'Kontrol Hafalan', 'route' => 'kontrol.hafalan', 'permission' => ['view-ujian', 'manage-ujian']],
                     ['label' => 'Kontrol Menulis', 'route' => 'kontrol.menulis', 'permission' => ['view-ujian', 'manage-ujian']],
                     ['label' => 'Kontrol Praktik Ibadah', 'route' => 'kontrol.praktik-ibadah', 'permission' => ['view-ujian', 'manage-ujian']],
                     ['label' => 'Kontrol Akhlaq', 'route' => 'kontrol.akhlaq', 'permission' => ['view-ujian', 'manage-ujian']],
                     ['label' => 'Kontrol Kemandirian', 'route' => 'kontrol.kemandirian', 'permission' => ['view-ujian', 'manage-ujian']],
-                    ['label' => 'Rapor Generus', 'route' => 'report-cards.index', 'permission' => ['view-report-cards', 'manage-report-cards']],
                 ]],
             ]],
             ['label' => 'Komunikasi & Laporan', 'sections' => [
@@ -117,8 +119,8 @@
         @endphp
 
         @if ($groupSections->isNotEmpty())
-            <div data-sidebar-group class="pt-3 first:pt-0">
-                <p class="px-2 pb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">{{ $group['label'] }}</p>
+            <div data-sidebar-group class="pt-2 first:pt-0">
+                <p class="px-2 pb-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">{{ $group['label'] }}</p>
 
                 @foreach ($groupSections as $section)
                     @php
@@ -129,22 +131,22 @@
                     @endphp
 
                     @if (isset($section['route']))
-                        <a data-sidebar-section href="{{ route($section['route']) }}" title="{{ $section['label'] }}" class="flex items-center gap-2.5 rounded-md border-l-2 px-2 py-1.5 text-[13px] font-semibold transition {{ $isActive ? 'border-amber-500 bg-amber-50 text-amber-700' : 'border-transparent text-slate-700 hover:bg-slate-100 hover:text-slate-900' }}">
+                        <a data-sidebar-section href="{{ route($section['route']) }}" title="{{ $section['label'] }}" class="flex items-center gap-2 rounded-md border-l-2 px-2 py-1 text-[13px] font-semibold transition {{ $isActive ? 'border-amber-500 bg-amber-50 text-amber-700' : 'border-transparent text-slate-700 hover:bg-slate-100 hover:text-slate-900' }}">
                             <x-sidebar-icon :name="$section['icon'] ?? 'dot'" class="h-4 w-4 shrink-0" />
                             <span data-sidebar-label>{{ $section['label'] }}</span>
                         </a>
                     @else
                         <details data-sidebar-section data-sidebar-accordion data-initial-open="{{ $isActive ? '1' : '0' }}" class="group" @if ($isActive) open @endif>
-                            <summary title="{{ $section['label'] }}" class="flex cursor-pointer list-none items-center justify-between rounded-md border-l-2 px-2 py-1.5 text-[13px] font-semibold transition [&::-webkit-details-marker]:hidden {{ $isActive ? 'border-amber-500 text-slate-900 hover:bg-slate-100' : 'border-transparent text-slate-700 hover:bg-slate-100 hover:text-slate-900' }}">
-                                <span class="flex items-center gap-2.5">
+                            <summary title="{{ $section['label'] }}" class="flex cursor-pointer list-none items-center justify-between rounded-md border-l-2 px-2 py-1 text-[13px] font-semibold transition [&::-webkit-details-marker]:hidden {{ $isActive ? 'border-amber-500 text-slate-900 hover:bg-slate-100' : 'border-transparent text-slate-700 hover:bg-slate-100 hover:text-slate-900' }}">
+                                <span class="flex items-center gap-2">
                                     <x-sidebar-icon :name="$section['icon'] ?? 'dot'" class="h-4 w-4 shrink-0" />
                                     <span data-sidebar-label>{{ $section['label'] }}</span>
                                 </span>
                                 <span data-sidebar-label class="text-[9px] text-slate-400 transition-transform duration-200 group-open:rotate-180">▾</span>
                             </summary>
-                            <div data-sidebar-label class="ml-[13px] space-y-0.5 border-l border-slate-200 py-0.5 pl-4">
+                            <div data-sidebar-label class="ml-[13px] space-y-0 border-l border-slate-200 py-0.5 pl-4">
                                 @foreach ($visibleItems as $item)
-                                    <a href="{{ route($item['route']) }}" class="block rounded-md px-2 py-1 text-[12px] transition {{ request()->routeIs($item['route']) ? 'bg-amber-50 font-medium text-amber-700 hover:bg-amber-100' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900' }}">
+                                    <a href="{{ route($item['route']) }}" class="block rounded-md px-2 py-0.5 text-[12px] transition {{ request()->routeIs($item['route']) ? 'bg-amber-50 font-medium text-amber-700 hover:bg-amber-100' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900' }}">
                                         {{ $item['label'] }}
                                     </a>
                                 @endforeach
