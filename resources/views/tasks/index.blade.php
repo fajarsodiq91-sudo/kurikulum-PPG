@@ -27,9 +27,9 @@
 
     <div class="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
-            <p class="text-sm font-semibold text-amber-600">Tugas</p>
-            <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Papan Tugas</h2>
-            <p class="mt-2 text-sm text-slate-500">Catat dan pantau tugas atau action plan hasil musyawarah/rapat pengurus, sesuai hirarki kepengurusan.</p>
+            <p class="text-sm font-semibold text-amber-600">Musyawaroh</p>
+            <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Papan Tugas &amp; Notulen</h2>
+            <p class="mt-2 text-sm text-slate-500">Catat dan pantau tugas atau action plan, serta notulen hasil musyawarah/rapat pengurus, sesuai hirarki kepengurusan.</p>
         </div>
         @if (\App\Support\Access::can('manage-tasks'))
             <div class="flex shrink-0 gap-2">
@@ -43,24 +43,10 @@
         @endif
     </div>
 
-    <div class="mb-6 grid gap-4 sm:grid-cols-3">
-        @foreach ($statusMeta as $key => $meta)
-            <x-card class="p-4">
-                <p class="text-xs font-medium text-slate-500">{{ $meta['label'] }}</p>
-                <p class="mt-1 text-2xl font-bold text-slate-950">{{ $tasksByStatus->get($key, collect())->count() }}</p>
-            </x-card>
-        @endforeach
+    <div class="mb-6 inline-flex items-center gap-1 rounded-lg border border-slate-300 p-0.5 text-sm" role="group" aria-label="Tampilan Musyawaroh" data-musyawaroh-initial-view="{{ $notulenFormShouldOpen ? 'notulen' : 'tasks' }}">
+        <button type="button" id="musyawaroh-view-tasks-btn" data-musyawaroh-view="tasks" class="rounded-md px-3 py-1.5 font-medium transition">Tugas</button>
+        <button type="button" id="musyawaroh-view-notulen-btn" data-musyawaroh-view="notulen" class="rounded-md px-3 py-1.5 font-medium transition">Notulen</button>
     </div>
-
-    <x-card class="mb-6 p-4">
-        <div class="flex items-center justify-between text-xs font-medium text-slate-500">
-            <span>Progres Keseluruhan</span>
-            <span>{{ $doneCount }} / {{ $totalTasks }} selesai ({{ $progressPercent }}%)</span>
-        </div>
-        <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100">
-            <div class="h-full rounded-full bg-emerald-500" style="width: {{ $progressPercent }}%"></div>
-        </div>
-    </x-card>
 
     @if (\App\Support\Access::can('manage-tasks'))
         <div id="create-task-backdrop" class="fixed inset-0 z-40 bg-slate-900/50 {{ $formShouldOpen ? '' : 'hidden' }}" data-create-task-close></div>
@@ -159,37 +145,61 @@
         </div>
     @endif
 
-    @if ($notulens->isNotEmpty())
-        <x-card class="mb-6">
-            <h3 class="mb-4 text-sm font-semibold text-slate-700">Notulen Musyawaroh</h3>
-            <div class="space-y-4">
-                @foreach ($notulens as $notulen)
-                    <div class="rounded-lg border border-slate-200 p-4">
-                        <div class="flex flex-wrap items-start justify-between gap-2">
-                            <div>
-                                <p class="font-medium text-slate-900">{{ $notulen->title }}</p>
-                                <p class="mt-0.5 text-xs text-slate-500">
-                                    {{ $notulen->bucket ?: 'Tanpa Kategori' }}
-                                    @if ($notulen->meeting_date)
-                                        &middot; {{ $notulen->meeting_date->translatedFormat('d M Y') }}
-                                    @endif
-                                    &middot; oleh {{ $notulen->createdBy?->name ?? '-' }}
-                                </p>
+    <div id="musyawaroh-view-notulen" class="{{ $notulenFormShouldOpen ? '' : 'hidden' }}">
+        @if ($notulens->isEmpty())
+            <x-empty-state title="Belum ada notulen." class="mb-6 border-none bg-transparent" />
+        @else
+            <x-card class="mb-6">
+                <h3 class="mb-4 text-sm font-semibold text-slate-700">Notulen Musyawaroh</h3>
+                <div class="space-y-4">
+                    @foreach ($notulens as $notulen)
+                        <div class="rounded-lg border border-slate-200 p-4">
+                            <div class="flex flex-wrap items-start justify-between gap-2">
+                                <div>
+                                    <p class="font-medium text-slate-900">{{ $notulen->title }}</p>
+                                    <p class="mt-0.5 text-xs text-slate-500">
+                                        {{ $notulen->bucket ?: 'Tanpa Kategori' }}
+                                        @if ($notulen->meeting_date)
+                                            &middot; {{ $notulen->meeting_date->translatedFormat('d M Y') }}
+                                        @endif
+                                        &middot; oleh {{ $notulen->createdBy?->name ?? '-' }}
+                                    </p>
+                                </div>
+                                @if ($notulen->isEditableBy($user))
+                                    <form method="POST" action="{{ route('notulen.destroy', $notulen) }}" onsubmit="return confirm('Hapus notulen ini?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-xs font-medium text-rose-600 hover:underline">Hapus</button>
+                                    </form>
+                                @endif
                             </div>
-                            @if ($notulen->isEditableBy($user))
-                                <form method="POST" action="{{ route('notulen.destroy', $notulen) }}" onsubmit="return confirm('Hapus notulen ini?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-xs font-medium text-rose-600 hover:underline">Hapus</button>
-                                </form>
-                            @endif
+                            <p class="mt-2 whitespace-pre-line text-sm text-slate-600">{{ $notulen->content }}</p>
                         </div>
-                        <p class="mt-2 whitespace-pre-line text-sm text-slate-600">{{ $notulen->content }}</p>
-                    </div>
-                @endforeach
-            </div>
-        </x-card>
-    @endif
+                    @endforeach
+                </div>
+            </x-card>
+        @endif
+    </div>
+
+    <div id="musyawaroh-view-tasks" class="{{ $notulenFormShouldOpen ? 'hidden' : '' }}">
+    <div class="mb-6 grid gap-4 sm:grid-cols-3">
+        @foreach ($statusMeta as $key => $meta)
+            <x-card class="p-4">
+                <p class="text-xs font-medium text-slate-500">{{ $meta['label'] }}</p>
+                <p class="mt-1 text-2xl font-bold text-slate-950">{{ $tasksByStatus->get($key, collect())->count() }}</p>
+            </x-card>
+        @endforeach
+    </div>
+
+    <x-card class="mb-6 p-4">
+        <div class="flex items-center justify-between text-xs font-medium text-slate-500">
+            <span>Progres Keseluruhan</span>
+            <span>{{ $doneCount }} / {{ $totalTasks }} selesai ({{ $progressPercent }}%)</span>
+        </div>
+        <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+            <div class="h-full rounded-full bg-emerald-500" style="width: {{ $progressPercent }}%"></div>
+        </div>
+    </x-card>
 
     @if ($totalTasks > 0)
         <x-card class="mb-6 flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
@@ -330,6 +340,7 @@
             </x-card>
         @endif
     </div>
+    </div>
 
     <script>
         (function () {
@@ -404,6 +415,60 @@
                     closeModal();
                 }
             });
+        })();
+
+        (function () {
+            const tasksButton = document.getElementById('musyawaroh-view-tasks-btn');
+            const notulenButton = document.getElementById('musyawaroh-view-notulen-btn');
+            const tasksView = document.getElementById('musyawaroh-view-tasks');
+            const notulenView = document.getElementById('musyawaroh-view-notulen');
+            const toggleGroup = tasksButton?.closest('[data-musyawaroh-initial-view]');
+
+            if (!tasksButton || !notulenButton || !tasksView || !notulenView) {
+                return;
+            }
+
+            const storageKey = 'musyawaroh-view-mode';
+
+            function setMode(mode) {
+                const isNotulen = mode === 'notulen';
+                tasksView.classList.toggle('hidden', isNotulen);
+                notulenView.classList.toggle('hidden', !isNotulen);
+                tasksButton.classList.toggle('bg-white', !isNotulen);
+                tasksButton.classList.toggle('shadow-sm', !isNotulen);
+                tasksButton.classList.toggle('text-slate-900', !isNotulen);
+                tasksButton.classList.toggle('text-slate-500', isNotulen);
+                notulenButton.classList.toggle('bg-white', isNotulen);
+                notulenButton.classList.toggle('shadow-sm', isNotulen);
+                notulenButton.classList.toggle('text-slate-900', isNotulen);
+                notulenButton.classList.toggle('text-slate-500', !isNotulen);
+
+                try {
+                    localStorage.setItem(storageKey, mode);
+                } catch (error) {
+                    // Private browsing or blocked storage - the toggle still works for this page view.
+                }
+            }
+
+            tasksButton.addEventListener('click', () => setMode('tasks'));
+            notulenButton.addEventListener('click', () => setMode('notulen'));
+
+            // A validation error redirect from the notulen form must land back on the
+            // notulen tab, overriding whatever tab the user had saved previously.
+            const forcedInitialView = toggleGroup?.dataset.musyawarohInitialView;
+
+            if (forcedInitialView === 'notulen') {
+                setMode('notulen');
+            } else {
+                let savedMode = 'tasks';
+                try {
+                    savedMode = localStorage.getItem(storageKey) || 'tasks';
+                } catch (error) {
+                    savedMode = 'tasks';
+                }
+
+                setMode(savedMode === 'notulen' ? 'notulen' : 'tasks');
+            }
         })();
 
         (function () {
