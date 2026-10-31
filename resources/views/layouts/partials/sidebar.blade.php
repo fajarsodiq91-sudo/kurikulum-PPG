@@ -156,3 +156,7 @@
         @endif
     @endforeach
 </nav>
+
+<div data-sidebar-label class="shrink-0 border-t border-slate-200 px-3 py-2">
+    <p class="text-[10px] text-slate-400">developed by alfajarlogic.com</p>
+</div>
