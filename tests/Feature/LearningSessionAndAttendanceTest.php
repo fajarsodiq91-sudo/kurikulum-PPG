@@ -495,6 +495,33 @@ class LearningSessionAndAttendanceTest extends TestCase
             ->assertSessionHasErrors('rfid_uid');
     }
 
+    public function test_attendance_roster_is_limited_to_the_sessions_class_grade_when_set(): void
+    {
+        [$village, $group] = $this->createPlacements();
+        $user = $this->createScopedUser('group', $group->id);
+        [$teacher, $material] = $this->createTeachingContext();
+        $classGradeId = $material->materialChapter->materialCategory->class_grade_id;
+
+        $otherLevel = Level::create(['name' => 'Kelas 2', 'code' => 'KELAS-2', 'sort_order' => 2, 'is_active' => true]);
+        $otherClassGrade = ClassGrade::create(['level_id' => $otherLevel->id, 'name' => 'Kelas 2', 'code' => 'KELAS-2', 'sort_order' => 2, 'is_active' => true]);
+
+        $inClass = $this->createGenerusAt('Ali', ['village_id' => $village->id, 'group_id' => $group->id]);
+        $inClass->update(['learning_class_id' => $classGradeId]);
+
+        $otherClass = $this->createGenerusAt('Budi', ['village_id' => $village->id, 'group_id' => $group->id]);
+        $otherClass->update(['learning_class_id' => $otherClassGrade->id]);
+
+        $session = $this->createSession($teacher, $material, [
+            'level' => 'group',
+            'group_id' => $group->id,
+            'village_id' => $village->id,
+            'class_grade_id' => $classGradeId,
+        ]);
+
+        $this->actingAs($user)->get("/learning-sessions/{$session->id}/attendance")
+            ->assertOk()->assertSee('Ali')->assertDontSee('Budi');
+    }
+
     public function test_learning_session_requires_placement_matching_its_level(): void
     {
         $user = $this->createAdminWithPermission('manage-learning-sessions');

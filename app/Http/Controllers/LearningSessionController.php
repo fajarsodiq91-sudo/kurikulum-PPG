@@ -53,6 +53,7 @@ class LearningSessionController extends Controller
         ]);
 
         $validated = $this->keepOnlyLevelPlacement($validated);
+        $validated['class_grade_id'] = $this->resolveClassGradeId($validated['material_id']);
 
         LearningSession::create($validated);
 
@@ -101,10 +102,11 @@ class LearningSessionController extends Controller
     private function generateForGroups(array $validated): int
     {
         $groups = Group::where('is_active', true)->get();
+        $classGradeId = $this->resolveClassGradeId($validated['material_id']);
 
         foreach ($groups as $group) {
             LearningSession::updateOrCreate(
-                ['material_id' => $validated['material_id'], 'group_id' => $group->id, 'level' => LearningSession::LEVEL_GROUP],
+                ['material_id' => $validated['material_id'], 'group_id' => $group->id, 'level' => LearningSession::LEVEL_GROUP, 'class_grade_id' => $classGradeId],
                 ['village_id' => $group->village_id, 'session_date' => $validated['session_date'], 'status' => $validated['status']],
             );
         }
@@ -118,15 +120,25 @@ class LearningSessionController extends Controller
     private function generateForVillages(array $validated): int
     {
         $villages = Village::where('is_active', true)->get();
+        $classGradeId = $this->resolveClassGradeId($validated['material_id']);
 
         foreach ($villages as $village) {
             LearningSession::updateOrCreate(
-                ['material_id' => $validated['material_id'], 'village_id' => $village->id, 'level' => LearningSession::LEVEL_VILLAGE, 'group_id' => null],
+                ['material_id' => $validated['material_id'], 'village_id' => $village->id, 'level' => LearningSession::LEVEL_VILLAGE, 'group_id' => null, 'class_grade_id' => $classGradeId],
                 ['session_date' => $validated['session_date'], 'status' => $validated['status']],
             );
         }
 
         return $villages->count();
+    }
+
+    /**
+     * The Kelas KBM a material belongs to, resolved via its chapter's category.
+     */
+    private function resolveClassGradeId(int $materialId): ?int
+    {
+        return LearningMaterial::with('materialChapter.materialCategory')
+            ->find($materialId)?->materialChapter?->materialCategory?->class_grade_id;
     }
 
     /**

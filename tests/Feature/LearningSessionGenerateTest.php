@@ -43,9 +43,12 @@ class LearningSessionGenerateTest extends TestCase
             ])
             ->assertRedirect('/learning-sessions');
 
+        $classGradeId = $material->materialChapter->materialCategory->class_grade_id;
+
         $this->assertDatabaseCount('learning_sessions', 2);
         $this->assertDatabaseHas('learning_sessions', [
             'material_id' => $material->id,
+            'class_grade_id' => $classGradeId,
             'group_id' => $groupOne->id,
             'village_id' => $villageOne->id,
             'session_date' => '2026-01-19',

@@ -115,6 +115,7 @@
                                 <th class="py-3 pr-4">Tanggal</th>
                                 <th class="py-3 pr-4">Guru</th>
                                 <th class="py-3 pr-4">Materi</th>
+                                <th class="py-3 pr-4">Kelas KBM</th>
                                 <th class="py-3 pr-4">Tingkat</th>
                                 <th class="py-3 pr-4">Status</th>
                                 <th class="py-3"><span class="sr-only">Aksi</span></th>
@@ -132,6 +133,7 @@
                                         @endif
                                     </td>
                                     <td class="py-3 pr-4">{{ $session->material?->title ?? '-' }}</td>
+                                    <td class="py-3 pr-4">{{ $session->classGrade?->name ?? '-' }}</td>
                                     <td class="py-3 pr-4">{{ $session->levelLabel() }}</td>
                                     <td class="py-3 pr-4">{{ $session->status }}</td>
                                     <td class="py-3 text-right whitespace-nowrap">
@@ -145,7 +147,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="py-6 text-center text-slate-500">Belum ada sesi KBM.</td>
+                                    <td colspan="7" class="py-6 text-center text-slate-500">Belum ada sesi KBM.</td>
                                 </tr>
                             @endforelse
                         </tbody>

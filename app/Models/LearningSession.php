@@ -24,6 +24,7 @@ class LearningSession extends Model
     protected $fillable = [
         'teacher_id',
         'material_id',
+        'class_grade_id',
         'level',
         'village_id',
         'group_id',
@@ -45,6 +46,11 @@ class LearningSession extends Model
         return $this->belongsTo(LearningMaterial::class, 'material_id');
     }
 
+    public function classGrade(): BelongsTo
+    {
+        return $this->belongsTo(ClassGrade::class);
+    }
+
     public function attendances(): HasMany
     {
         return $this->hasMany(SessionAttendance::class);
@@ -62,11 +68,13 @@ class LearningSession extends Model
 
     public function levelLabel(): string
     {
-        return match ($this->level) {
+        $label = match ($this->level) {
             self::LEVEL_VILLAGE => 'Desa'.($this->village ? ': '.$this->village->name : ''),
             self::LEVEL_GROUP => 'Kelompok'.($this->group ? ': '.$this->group->name : ''),
             default => '-',
         };
+
+        return $this->classGrade ? $label.' · Kelas KBM: '.$this->classGrade->name : $label;
     }
 
     /**
@@ -162,6 +170,7 @@ class LearningSession extends Model
         return Generus::query()
             ->where('status', 'active')
             ->when($placement, fn (Builder $query) => $query->inPlacement($placement))
+            ->when($this->class_grade_id, fn (Builder $query) => $query->where('learning_class_id', $this->class_grade_id))
             ->orderBy('full_name');
     }
 
