@@ -9,8 +9,10 @@ use App\Models\Region;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Village;
+use App\Notifications\UserAccountCreated;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class UserManagementTest extends TestCase
@@ -225,6 +227,51 @@ class UserManagementTest extends TestCase
             ->assertOk()
             ->assertSee('Budi Santoso')
             ->assertDontSee('Citra Lestari');
+    }
+
+    public function test_creating_a_user_sends_them_an_account_created_email(): void
+    {
+        Notification::fake();
+
+        $adminRole = Role::create(['name' => 'Super Admin', 'slug' => 'super-admin', 'is_active' => true]);
+        $adminRole->permissions()->attach(Permission::create(['name' => 'Manage Users', 'slug' => 'manage-users', 'module' => 'users', 'is_active' => true])->id);
+        $admin = User::create(['name' => 'Admin PPG', 'email' => 'admin@ppg.test', 'password' => Hash::make('password123'), 'status' => 'active']);
+        $admin->assignRole($adminRole->id, 'global', null);
+
+        $this->actingAs($admin)
+            ->post('/users', [
+                'name' => 'Pengguna Baru',
+                'email' => 'baru-notif@ppg.test',
+                'password' => 'password123',
+                'status' => 'active',
+            ])
+            ->assertRedirect('/users');
+
+        $createdUser = User::query()->where('email', 'baru-notif@ppg.test')->firstOrFail();
+
+        Notification::assertSentTo($createdUser, UserAccountCreated::class);
+    }
+
+    public function test_updating_a_user_does_not_send_an_account_created_email(): void
+    {
+        Notification::fake();
+
+        $adminRole = Role::create(['name' => 'Super Admin', 'slug' => 'super-admin', 'is_active' => true]);
+        $adminRole->permissions()->attach(Permission::create(['name' => 'Manage Users', 'slug' => 'manage-users', 'module' => 'users', 'is_active' => true])->id);
+        $admin = User::create(['name' => 'Admin PPG', 'email' => 'admin@ppg.test', 'password' => Hash::make('password123'), 'status' => 'active']);
+        $admin->assignRole($adminRole->id, 'global', null);
+
+        $target = User::create(['name' => 'Fajar Sodiq', 'email' => 'fajar@ppg.test', 'password' => Hash::make('password123'), 'status' => 'active']);
+
+        $this->actingAs($admin)
+            ->put("/users/{$target->id}", [
+                'name' => $target->name,
+                'email' => $target->email,
+                'status' => 'active',
+            ])
+            ->assertRedirect('/users');
+
+        Notification::assertNotSentTo($target, UserAccountCreated::class);
     }
 
     public function test_user_without_manage_users_permission_cannot_access_user_management(): void

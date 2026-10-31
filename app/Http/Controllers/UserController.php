@@ -8,16 +8,19 @@ use App\Models\Group;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Village;
+use App\Notifications\UserAccountCreated;
 use App\Support\OrganizationRoleScopes;
 use App\Support\Sheets\UserSheet;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Throwable;
 
 class UserController extends Controller
 {
@@ -61,6 +64,15 @@ class UserController extends Controller
             ]);
 
             $this->syncRoles($request, $user, $validated['roles'] ?? []);
+
+            try {
+                $user->notify(new UserAccountCreated($validated['password']));
+            } catch (Throwable $e) {
+                Log::error('Gagal mengirim email akun pengguna baru.', [
+                    'user_id' => $user->id,
+                    'exception' => $e,
+                ]);
+            }
         });
 
         return redirect()->route('users.index')->with('success', 'Data pengguna berhasil ditambahkan.');
