@@ -158,8 +158,8 @@
 </nav>
 
 <div data-sidebar-label class="shrink-0 border-t border-slate-200 px-3 py-2">
-    <a href="https://alfajarlogic.com/" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 text-[10px] text-slate-400 transition hover:text-slate-600">
-        <img src="{{ asset('images/alfajarlogic-logo.png') }}" alt="Alfajarlogic" class="h-4 w-auto">
+    <a href="https://alfajarlogic.com/" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 text-xs text-slate-500 transition hover:text-slate-700">
+        <img src="{{ asset('images/alfajarlogic-logo.png') }}" alt="Alfajarlogic" class="h-7 w-auto">
         <span>developed by alfajarlogic.com</span>
     </a>
 </div>
