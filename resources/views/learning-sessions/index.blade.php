@@ -11,11 +11,14 @@
             <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Jadwal KBM</h2>
             <p class="mt-2 text-sm text-slate-500">Kelola sesi pembelajaran, pengajar, dan waktu pelaksanaan.</p>
         </div>
-        @if (\App\Support\Access::can('manage-learning-sessions'))
-            <div class="flex flex-wrap gap-3">
-                <a href="{{ route('learning-sessions.generate') }}" class="inline-flex items-center justify-center rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800">Generate Jadwal Mingguan</a>
-            </div>
-        @endif
+        <div class="flex flex-wrap gap-3">
+            @if (\App\Support\Access::can('manage-learning-attendance'))
+                <a href="{{ route('learning-sessions.today') }}" class="inline-flex items-center justify-center rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800">Mulai Sesi Hari Ini</a>
+            @endif
+            @if (\App\Support\Access::can('view-learning-sessions') || \App\Support\Access::can('manage-learning-sessions'))
+                <a href="{{ route('default-schedules.index') }}" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Jadwal KBM Default</a>
+            @endif
+        </div>
     </div>
 
         @include('layouts.partials.spreadsheet-tools', ['exportUrl' => route('learning-sessions.export')])
@@ -36,13 +39,23 @@
                         </select>
                     </div>
                     <div class="mb-4">
-                        <label class="block text-sm font-medium mb-2" for="material_id">Materi</label>
-                        <select id="material_id" name="material_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                        <label class="block text-sm font-medium mb-2" for="class_grade_id">Kelas KBM</label>
+                        <select id="class_grade_id" name="class_grade_id" class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                            <option value="">-- Semua kelas --</option>
+                            @foreach($classGrades as $classGrade)
+                                <option value="{{ $classGrade->id }}">{{ $classGrade->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2" for="material_id">Materi (opsional)</label>
+                        <select id="material_id" name="material_id" class="w-full rounded-lg border border-slate-300 px-3 py-2">
                             <option value="">-- Pilih --</option>
                             @foreach($materials as $material)
                                 <option value="{{ $material->id }}">{{ $material->title }}</option>
                             @endforeach
                         </select>
+                        <p class="mt-1 text-xs text-slate-500">Materi yang benar-benar diajarkan dapat dicatat lewat Jurnal KBM setelah sesi berjalan.</p>
                     </div>
                     <div class="mb-4">
                         <label class="block text-sm font-medium mb-2" for="level">Tingkat Pelaksanaan</label>

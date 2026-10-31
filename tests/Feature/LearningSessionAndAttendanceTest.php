@@ -522,6 +522,36 @@ class LearningSessionAndAttendanceTest extends TestCase
             ->assertOk()->assertSee('Ali')->assertDontSee('Budi');
     }
 
+    public function test_teacher_can_fill_in_the_journal_for_their_own_session(): void
+    {
+        [$village, $group] = $this->createPlacements();
+        $user = $this->createScopedUser('group', $group->id);
+        [$teacher, $material] = $this->createTeachingContext();
+        $session = $this->createSession($teacher, $material, ['level' => 'group', 'group_id' => $group->id, 'village_id' => $village->id]);
+
+        $this->actingAs($user)
+            ->put("/learning-sessions/{$session->id}/journal", ['material_id' => $material->id, 'content' => 'Membahas akhlaq sehari-hari'])
+            ->assertRedirect("/learning-sessions/{$session->id}/attendance");
+
+        $this->assertDatabaseHas('learning_journals', [
+            'learning_session_id' => $session->id,
+            'material_id' => $material->id,
+            'content' => 'Membahas akhlaq sehari-hari',
+        ]);
+    }
+
+    public function test_journal_cannot_be_filled_for_a_session_outside_the_users_scope(): void
+    {
+        [$village, $group, $otherGroup] = $this->createPlacements();
+        $user = $this->createScopedUser('group', $group->id);
+        [$teacher, $material] = $this->createTeachingContext();
+        $foreign = $this->createSession($teacher, $material, ['level' => 'group', 'group_id' => $otherGroup->id, 'village_id' => $otherGroup->village_id]);
+
+        $this->actingAs($user)
+            ->put("/learning-sessions/{$foreign->id}/journal", ['content' => 'Tidak boleh'])
+            ->assertNotFound();
+    }
+
     public function test_learning_session_requires_placement_matching_its_level(): void
     {
         $user = $this->createAdminWithPermission('manage-learning-sessions');

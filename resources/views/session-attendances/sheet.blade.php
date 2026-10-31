@@ -81,5 +81,27 @@
             @endif
         </form>
     </section>
+    <section class="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h3 class="text-lg font-bold text-slate-950">Jurnal KBM</h3>
+        <p class="mt-1 text-sm text-slate-500">Catat materi/topik yang benar-benar diajarkan pada sesi ini.</p>
+        <form method="POST" action="{{ route('learning-sessions.journal.update', $session) }}" class="mt-4 space-y-4">
+            @csrf
+            @method('PUT')
+            <div>
+                <label class="block text-sm font-medium mb-2" for="journal_material_id">Materi (opsional)</label>
+                <select id="journal_material_id" name="material_id" class="w-full max-w-md rounded-lg border border-slate-300 px-3 py-2">
+                    <option value="">-- Pilih --</option>
+                    @foreach ($journalMaterials as $material)
+                        <option value="{{ $material->id }}" @selected(old('material_id', $session->journal?->material_id) == $material->id)>{{ $material->title }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-2" for="journal_content">Catatan</label>
+                <textarea id="journal_content" name="content" rows="3" class="w-full rounded-lg border border-slate-300 px-3 py-2">{{ old('content', $session->journal?->content) }}</textarea>
+            </div>
+            <button type="submit" class="rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Simpan Jurnal</button>
+        </form>
+    </section>
     @vite('resources/js/attendance-scanner.js')
 @endsection

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class LearningSession extends Model
 {
@@ -54,6 +55,11 @@ class LearningSession extends Model
     public function attendances(): HasMany
     {
         return $this->hasMany(SessionAttendance::class);
+    }
+
+    public function journal(): HasOne
+    {
+        return $this->hasOne(LearningJournal::class);
     }
 
     public function village(): BelongsTo

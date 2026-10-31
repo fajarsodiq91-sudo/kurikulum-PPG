@@ -11,6 +11,7 @@ use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\CommunicationController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DefaultScheduleController;
 use App\Http\Controllers\DownloadFileController;
 use App\Http\Controllers\EvaluationController;
 use App\Http\Controllers\EvaluationScoreController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\FollowUpController;
 use App\Http\Controllers\GenerusController;
 use App\Http\Controllers\GuardianController;
 use App\Http\Controllers\KontrolController;
+use App\Http\Controllers\LearningJournalController;
 use App\Http\Controllers\LearningMaterialController;
 use App\Http\Controllers\LearningSessionController;
 use App\Http\Controllers\MasterData\MasterDataController;
@@ -393,18 +395,20 @@ Route::middleware(['auth', 'permission:view-learning-sessions,manage-learning-se
         ->name('learning-sessions.index');
     Route::get('/learning-sessions/export', [LearningSessionController::class, 'export'])
         ->name('learning-sessions.export');
+    Route::get('/default-schedules', [DefaultScheduleController::class, 'index'])
+        ->name('default-schedules.index');
 });
 
 Route::middleware(['auth', 'permission:manage-learning-sessions'])->group(function () {
-    Route::get('/learning-sessions/generate', [LearningSessionController::class, 'generate'])
-        ->name('learning-sessions.generate');
-    Route::post('/learning-sessions/generate', [LearningSessionController::class, 'generateStore'])
-        ->name('learning-sessions.generate.store');
     Route::post('/learning-sessions', [LearningSessionController::class, 'store'])
         ->name('learning-sessions.store');
     Route::delete('/learning-sessions/{learningSession}', [LearningSessionController::class, 'destroy'])
         ->whereNumber('learningSession')
         ->name('learning-sessions.destroy');
+    Route::post('/default-schedules/generate', [DefaultScheduleController::class, 'generateWeeks'])
+        ->name('default-schedules.generate');
+    Route::put('/default-schedules', [DefaultScheduleController::class, 'saveBatch'])
+        ->name('default-schedules.update');
 });
 
 Route::middleware(['auth', 'permission:manage-learning-sessions,manage-learning-attendance'])->group(function () {
@@ -424,6 +428,11 @@ Route::middleware(['auth', 'permission:view-learning-attendance,manage-learning-
 });
 
 Route::middleware(['auth', 'permission:manage-learning-attendance'])->group(function () {
+    Route::get('/learning-sessions/today', [LearningSessionController::class, 'today'])
+        ->name('learning-sessions.today');
+    Route::put('/learning-sessions/{learningSession}/journal', [LearningJournalController::class, 'update'])
+        ->whereNumber('learningSession')
+        ->name('learning-sessions.journal.update');
     Route::post('/session-attendances/import', [SessionAttendanceController::class, 'import'])
         ->name('session-attendances.import');
     Route::get('/learning-sessions/{learningSession}/attendance', [SessionAttendanceController::class, 'sheet'])

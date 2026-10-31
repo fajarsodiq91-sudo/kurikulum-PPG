@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\HandlesSheets;
+use App\Models\ClassGrade;
 use App\Models\Group;
 use App\Models\LearningMaterial;
 use App\Models\LearningSession;
@@ -11,6 +12,7 @@ use App\Models\Village;
 use App\Support\Sheets\LearningSessionSheet;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -33,6 +35,7 @@ class LearningSessionController extends Controller
             'groups' => Group::where('is_active', true)->orderBy('name')->get(),
             'teachers' => Teacher::where('status', 'active')->get(),
             'materials' => LearningMaterial::where('is_active', true)->get(),
+            'classGrades' => ClassGrade::where('is_active', true)->orderBy('sort_order')->get(),
         ]);
     }
 
@@ -40,7 +43,8 @@ class LearningSessionController extends Controller
     {
         $validated = $request->validate([
             'teacher_id' => ['required', 'exists:teachers,id'],
-            'material_id' => ['required', 'exists:learning_materials,id'],
+            'material_id' => ['nullable', 'exists:learning_materials,id'],
+            'class_grade_id' => ['nullable', 'exists:class_grades,id'],
             'level' => ['required', Rule::in([LearningSession::LEVEL_VILLAGE, LearningSession::LEVEL_GROUP])],
             'village_id' => ['required_if:level,'.LearningSession::LEVEL_VILLAGE, 'nullable', 'exists:villages,id'],
             'group_id' => ['required_if:level,'.LearningSession::LEVEL_GROUP, 'nullable', 'exists:groups,id'],
@@ -53,7 +57,7 @@ class LearningSessionController extends Controller
         ]);
 
         $validated = $this->keepOnlyLevelPlacement($validated);
-        $validated['class_grade_id'] = $this->resolveClassGradeId($validated['material_id']);
+        $validated['class_grade_id'] = $validated['class_grade_id'] ?? ($validated['material_id'] ? $this->resolveClassGradeId($validated['material_id']) : null);
 
         LearningSession::create($validated);
 
@@ -61,75 +65,44 @@ class LearningSessionController extends Controller
     }
 
     /**
-     * One national weekly schedule: a material (already tagged with its week number) and a
-     * calendar date, generated into every active village or group at once. Teacher and time
-     * are left for each village/group to complete afterwards.
+     * The teacher's own daily attendance session: found or created for the given date (today
+     * by default) in their fixed group. When they teach more than one Kelas KBM, they must
+     * say which one first.
      */
-    public function generate(): View
+    public function today(Request $request): View|RedirectResponse
     {
-        return view('learning-sessions.generate', [
-            'materials' => LearningMaterial::with('materialChapter.materialCategory.semester.academicYear')
-                ->where('is_active', true)
-                ->orderBy('week_number')
-                ->get(),
-            'groupCount' => Group::where('is_active', true)->count(),
-            'villageCount' => Village::where('is_active', true)->count(),
-        ]);
-    }
+        $teacher = $request->user()?->teacher;
+        abort_if($teacher === null, 403, 'Akun Anda belum terhubung ke data Guru.');
+        abort_if($teacher->group_id === null, 403, 'Guru ini belum ditempatkan di kelompok manapun.');
 
-    public function generateStore(Request $request): RedirectResponse
-    {
-        $validated = $request->validate([
-            'material_id' => ['required', 'exists:learning_materials,id'],
-            'session_date' => ['required', 'date'],
-            'level' => ['required', Rule::in([LearningSession::LEVEL_VILLAGE, LearningSession::LEVEL_GROUP])],
-            'status' => ['required', 'string', 'max:50'],
-        ]);
+        $date = $request->filled('date') ? Carbon::parse($request->string('date')->value())->toDateString() : today()->toDateString();
+        $classGrades = $teacher->classGrades;
 
-        $count = $validated['level'] === LearningSession::LEVEL_GROUP
-            ? $this->generateForGroups($validated)
-            : $this->generateForVillages($validated);
-
-        $target = $validated['level'] === LearningSession::LEVEL_GROUP ? 'kelompok' : 'desa';
-
-        return redirect()->route('learning-sessions.index')
-            ->with('success', "Jadwal KBM berhasil dibuat untuk {$count} {$target}. Guru dan jam pelaksanaan dapat dilengkapi oleh masing-masing {$target}.");
-    }
-
-    /**
-     * @param  array<string, mixed>  $validated
-     */
-    private function generateForGroups(array $validated): int
-    {
-        $groups = Group::where('is_active', true)->get();
-        $classGradeId = $this->resolveClassGradeId($validated['material_id']);
-
-        foreach ($groups as $group) {
-            LearningSession::updateOrCreate(
-                ['material_id' => $validated['material_id'], 'group_id' => $group->id, 'level' => LearningSession::LEVEL_GROUP, 'class_grade_id' => $classGradeId],
-                ['village_id' => $group->village_id, 'session_date' => $validated['session_date'], 'status' => $validated['status']],
-            );
+        if ($request->filled('class_grade_id')) {
+            $classGradeId = $classGrades->pluck('id')->contains($request->integer('class_grade_id'))
+                ? $request->integer('class_grade_id')
+                : abort(422, 'Kelas KBM tidak termasuk kelas yang Anda ajar.');
+        } elseif ($classGrades->count() > 1) {
+            return view('learning-sessions.today-pick-class', [
+                'classGrades' => $classGrades,
+                'date' => $date,
+            ]);
+        } else {
+            $classGradeId = $classGrades->first()?->id;
         }
 
-        return $groups->count();
-    }
+        $session = LearningSession::firstOrCreate([
+            'teacher_id' => $teacher->id,
+            'group_id' => $teacher->group_id,
+            'level' => LearningSession::LEVEL_GROUP,
+            'class_grade_id' => $classGradeId,
+            'session_date' => $date,
+        ], [
+            'village_id' => $teacher->group->village_id,
+            'status' => 'scheduled',
+        ]);
 
-    /**
-     * @param  array<string, mixed>  $validated
-     */
-    private function generateForVillages(array $validated): int
-    {
-        $villages = Village::where('is_active', true)->get();
-        $classGradeId = $this->resolveClassGradeId($validated['material_id']);
-
-        foreach ($villages as $village) {
-            LearningSession::updateOrCreate(
-                ['material_id' => $validated['material_id'], 'village_id' => $village->id, 'level' => LearningSession::LEVEL_VILLAGE, 'group_id' => null, 'class_grade_id' => $classGradeId],
-                ['session_date' => $validated['session_date'], 'status' => $validated['status']],
-            );
-        }
-
-        return $villages->count();
+        return redirect()->route('learning-sessions.attendance.edit', $session);
     }
 
     /**

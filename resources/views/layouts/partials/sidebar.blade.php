@@ -72,6 +72,8 @@
                     ['label' => 'Pelaksanaan Program', 'route' => 'activity-executions.index', 'permission' => ['view-activity-executions', 'manage-activity-executions']],
                     ['label' => 'Milestone', 'route' => 'milestones.index', 'permission' => ['view-milestones', 'manage-milestones']],
                     ['label' => 'Sesi KBM', 'route' => 'learning-sessions.index', 'permission' => ['view-learning-sessions', 'manage-learning-sessions']],
+                    ['label' => 'Mulai Sesi Hari Ini', 'route' => 'learning-sessions.today', 'permission' => ['manage-learning-attendance']],
+                    ['label' => 'Jadwal KBM Default', 'route' => 'default-schedules.index', 'permission' => ['view-learning-sessions', 'manage-learning-sessions']],
                     ['label' => 'Absensi Sesi', 'route' => 'session-attendances.index', 'permission' => ['view-learning-attendance', 'manage-learning-attendance']],
                 ]],
                 ['label' => 'Evaluasi & Ujian', 'icon' => 'check-circle', 'items' => [

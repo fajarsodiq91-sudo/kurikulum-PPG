@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\HandlesSheets;
 use App\Models\Generus;
+use App\Models\LearningMaterial;
 use App\Models\LearningSession;
 use App\Models\SessionAttendance;
 use App\Support\Sheets\SessionAttendanceSheet;
@@ -37,11 +38,17 @@ class SessionAttendanceController extends Controller
         $this->authorizeSession($learningSession);
 
         return view('session-attendances.sheet', [
-            'session' => $learningSession->load(['teacher', 'material', 'village', 'group']),
+            'session' => $learningSession->load(['teacher', 'material', 'village', 'group', 'journal']),
             'roster' => $learningSession->rosterFor(request()->user())->get(),
             'recorded' => $learningSession->attendances()->get()->keyBy('generus_id'),
             'statuses' => self::STATUSES,
             'facesWithPhoto' => $learningSession->rosterFor(request()->user())->whereNotNull('photo')->count(),
+            'journalMaterials' => LearningMaterial::where('is_active', true)
+                ->when($learningSession->class_grade_id, fn (Builder $query) => $query->whereHas(
+                    'materialChapter.materialCategory',
+                    fn (Builder $category) => $category->where('class_grade_id', $learningSession->class_grade_id)
+                ))
+                ->get(),
         ]);
     }
 
