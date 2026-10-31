@@ -409,6 +409,41 @@ class AuthAndAuthorizationTest extends TestCase
             ->assertDontSee('Kategori Materi');
     }
 
+    public function test_sidebar_shows_download_file_menu_for_a_role_that_only_has_that_permission(): void
+    {
+        $role = Role::create([
+            'name' => 'Tamu',
+            'slug' => 'guest',
+            'is_active' => true,
+        ]);
+
+        $role->permissions()->attach([
+            Permission::create(['name' => 'View Dashboard', 'slug' => 'view-dashboard', 'module' => 'dashboard', 'is_active' => true])->id,
+            // The download-files permissions are seeded by a migration (not a factory/seeder),
+            // so they already exist in the test database by the time this runs.
+            Permission::firstOrCreate(['slug' => 'view-download-files'], ['name' => 'View Download Files', 'module' => 'download-files', 'is_active' => true])->id,
+        ]);
+
+        $user = User::create([
+            'name' => 'Tamu User',
+            'email' => 'tamu-download@ppg.test',
+            'password' => Hash::make('password123'),
+            'status' => 'active',
+        ]);
+
+        $user->assignRole($role->id);
+
+        $this->actingAs($user)
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertSee('Download File')
+            ->assertDontSee('Kategori Materi');
+
+        $this->actingAs($user)
+            ->get('/download-files')
+            ->assertOk();
+    }
+
     public function test_integrated_module_pages_are_available_to_authorized_users(): void
     {
         $role = Role::create([

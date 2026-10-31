@@ -60,10 +60,10 @@
                     ['label' => 'Konversi Nilai', 'route' => 'master-data.grade-scales.index'],
                     ['label' => 'Dapukan', 'route' => 'master-data.dapukans.index'],
                 ]],
-                ['label' => 'Kurikulum', 'permission' => ['view-learning-materials', 'manage-learning-materials'], 'icon' => 'book-open', 'items' => [
-                    ['label' => 'Kategori Materi', 'route' => 'material-categories.index'],
-                    ['label' => 'Bab Materi', 'route' => 'material-chapters.index'],
-                    ['label' => 'Materi', 'route' => 'learning-materials.index'],
+                ['label' => 'Kurikulum', 'icon' => 'book-open', 'items' => [
+                    ['label' => 'Kategori Materi', 'route' => 'material-categories.index', 'permission' => ['view-learning-materials', 'manage-learning-materials']],
+                    ['label' => 'Bab Materi', 'route' => 'material-chapters.index', 'permission' => ['view-learning-materials', 'manage-learning-materials']],
+                    ['label' => 'Materi', 'route' => 'learning-materials.index', 'permission' => ['view-learning-materials', 'manage-learning-materials']],
                     ['label' => 'Progress Tracking', 'route' => 'progress-tracks.index', 'permission' => ['view-progress-tracking', 'manage-progress-tracking']],
                     ['label' => 'Download File', 'route' => 'download-files.index', 'permission' => ['view-download-files', 'manage-download-files']],
                 ]],
@@ -158,5 +158,8 @@
 </nav>
 
 <div data-sidebar-label class="shrink-0 border-t border-slate-200 px-3 py-2">
-    <p class="text-[10px] text-slate-400">developed by alfajarlogic.com</p>
+    <a href="https://alfajarlogic.com/" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 text-[10px] text-slate-400 transition hover:text-slate-600">
+        <img src="{{ asset('images/alfajarlogic-logo.png') }}" alt="Alfajarlogic" class="h-4 w-auto">
+        <span>developed by alfajarlogic.com</span>
+    </a>
 </div>
