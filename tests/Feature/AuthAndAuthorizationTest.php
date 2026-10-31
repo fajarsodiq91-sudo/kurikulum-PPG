@@ -2,12 +2,18 @@
 
 namespace Tests\Feature;
 
+use App\Models\ClassGrade;
 use App\Models\Generus;
+use App\Models\GenerusAssignment;
+use App\Models\Group;
 use App\Models\Guardian;
+use App\Models\Level;
 use App\Models\Permission;
+use App\Models\Region;
 use App\Models\Role;
 use App\Models\Teacher;
 use App\Models\User;
+use App\Models\Village;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -49,6 +55,35 @@ class AuthAndAuthorizationTest extends TestCase
             ->assertOk()
             ->assertSee('Tamu')
             ->assertDontSee('Data Generus');
+    }
+
+    public function test_guest_sees_the_generus_resume_table_when_guest_role_grants_view_generus(): void
+    {
+        $guestRole = Role::create([
+            'name' => 'Tamu',
+            'slug' => 'guest',
+            'is_active' => true,
+        ]);
+
+        $guestRole->permissions()->attach([
+            Permission::create(['name' => 'View Dashboard', 'slug' => 'view-dashboard', 'module' => 'dashboard', 'is_active' => true])->id,
+            Permission::create(['name' => 'View Generus', 'slug' => 'view-generus', 'module' => 'generus', 'is_active' => true])->id,
+        ]);
+
+        $region = Region::create(['name' => 'Karawang Timur', 'code' => 'KT', 'is_active' => true]);
+        $village = Village::create(['region_id' => $region->id, 'name' => 'Desa Satu', 'code' => 'D1', 'is_active' => true]);
+        $group = Group::create(['village_id' => $village->id, 'name' => 'Kelompok A', 'code' => 'KA', 'is_active' => true]);
+        $level = Level::create(['name' => 'PAUD', 'code' => 'PD', 'sort_order' => 1, 'is_active' => true]);
+        $classGrade = ClassGrade::create(['level_id' => $level->id, 'name' => 'Pra PAUD', 'code' => '00', 'sort_order' => 1, 'is_active' => true]);
+
+        $child = Generus::create(['registration_number' => 'GEN-001', 'full_name' => 'Generus Satu', 'gender' => 'laki-laki', 'status' => 'active', 'learning_class_id' => $classGrade->id]);
+        GenerusAssignment::create(['generus_id' => $child->id, 'village_id' => $village->id, 'group_id' => $group->id, 'level_id' => $level->id, 'assigned_at' => now()->toDateString()]);
+
+        $this->get('/dashboard')
+            ->assertOk()
+            ->assertSee('Resume Jumlah Generus')
+            ->assertSee('Desa Satu')
+            ->assertViewHas('resumeGrandTotal', 1);
     }
 
     public function test_guest_is_redirected_to_login_when_accessing_pages_requiring_edit_permissions(): void

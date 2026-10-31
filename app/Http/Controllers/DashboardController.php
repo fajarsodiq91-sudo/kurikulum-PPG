@@ -16,6 +16,7 @@ use App\Models\Training;
 use App\Models\Ujian;
 use App\Models\User;
 use App\Models\Village;
+use App\Support\Access;
 use App\Support\StudentScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -222,9 +223,15 @@ class DashboardController extends Controller
 
     /**
      * Counts follow the user's area only when they hold a view/manage role for that data.
+     * An anonymous visitor is checked against the guest role's own permissions, the same
+     * way the `permission:` route middleware already grants them read-only access.
      */
     private function canSee(?User $user, string $module): bool
     {
-        return $user !== null && ($user->hasPermission("view-{$module}") || $user->hasPermission("manage-{$module}"));
+        if ($user !== null) {
+            return $user->hasPermission("view-{$module}") || $user->hasPermission("manage-{$module}");
+        }
+
+        return Access::can("view-{$module}", "manage-{$module}");
     }
 }
