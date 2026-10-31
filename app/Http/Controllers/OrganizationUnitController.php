@@ -43,6 +43,8 @@ class OrganizationUnitController extends Controller
             'isGlobal' => $isGlobal,
             'villages' => $villagesQuery?->get() ?? collect(),
             'canManageTasks' => Access::can('manage-tasks'),
+            'canManageOrganizationUnits' => Access::can('manage-organization-units'),
+            'organizationUnits' => OrganizationUnit::query()->orderBy('name')->get(),
             'pengurusDaerah' => $this->activePengurus('ppg', 'global'),
             'perwakilanDesa' => $this->activePengurus('perwakilan-ppg-desa', 'village'),
             'pelaksanaKelompok' => $this->activePengurus('pelaksana-ppg-kelompok', 'group'),

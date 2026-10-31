@@ -112,4 +112,98 @@
     </section>
 
     @include('organization-units.partials.person-detail-modal')
+
+    <section class="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h3 class="text-lg font-semibold text-slate-950">Daftar Unit Organisasi</h3>
+        <p class="mt-1 text-sm text-slate-500">Unit organisasi dengan status "Aktif" akan muncul sebagai pilihan pada form Penempatan.</p>
+
+        <div class="mt-4 overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-slate-200 text-left text-xs font-semibold uppercase text-slate-500">
+                        <th class="py-2">Nama</th>
+                        <th class="py-2">Kode</th>
+                        <th class="py-2">Jenis</th>
+                        <th class="py-2">Pimpinan</th>
+                        <th class="py-2">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($organizationUnits as $unit)
+                        <tr class="border-b border-slate-100">
+                            <td class="py-2">{{ $unit->name }}</td>
+                            <td class="py-2">{{ $unit->code }}</td>
+                            <td class="py-2">{{ $unit->unit_type }}</td>
+                            <td class="py-2">{{ $unit->leader_name ?? '-' }}</td>
+                            <td class="py-2">
+                                <span class="rounded-full px-2 py-0.5 text-xs font-medium {{ $unit->status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500' }}">
+                                    {{ $unit->status === 'active' ? 'Aktif' : $unit->status }}
+                                </span>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="py-6 text-center text-sm text-slate-500">Belum ada unit organisasi.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        @if ($canManageOrganizationUnits)
+            <form action="{{ route('organization-units.store') }}" method="POST" class="mt-6 grid gap-4 border-t border-slate-200 pt-6 sm:grid-cols-2">
+                @csrf
+                <div>
+                    <label for="name" class="block text-sm font-medium text-slate-700">Nama Unit</label>
+                    <input type="text" name="name" id="name" value="{{ old('name') }}" required
+                        class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-amber-500 focus:ring-amber-500">
+                    @error('name') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
+                    <label for="code" class="block text-sm font-medium text-slate-700">Kode</label>
+                    <input type="text" name="code" id="code" value="{{ old('code') }}" required
+                        class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-amber-500 focus:ring-amber-500">
+                    @error('code') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
+                    <label for="unit_type" class="block text-sm font-medium text-slate-700">Jenis Unit</label>
+                    <input type="text" name="unit_type" id="unit_type" value="{{ old('unit_type', 'bidang') }}" required
+                        class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-amber-500 focus:ring-amber-500">
+                    @error('unit_type') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
+                    <label for="leader_name" class="block text-sm font-medium text-slate-700">Nama Pimpinan</label>
+                    <input type="text" name="leader_name" id="leader_name" value="{{ old('leader_name') }}"
+                        class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-amber-500 focus:ring-amber-500">
+                    @error('leader_name') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
+                    <label for="status" class="block text-sm font-medium text-slate-700">Status</label>
+                    <select name="status" id="status" required
+                        class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-amber-500 focus:ring-amber-500">
+                        <option value="active" @selected(old('status', 'active') === 'active')>Aktif</option>
+                        <option value="inactive" @selected(old('status') === 'inactive')>Tidak Aktif</option>
+                    </select>
+                    @error('status') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label for="description" class="block text-sm font-medium text-slate-700">Keterangan</label>
+                    <textarea name="description" id="description" rows="2"
+                        class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-amber-500 focus:ring-amber-500">{{ old('description') }}</textarea>
+                    @error('description') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                </div>
+
+                <div class="sm:col-span-2">
+                    <button type="submit" class="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-500">
+                        Tambah Unit Organisasi
+                    </button>
+                </div>
+            </form>
+        @endif
+    </section>
 @endsection
