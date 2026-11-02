@@ -46,7 +46,6 @@
                 ]],
                 ['label' => 'Organisasi', 'permission' => ['view-organization-units', 'manage-organization-units'], 'icon' => 'grid', 'items' => [
                     ['label' => 'Struktur Organisasi', 'route' => 'organization-units.index'],
-                    ['label' => 'Penempatan', 'route' => 'assignments.index', 'permission' => ['view-assignments', 'manage-assignments']],
                 ]],
             ]],
             ['label' => 'Kurikulum & Pembinaan', 'sections' => [
