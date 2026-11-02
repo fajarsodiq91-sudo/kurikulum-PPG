@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('reason')->nullable();
             $table->timestamps();
 
-            $table->unique(['default_schedule_id', 'exception_date']);
+            $table->unique(['default_schedule_id', 'exception_date'], 'default_schedule_exceptions_unique');
         });
     }
 

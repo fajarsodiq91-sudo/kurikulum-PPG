@@ -28,7 +28,7 @@ return new class extends Migration
             $table->unsignedSmallInteger('week_number')->after('semester_id');
             $table->date('scheduled_date')->nullable()->after('week_number');
             $table->unsignedTinyInteger('day_of_week')->nullable()->after('scheduled_date');
-            $table->unique(['level_id', 'academic_year_id', 'semester_id', 'week_number']);
+            $table->unique(['level_id', 'academic_year_id', 'semester_id', 'week_number'], 'default_schedules_week_unique');
         });
     }
 
