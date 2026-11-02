@@ -20,6 +20,8 @@ class LearningSession extends Model
 
     public const MANAGE_PERMISSION = 'manage-learning-sessions';
 
+    public const OWN_MANAGE_PERMISSION = 'manage-own-learning-sessions';
+
     protected $table = 'learning_sessions';
 
     protected $fillable = [

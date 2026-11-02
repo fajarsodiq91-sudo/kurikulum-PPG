@@ -33,7 +33,7 @@ class RolePermissionSeeder extends Seeder
         'manage-generus', 'manage-teachers', 'manage-guardians', 'manage-learning-attendance',
         'manage-evaluations', 'manage-follow-ups', 'manage-progress-tracking', 'manage-report-cards',
         'manage-milestones', 'manage-munaqosah', 'manage-ujian', 'manage-parent-communications',
-        'manage-tasks',
+        'manage-tasks', 'manage-own-learning-sessions',
     ];
 
     /**
@@ -49,6 +49,7 @@ class RolePermissionSeeder extends Seeder
         $this->ensurePermission('manage-parent-communications', 'Manage Parent Communications', 'parent-communications');
         $this->ensurePermission('view-parent-communications', 'View Parent Communications', 'parent-communications');
         $this->ensurePermission('manage-tasks', 'Manage Tasks', 'tasks');
+        $this->ensurePermission('manage-own-learning-sessions', 'Manage Own Learning Sessions', 'learning-sessions');
         $this->ensurePermission('approve-registrations', 'Approve Registrations', 'registrations');
 
         foreach (self::MODULES as $module) {

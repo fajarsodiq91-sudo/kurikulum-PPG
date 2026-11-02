@@ -405,10 +405,19 @@ Route::middleware(['auth', 'permission:manage-learning-sessions'])->group(functi
     Route::delete('/learning-sessions/{learningSession}', [LearningSessionController::class, 'destroy'])
         ->whereNumber('learningSession')
         ->name('learning-sessions.destroy');
-    Route::post('/default-schedules/generate', [DefaultScheduleController::class, 'generateWeeks'])
-        ->name('default-schedules.generate');
-    Route::put('/default-schedules', [DefaultScheduleController::class, 'saveBatch'])
+    Route::put('/default-schedules', [DefaultScheduleController::class, 'update'])
         ->name('default-schedules.update');
+    Route::post('/default-schedules/{defaultSchedule}/exceptions', [DefaultScheduleController::class, 'storeException'])
+        ->whereNumber('defaultSchedule')
+        ->name('default-schedules.exceptions.store');
+    Route::delete('/default-schedule-exceptions/{defaultScheduleException}', [DefaultScheduleController::class, 'destroyException'])
+        ->whereNumber('defaultScheduleException')
+        ->name('default-schedules.exceptions.destroy');
+});
+
+Route::middleware(['auth', 'permission:manage-own-learning-sessions'])->group(function () {
+    Route::post('/learning-sessions/own', [LearningSessionController::class, 'storeOwn'])
+        ->name('learning-sessions.store-own');
 });
 
 Route::middleware(['auth', 'permission:manage-learning-sessions,manage-learning-attendance'])->group(function () {

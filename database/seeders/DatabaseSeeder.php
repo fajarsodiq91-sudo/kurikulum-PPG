@@ -41,6 +41,7 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Manage Curriculum', 'slug' => 'manage-curriculum', 'module' => 'curriculum'],
             ['name' => 'Manage Learning Materials', 'slug' => 'manage-learning-materials', 'module' => 'learning-materials'],
             ['name' => 'Manage Learning Sessions', 'slug' => 'manage-learning-sessions', 'module' => 'learning-sessions'],
+            ['name' => 'Manage Own Learning Sessions', 'slug' => 'manage-own-learning-sessions', 'module' => 'learning-sessions'],
             ['name' => 'Manage Learning Attendance', 'slug' => 'manage-learning-attendance', 'module' => 'learning-attendance'],
             ['name' => 'Manage Evaluations', 'slug' => 'manage-evaluations', 'module' => 'evaluations'],
             ['name' => 'Manage Training', 'slug' => 'manage-training', 'module' => 'training'],

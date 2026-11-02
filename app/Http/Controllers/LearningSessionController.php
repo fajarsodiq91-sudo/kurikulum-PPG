@@ -65,6 +65,36 @@ class LearningSessionController extends Controller
     }
 
     /**
+     * A Kelompok executor scheduling their own group's KBM session for any date, via the
+     * dashboard calendar. Scoped to the group(s) their role placement actually covers.
+     */
+    public function storeOwn(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        $myGroupIds = $user?->scopedPlacementIds(LearningSession::OWN_MANAGE_PERMISSION)['group_id'] ?? [];
+        abort_if($myGroupIds === [], 403, 'Anda belum ditempatkan di kelompok manapun.');
+
+        $validated = $request->validate([
+            'group_id' => ['required', 'integer', Rule::in($myGroupIds)],
+            'class_grade_id' => ['nullable', 'exists:class_grades,id'],
+            'session_date' => ['required', 'date'],
+            'start_time' => ['nullable', 'date_format:H:i'],
+            'end_time' => ['nullable', 'date_format:H:i'],
+            'location' => ['nullable', 'string', 'max:255'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        LearningSession::create([
+            ...$validated,
+            'level' => LearningSession::LEVEL_GROUP,
+            'village_id' => Group::whereKey($validated['group_id'])->value('village_id'),
+            'status' => 'scheduled',
+        ]);
+
+        return redirect()->route('dashboard')->with('success', 'Jadwal KBM berhasil ditambahkan.');
+    }
+
+    /**
      * The teacher's own daily attendance session: found or created for the given date (today
      * by default) in their fixed group. When they teach more than one Kelas KBM, they must
      * say which one first.

@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AcademicYear;
 use App\Models\Announcement;
 use App\Models\ClassGrade;
+use App\Models\DefaultSchedule;
 use App\Models\Generus;
 use App\Models\GenerusAssignment;
 use App\Models\Group;
@@ -20,6 +22,7 @@ use App\Support\Access;
 use App\Support\StudentScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
@@ -29,6 +32,10 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         $canSeeGenerus = $this->canSee($user, 'generus');
+        $monthParam = $request->string('month')->value();
+        $calendarMonth = preg_match('/^\d{4}-\d{2}$/', (string) $monthParam)
+            ? Carbon::createFromFormat('Y-m', $monthParam)->startOfMonth()
+            : now()->startOfMonth();
 
         return view('dashboard.index', [
             'generusCount' => Generus::query()->when($canSeeGenerus, fn ($query) => $query->visibleTo($user))->where('status', 'active')->count(),
@@ -62,7 +69,66 @@ class DashboardController extends Controller
             'resumeVillages' => collect(),
             'resumeGrandCounts' => [],
             'resumeGrandTotal' => 0,
-        ]));
+        ]) + $this->calendarData($user, $calendarMonth));
+    }
+
+    /**
+     * Month-grid data for the dashboard calendar: which default-schedule patterns (PPG Daerah)
+     * land on each day, and which of the viewer's own group's sessions (Kelompok) do too.
+     *
+     * @return array{calendarMonth: Carbon, calendarDays: list<Carbon>, defaultSchedules: Collection, canManageDefault: bool, canCreateOwnSessions: bool, ownSessions: Collection}
+     */
+    private function calendarData(?User $user, Carbon $calendarMonth): array
+    {
+        $activeAcademicYear = AcademicYear::where('is_active', true)->first();
+        $activeSemester = Semester::where('is_active', true)->first();
+
+        $defaultSchedules = ($activeAcademicYear && $activeSemester)
+            ? DefaultSchedule::with(['level', 'exceptions'])
+                ->where('academic_year_id', $activeAcademicYear->id)
+                ->where('semester_id', $activeSemester->id)
+                ->get()
+            : collect();
+
+        $myGroupIds = $user?->scopedPlacementIds(LearningSession::OWN_MANAGE_PERMISSION)['group_id'] ?? [];
+
+        $ownSessions = $myGroupIds !== []
+            ? LearningSession::whereIn('group_id', $myGroupIds)
+                ->whereBetween('session_date', [$calendarMonth->toDateString(), $calendarMonth->copy()->endOfMonth()->toDateString()])
+                ->with('classGrade')
+                ->get()
+                ->groupBy(fn (LearningSession $session): string => $session->session_date->toDateString())
+            : collect();
+
+        return [
+            'calendarMonth' => $calendarMonth,
+            'calendarDays' => $this->buildCalendarDays($calendarMonth),
+            'defaultSchedules' => $defaultSchedules,
+            'canManageDefault' => $user?->hasGlobalAccess(LearningSession::MANAGE_PERMISSION) ?? false,
+            'canCreateOwnSessions' => $myGroupIds !== [],
+            'myGroupId' => $myGroupIds[0] ?? null,
+            'ownSessions' => $ownSessions,
+            'calendarClassGrades' => $myGroupIds !== [] ? ClassGrade::where('is_active', true)->orderBy('sort_order')->get() : collect(),
+        ];
+    }
+
+    /**
+     * Every day shown on the month grid: full weeks (Senin–Minggu) from before the 1st
+     * through after the last day, so the calendar has no partial rows.
+     *
+     * @return list<Carbon>
+     */
+    private function buildCalendarDays(Carbon $calendarMonth): array
+    {
+        $start = $calendarMonth->copy()->startOfWeek(Carbon::MONDAY);
+        $end = $calendarMonth->copy()->endOfMonth()->endOfWeek(Carbon::MONDAY);
+
+        $days = [];
+        for ($day = $start->copy(); $day->lte($end); $day->addDay()) {
+            $days[] = $day->copy();
+        }
+
+        return $days;
     }
 
     /**

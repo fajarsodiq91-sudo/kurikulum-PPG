@@ -4,12 +4,14 @@ namespace Tests\Feature;
 
 use App\Models\AcademicYear;
 use App\Models\DefaultSchedule;
+use App\Models\DefaultScheduleException;
 use App\Models\Level;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Semester;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
@@ -17,55 +19,43 @@ class DefaultScheduleTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_daerah_admin_can_generate_weeks_and_fill_in_the_optional_date(): void
+    public function test_daerah_admin_can_set_the_weekly_pattern_and_mark_a_holiday(): void
     {
         $admin = $this->createAdminWithPermission('manage-learning-sessions');
         [$level, $academicYear, $semester] = $this->createContext();
-
-        $this->actingAs($admin)
-            ->post('/default-schedules/generate', [
-                'level_id' => $level->id,
-                'academic_year_id' => $academicYear->id,
-                'semester_id' => $semester->id,
-                'week_count' => 20,
-            ])
-            ->assertRedirect();
-
-        $this->assertDatabaseCount('default_schedules', 20);
-        $this->assertDatabaseHas('default_schedules', [
-            'level_id' => $level->id,
-            'academic_year_id' => $academicYear->id,
-            'semester_id' => $semester->id,
-            'week_number' => 20,
-            'scheduled_date' => null,
-        ]);
-
-        $week = DefaultSchedule::where('week_number', 1)->first();
 
         $this->actingAs($admin)
             ->put('/default-schedules', [
                 'level_id' => $level->id,
                 'academic_year_id' => $academicYear->id,
                 'semester_id' => $semester->id,
-                'weeks' => [
-                    $week->id => ['scheduled_date' => '2026-01-05', 'day_of_week' => 1, 'start_time' => '16:00', 'end_time' => '17:30'],
-                ],
+                'days_of_week' => [1, 2, 3, 4, 5],
+                'start_date' => '2026-01-05',
+                'end_date' => '2026-06-30',
+                'start_time' => '16:00',
+                'end_time' => '17:00',
             ])
             ->assertRedirect();
 
-        $this->assertSame('2026-01-05', $week->fresh()->scheduled_date);
-        $this->assertSame(1, $week->fresh()->day_of_week);
-        $this->assertSame('16:00', $week->fresh()->start_time);
-        $this->assertSame('17:30', $week->fresh()->end_time);
+        $this->assertDatabaseCount('default_schedules', 1);
+        $schedule = DefaultSchedule::first();
+        $this->assertSame([1, 2, 3, 4, 5], $schedule->days_of_week);
+        $this->assertTrue($schedule->occursOn(Carbon::parse('2026-01-05')));
+        $this->assertFalse($schedule->occursOn(Carbon::parse('2026-01-04')));
 
-        // Regenerating does not wipe out the date already filled in.
-        $this->actingAs($admin)->post('/default-schedules/generate', [
-            'level_id' => $level->id,
-            'academic_year_id' => $academicYear->id,
-            'semester_id' => $semester->id,
-            'week_count' => 20,
-        ]);
-        $this->assertDatabaseHas('default_schedules', ['id' => $week->id, 'scheduled_date' => '2026-01-05']);
+        $this->actingAs($admin)
+            ->post("/default-schedules/{$schedule->id}/exceptions", [
+                'exception_date' => '2026-01-05',
+                'reason' => 'Libur Tahun Baru',
+            ])
+            ->assertRedirect();
+
+        $this->assertSame(1, DefaultScheduleException::where('default_schedule_id', $schedule->id)->whereDate('exception_date', '2026-01-05')->count());
+        $this->assertFalse($schedule->fresh('exceptions')->occursOn(Carbon::parse('2026-01-05')));
+
+        $exceptionId = DefaultScheduleException::first()->id;
+        $this->actingAs($admin)->delete("/default-schedule-exceptions/{$exceptionId}")->assertRedirect();
+        $this->assertDatabaseCount('default_schedule_exceptions', 0);
     }
 
     public function test_a_user_without_the_permission_cannot_manage_the_default_schedule(): void
@@ -73,11 +63,13 @@ class DefaultScheduleTest extends TestCase
         $user = User::create(['name' => 'Tanpa Izin', 'email' => 'tanpaizin@ppg.test', 'password' => Hash::make('password123'), 'status' => 'active']);
         [$level, $academicYear, $semester] = $this->createContext();
 
-        $this->actingAs($user)->post('/default-schedules/generate', [
+        $this->actingAs($user)->put('/default-schedules', [
             'level_id' => $level->id,
             'academic_year_id' => $academicYear->id,
             'semester_id' => $semester->id,
-            'week_count' => 5,
+            'days_of_week' => [1],
+            'start_date' => '2026-01-05',
+            'end_date' => '2026-06-30',
         ])->assertForbidden();
     }
 

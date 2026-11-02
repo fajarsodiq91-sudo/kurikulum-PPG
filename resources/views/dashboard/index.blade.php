@@ -278,6 +278,10 @@
         </x-card>
     </div>
 
+    @if ($canManageDefault || $canCreateOwnSessions)
+        @include('dashboard.partials.calendar')
+    @endif
+
     @if ($generusCount === 0 && $teacherCount === 0 && $learningSessionCount === 0)
         <x-empty-state class="mt-6" title="Belum ada data operasional" description="Dashboard siap digunakan. Mulai dengan menambahkan generus, guru, atau sesi KBM melalui menu yang tersedia." />
     @endif
