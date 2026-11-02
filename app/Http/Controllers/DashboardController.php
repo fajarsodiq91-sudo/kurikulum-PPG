@@ -69,16 +69,17 @@ class DashboardController extends Controller
             'resumeVillages' => collect(),
             'resumeGrandCounts' => [],
             'resumeGrandTotal' => 0,
-        ]) + $this->calendarData($user, $calendarMonth));
+        ]) + $this->calendarData($user, $request, $calendarMonth));
     }
 
     /**
      * Month-grid data for the dashboard calendar: which default-schedule patterns (PPG Daerah)
-     * land on each day, and which of the viewer's own group's sessions (Kelompok) do too.
+     * land on each day, which of the viewer's own group's sessions (Kelompok) do too, and the
+     * detail panel for whichever single date is selected (defaults to today).
      *
      * @return array{calendarMonth: Carbon, calendarDays: list<Carbon>, defaultSchedules: Collection, canManageDefault: bool, canCreateOwnSessions: bool, ownSessions: Collection}
      */
-    private function calendarData(?User $user, Carbon $calendarMonth): array
+    private function calendarData(?User $user, Request $request, Carbon $calendarMonth): array
     {
         $activeAcademicYear = AcademicYear::where('is_active', true)->first();
         $activeSemester = Semester::where('is_active', true)->first();
@@ -97,8 +98,13 @@ class DashboardController extends Controller
                 ->whereBetween('session_date', [$calendarMonth->toDateString(), $calendarMonth->copy()->endOfMonth()->toDateString()])
                 ->with('classGrade')
                 ->get()
-                ->groupBy(fn (LearningSession $session): string => $session->session_date->toDateString())
+                ->groupBy(fn (LearningSession $session): string => substr((string) $session->session_date, 0, 10))
             : collect();
+
+        $dateParam = $request->string('date')->value();
+        $selectedDate = preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $dateParam)
+            ? Carbon::createFromFormat('Y-m-d', $dateParam)
+            : now()->startOfDay();
 
         return [
             'calendarMonth' => $calendarMonth,
@@ -109,6 +115,11 @@ class DashboardController extends Controller
             'myGroupId' => $myGroupIds[0] ?? null,
             'ownSessions' => $ownSessions,
             'calendarClassGrades' => $myGroupIds !== [] ? ClassGrade::where('is_active', true)->orderBy('sort_order')->get() : collect(),
+            'selectedDate' => $selectedDate,
+            'selectedPatterns' => $defaultSchedules->filter(fn (DefaultSchedule $pattern): bool => $pattern->appliesTo($selectedDate)),
+            'selectedOwnSessions' => $myGroupIds !== []
+                ? LearningSession::whereIn('group_id', $myGroupIds)->where('session_date', $selectedDate->toDateString())->with('classGrade')->get()
+                : collect(),
         ];
     }
 

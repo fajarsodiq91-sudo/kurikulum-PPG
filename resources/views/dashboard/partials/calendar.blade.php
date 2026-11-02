@@ -1,6 +1,6 @@
 @php
     $dayLabels = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
-    $levelColors = ['bg-amber-100 text-amber-700', 'bg-sky-100 text-sky-700', 'bg-emerald-100 text-emerald-700', 'bg-violet-100 text-violet-700', 'bg-rose-100 text-rose-700'];
+    $levelColors = ['bg-amber-400', 'bg-sky-400', 'bg-emerald-400', 'bg-violet-400', 'bg-rose-400'];
     $levelColorFor = fn ($levelId) => $levelColors[$levelId % count($levelColors)];
 @endphp
 
@@ -15,83 +15,129 @@
                     Referensi jadwal KBM default
                     @if ($canCreateOwnSessions) dan jadwal KBM kelompok Anda. @endif
                 @endif
+                Klik tanggal untuk melihat detail.
             </p>
         </div>
         <div class="flex items-center gap-2 text-sm font-semibold">
-            <a href="{{ route('dashboard', ['month' => $calendarMonth->copy()->subMonth()->format('Y-m')]) }}" class="rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50">&laquo; Sebelumnya</a>
+            <a href="{{ route('dashboard', ['month' => $calendarMonth->copy()->subMonth()->format('Y-m')]) }}" class="rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50">&laquo;</a>
             <a href="{{ route('dashboard') }}" class="rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50">Hari Ini</a>
-            <a href="{{ route('dashboard', ['month' => $calendarMonth->copy()->addMonth()->format('Y-m')]) }}" class="rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50">Berikutnya &raquo;</a>
+            <a href="{{ route('dashboard', ['month' => $calendarMonth->copy()->addMonth()->format('Y-m')]) }}" class="rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50">&raquo;</a>
         </div>
     </div>
 
-    <div class="mt-5 grid grid-cols-7 gap-px overflow-hidden rounded-xl border border-slate-200 bg-slate-200 text-xs">
+    <div class="mt-5 grid grid-cols-7 gap-px overflow-hidden rounded-xl border border-slate-200 bg-slate-200">
         @foreach ($dayLabels as $label)
-            <div class="bg-slate-50 px-2 py-2 text-center font-semibold text-slate-500">{{ $label }}</div>
+            <div class="bg-slate-50 px-2 py-2 text-center text-xs font-semibold text-slate-500">{{ $label }}</div>
         @endforeach
 
         @foreach ($calendarDays as $day)
             @php
                 $isCurrentMonth = $day->month === $calendarMonth->month;
-                $matchingPatterns = $defaultSchedules->filter(fn ($pattern) => $pattern->occursOn($day));
-                $daySessions = $ownSessions->get($day->toDateString(), collect());
+                $isSelected = $day->isSameDay($selectedDate);
+                $matchingPatterns = $isCurrentMonth ? $defaultSchedules->filter(fn ($pattern) => $pattern->appliesTo($day)) : collect();
+                $daySessionCount = $isCurrentMonth ? $ownSessions->get($day->toDateString(), collect())->count() : 0;
+                $cellClasses = 'flex min-h-[4.5rem] flex-col items-center gap-1 bg-white py-2 sm:min-h-[5.5rem]'
+                    .(! $isCurrentMonth ? ' bg-slate-50' : '')
+                    .($isSelected ? ' ring-2 ring-inset ring-brand-600' : '');
             @endphp
-            <div class="min-h-[6.5rem] bg-white p-1.5 {{ $isCurrentMonth ? '' : 'bg-slate-50 text-slate-400' }}">
-                <p class="text-right text-[0.7rem] font-semibold {{ $day->isToday() ? 'text-amber-600' : '' }}">{{ $day->day }}</p>
 
-                <div class="mt-1 space-y-1">
+            @if ($isCurrentMonth)
+                <a href="{{ route('dashboard', ['month' => $calendarMonth->format('Y-m'), 'date' => $day->toDateString()]) }}" class="{{ $cellClasses }} transition hover:bg-amber-50">
+            @else
+                <div class="{{ $cellClasses }}">
+            @endif
+                <span class="flex h-7 w-7 items-center justify-center rounded-full text-sm font-semibold {{ $day->isToday() ? 'bg-brand-950 text-white' : ($isCurrentMonth ? 'text-slate-900' : 'text-slate-400') }}">
+                    {{ $day->day }}
+                </span>
+                <div class="flex items-center gap-1">
                     @foreach ($matchingPatterns as $pattern)
-                        @php
-                            $exception = $pattern->exceptions->first(fn ($e) => $e->exception_date->isSameDay($day));
-                        @endphp
-                        <div class="flex items-center justify-between gap-1 rounded px-1.5 py-0.5 {{ $levelColorFor($pattern->level_id) }}">
-                            <span class="truncate">{{ $pattern->level->name }}</span>
-                            @if ($canManageDefault)
-                                @if ($exception)
-                                    <form method="POST" action="{{ route('default-schedules.exceptions.destroy', $exception) }}">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" title="Batalkan libur" class="font-bold">↺</button>
-                                    </form>
-                                @else
-                                    <form method="POST" action="{{ route('default-schedules.exceptions.store', $pattern) }}">
-                                        @csrf
-                                        <input type="hidden" name="exception_date" value="{{ $day->toDateString() }}">
-                                        <button type="submit" title="Liburkan tanggal ini" class="font-bold">×</button>
-                                    </form>
-                                @endif
-                            @endif
-                        </div>
+                        <span class="h-1.5 w-1.5 rounded-full {{ $levelColorFor($pattern->level_id) }}" title="{{ $pattern->level->name }}"></span>
                     @endforeach
+                    @if ($daySessionCount > 0)
+                        <span class="rounded-full bg-brand-100 px-1.5 text-[0.65rem] font-semibold text-brand-700">{{ $daySessionCount }}</span>
+                    @endif
+                </div>
+            @if ($isCurrentMonth)
+                </a>
+            @else
+                </div>
+            @endif
+        @endforeach
+    </div>
 
-                    @foreach ($daySessions as $session)
-                        <p class="truncate rounded bg-brand-50 px-1.5 py-0.5 text-brand-700">
-                            {{ $session->start_time ? substr($session->start_time, 0, 5).' · ' : '' }}{{ $session->classGrade?->name ?? 'KBM' }}
-                        </p>
-                    @endforeach
+    <div class="mt-6 rounded-xl border border-slate-200 p-4">
+        <h3 class="font-semibold text-slate-950">{{ $selectedDate->translatedFormat('l, d F Y') }}</h3>
+
+        @if ($canManageDefault)
+            <div class="mt-3 space-y-2">
+                @forelse ($selectedPatterns as $pattern)
+                    @php($exception = $pattern->exceptionOn($selectedDate))
+                    <div class="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                        <span class="flex items-center gap-2">
+                            <span class="h-2 w-2 rounded-full {{ $levelColorFor($pattern->level_id) }}"></span>
+                            {{ $pattern->level->name }}
+                            @if ($pattern->start_time) <span class="text-slate-500">· {{ substr($pattern->start_time, 0, 5) }}–{{ substr($pattern->end_time, 0, 5) }}</span> @endif
+                            @if ($exception) <span class="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-600">Libur</span> @endif
+                        </span>
+                        @if ($exception)
+                            <form method="POST" action="{{ route('default-schedules.exceptions.destroy', $exception) }}">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="text-xs font-semibold text-brand-700 hover:text-brand-900">Batalkan libur</button>
+                            </form>
+                        @else
+                            <form method="POST" action="{{ route('default-schedules.exceptions.store', $pattern) }}">
+                                @csrf
+                                <input type="hidden" name="exception_date" value="{{ $selectedDate->toDateString() }}">
+                                <button type="submit" class="text-xs font-semibold text-rose-600 hover:text-rose-700">Liburkan tanggal ini</button>
+                            </form>
+                        @endif
+                    </div>
+                @empty
+                    <p class="text-sm text-slate-500">Tidak ada jadwal KBM default pada tanggal ini.</p>
+                @endforelse
+            </div>
+        @endif
+
+        @if ($canCreateOwnSessions)
+            <div class="mt-4 {{ $canManageDefault ? 'border-t border-slate-100 pt-4' : '' }}">
+                <h4 class="text-sm font-semibold text-slate-700">Jadwal KBM Kelompok</h4>
+                <div class="mt-2 space-y-2">
+                    @forelse ($selectedOwnSessions as $session)
+                        <div class="rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                            {{ $session->start_time ? substr($session->start_time, 0, 5).'–'.substr($session->end_time ?? '', 0, 5) : 'Jam belum diisi' }}
+                            · {{ $session->classGrade?->name ?? 'Semua kelas' }}
+                            <span class="ml-1 text-xs text-slate-400">({{ $session->status }})</span>
+                        </div>
+                    @empty
+                        <p class="text-sm text-slate-500">Belum ada jadwal KBM kelompok di tanggal ini.</p>
+                    @endforelse
                 </div>
 
-                @if ($canCreateOwnSessions)
-                    <details class="mt-1">
-                        <summary class="cursor-pointer select-none text-[0.7rem] font-semibold text-slate-400 hover:text-brand-700">+ Tambah</summary>
-                        <form method="POST" action="{{ route('learning-sessions.store-own') }}" class="mt-1 space-y-1">
-                            @csrf
-                            <input type="hidden" name="group_id" value="{{ $myGroupId }}">
-                            <input type="hidden" name="session_date" value="{{ $day->toDateString() }}">
-                            <select name="class_grade_id" class="w-full rounded border border-slate-300 px-1 py-0.5 text-[0.7rem]">
-                                <option value="">-- Kelas KBM --</option>
-                                @foreach ($calendarClassGrades as $classGrade)
-                                    <option value="{{ $classGrade->id }}">{{ $classGrade->name }}</option>
-                                @endforeach
-                            </select>
-                            <div class="flex gap-1">
-                                <input type="time" name="start_time" class="w-1/2 rounded border border-slate-300 px-1 py-0.5 text-[0.7rem]">
-                                <input type="time" name="end_time" class="w-1/2 rounded border border-slate-300 px-1 py-0.5 text-[0.7rem]">
-                            </div>
-                            <button type="submit" class="w-full rounded bg-brand-600 px-1 py-0.5 text-[0.7rem] font-semibold text-white hover:bg-brand-700">Simpan</button>
-                        </form>
-                    </details>
-                @endif
+                <form method="POST" action="{{ route('learning-sessions.store-own') }}" class="mt-3 flex flex-wrap items-end gap-3">
+                    @csrf
+                    <input type="hidden" name="group_id" value="{{ $myGroupId }}">
+                    <input type="hidden" name="session_date" value="{{ $selectedDate->toDateString() }}">
+                    <div>
+                        <label class="mb-1 block text-xs font-medium text-slate-600">Kelas KBM</label>
+                        <select name="class_grade_id" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm">
+                            <option value="">-- Semua kelas --</option>
+                            @foreach ($calendarClassGrades as $classGrade)
+                                <option value="{{ $classGrade->id }}">{{ $classGrade->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-xs font-medium text-slate-600">Jam Mulai</label>
+                        <input type="time" name="start_time" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm">
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-xs font-medium text-slate-600">Jam Selesai</label>
+                        <input type="time" name="end_time" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm">
+                    </div>
+                    <button type="submit" class="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-brand-700">+ Tambah Jadwal</button>
+                </form>
             </div>
-        @endforeach
+        @endif
     </div>
 </x-card>

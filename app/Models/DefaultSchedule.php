@@ -47,19 +47,28 @@ class DefaultSchedule extends Model
     }
 
     /**
-     * Whether this pattern lands on $date: within its date range, on one of its weekdays,
-     * and not marked as a holiday.
+     * Whether this pattern applies to $date: within its date range and on one of its weekdays.
+     * True even on a date marked as a holiday — use occursOn() to also exclude those.
      */
-    public function occursOn(Carbon $date): bool
+    public function appliesTo(Carbon $date): bool
     {
         if ($date->lt($this->start_date) || $date->gt($this->end_date)) {
             return false;
         }
 
-        if (! in_array($date->isoWeekday(), $this->days_of_week ?? [], true)) {
-            return false;
-        }
+        return in_array($date->isoWeekday(), $this->days_of_week ?? [], true);
+    }
 
-        return ! $this->exceptions->contains(fn (DefaultScheduleException $exception): bool => $exception->exception_date->isSameDay($date));
+    /**
+     * Whether this pattern lands on $date: applies to it, and not marked as a holiday.
+     */
+    public function occursOn(Carbon $date): bool
+    {
+        return $this->appliesTo($date) && ! $this->exceptionOn($date);
+    }
+
+    public function exceptionOn(Carbon $date): ?DefaultScheduleException
+    {
+        return $this->exceptions->first(fn (DefaultScheduleException $exception): bool => $exception->exception_date->isSameDay($date));
     }
 }
