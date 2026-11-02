@@ -44,6 +44,18 @@ Hostinger, lihat bagian "Keterbatasan server" di bawah.
 Tidak perlu langkah tambahan — `deploy.sh` selalu menjalankan
 `php artisan migrate --force` di setiap deploy.
 
+## Kalau mengubah RolePermissionSeeder atau DapukanSeeder
+
+Tidak perlu langkah tambahan — `deploy.sh` juga selalu menjalankan kedua
+seeder ini (`--force`) di setiap deploy, karena keduanya aman dijalankan
+berulang (pakai `firstOrCreate`/`syncWithoutDetaching`, tidak menyentuh
+password user).
+
+**Jangan** tambahkan `DatabaseSeeder` (atau `db:seed` tanpa `--class`) ke
+`deploy.sh` — seeder itu melakukan `User::updateOrCreate` untuk akun
+`test@example.com` dan `admin@ppg.test` dengan password hardcoded, yang
+akan ter-reset ke default setiap deploy kalau dijalankan otomatis.
+
 ## Keterbatasan server (penting!)
 
 1. **PHP di build container = 8.3.35**, berbeda dari PHP akun hosting

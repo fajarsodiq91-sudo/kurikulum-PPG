@@ -15,6 +15,8 @@ fi
 mkdir -p public/storage
 
 php artisan migrate --force
+php artisan db:seed --class=RolePermissionSeeder --force
+php artisan db:seed --class=DapukanSeeder --force
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
