@@ -1,8 +1,17 @@
 @php
-    $dayLabels = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+    $dayLabels = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     $levelDotColors = ['bg-amber-400', 'bg-sky-400', 'bg-emerald-400', 'bg-violet-400', 'bg-rose-400'];
     $levelDotFor = fn ($levelId) => $levelDotColors[$levelId % count($levelDotColors)];
-    $maxChipsPerCell = 3;
+    $headerClassFor = fn ($i) => match (true) {
+        $i === 0 => 'bg-rose-600 text-white',
+        $i === 6 => 'bg-slate-900 text-white',
+        default => 'bg-slate-800 text-white',
+    };
+    $dateClassFor = fn ($i) => match (true) {
+        $i === 0 => 'text-rose-600',
+        $i === 6 => 'text-sky-600',
+        default => 'text-slate-900',
+    };
 @endphp
 
 <x-card class="mt-6">
@@ -31,23 +40,15 @@
 
     <div class="mt-5 grid grid-cols-7 gap-px overflow-hidden rounded-xl border border-slate-200 bg-slate-200">
         @foreach ($dayLabels as $i => $label)
-            <div class="bg-slate-50 px-2 py-2 text-center text-xs font-semibold {{ $i >= 5 ? 'text-rose-500' : 'text-slate-500' }}">{{ $label }}</div>
+            <div class="px-2 py-2 text-center text-xs font-semibold {{ $headerClassFor($i) }}">{{ $label }}</div>
         @endforeach
 
         @foreach ($calendarDays as $day)
             @php
+                $i = $day->dayOfWeek;
                 $isCurrentMonth = $day->month === $calendarMonth->month;
                 $isSelected = $day->isSameDay($selectedDate);
-                $matchingPatterns = $isCurrentMonth ? $defaultSchedules->filter(fn ($pattern) => $pattern->appliesTo($day)) : collect();
-                $daySessions = $isCurrentMonth ? $ownSessions->get($day->toDateString(), collect()) : collect();
-                $chips = $matchingPatterns->map(fn ($pattern) => ['label' => $pattern->level->name, 'dot' => $levelDotFor($pattern->level_id)])
-                    ->concat($daySessions->map(fn ($session) => [
-                        'label' => ($session->start_time ? substr($session->start_time, 0, 5).' ' : '').($session->classGrade?->name ?? 'KBM'),
-                        'dot' => 'bg-brand-600',
-                    ]));
-                $visibleChips = $chips->take($maxChipsPerCell);
-                $hiddenCount = max(0, $chips->count() - $maxChipsPerCell);
-                $cellClasses = 'flex min-h-[5.5rem] flex-col gap-1 bg-white p-1.5 sm:min-h-[7rem]'
+                $cellClasses = 'flex min-h-[4.5rem] items-start justify-center bg-white p-1.5 sm:min-h-[5.5rem]'
                     .(! $isCurrentMonth ? ' bg-slate-50' : '')
                     .($isSelected && ! $day->isToday() ? ' ring-2 ring-inset ring-brand-600' : '');
             @endphp
@@ -57,20 +58,9 @@
             @else
                 <div class="{{ $cellClasses }}">
             @endif
-                <span class="flex h-6 w-6 items-center justify-center rounded-full text-sm {{ $day->isToday() ? 'bg-brand-600 font-semibold text-white' : ($isCurrentMonth ? 'text-slate-900' : 'text-slate-400') }}">
+                <span class="flex h-7 w-7 items-center justify-center rounded-full text-sm font-medium {{ $day->isToday() ? 'bg-brand-600 font-semibold text-white' : ($isCurrentMonth ? $dateClassFor($i) : 'text-slate-300') }}">
                     {{ $day->day }}
                 </span>
-                <div class="flex flex-1 flex-col gap-0.5 overflow-hidden">
-                    @foreach ($visibleChips as $chip)
-                        <span class="flex items-center gap-1 truncate text-[0.7rem] leading-tight text-slate-700">
-                            <span class="h-1.5 w-1.5 shrink-0 rounded-full {{ $chip['dot'] }}"></span>
-                            <span class="truncate">{{ $chip['label'] }}</span>
-                        </span>
-                    @endforeach
-                    @if ($hiddenCount > 0)
-                        <span class="truncate text-[0.7rem] text-slate-500">+{{ $hiddenCount }} lainnya</span>
-                    @endif
-                </div>
             @if ($isCurrentMonth)
                 </a>
             @else
