@@ -32,7 +32,7 @@
 
     <div class="mt-5 grid grid-cols-7 gap-px overflow-hidden rounded-xl border border-slate-200 bg-slate-200">
         @foreach ($dayLabels as $i => $label)
-            <div class="px-2 py-2 text-center text-xs font-semibold {{ $headerClassFor($i) }}">{{ $label }}</div>
+            <div class="px-2 py-1.5 text-center text-xs font-semibold {{ $headerClassFor($i) }}">{{ $label }}</div>
         @endforeach
 
         @foreach ($calendarDays as $day)
@@ -64,8 +64,9 @@
                 $maxVisibleBadges = 4;
                 $visibleBadges = $dayBadges->take($maxVisibleBadges);
                 $hiddenBadgeCount = max(0, $dayBadges->count() - $maxVisibleBadges);
-                $cellClasses = 'relative flex min-h-[5rem] flex-col items-center gap-1 bg-white p-1.5 sm:min-h-[6rem]'
+                $cellClasses = 'relative flex min-h-[3.5rem] flex-col items-start gap-0.5 bg-white p-1.5 sm:min-h-[4.25rem]'
                     .(! $isCurrentMonth ? ' bg-slate-50' : '')
+                    .($day->isToday() ? ' bg-brand-50' : '')
                     .($isSelected && ! $day->isToday() ? ' ring-2 ring-inset ring-brand-600' : '');
             @endphp
 
@@ -77,11 +78,11 @@
                 @if ($hasHoliday)
                     <span class="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-rose-600" title="Ada jadwal libur"></span>
                 @endif
-                <span class="flex h-7 w-7 items-center justify-center rounded-full text-sm font-medium {{ $day->isToday() ? 'bg-brand-600 font-semibold text-white' : ($isCurrentMonth ? $dateClassFor($i) : 'text-slate-300') }}">
+                <span class="text-sm {{ $day->isToday() ? 'font-bold text-brand-700' : ($isCurrentMonth ? 'font-medium '.$dateClassFor($i) : 'font-medium text-slate-300') }}">
                     {{ $day->day }}
                 </span>
                 @if ($dayBadges->isNotEmpty())
-                    <span class="flex flex-wrap items-center justify-center gap-1">
+                    <span class="flex flex-wrap items-center gap-1">
                         @foreach ($visibleBadges as $badge)
                             <span class="flex h-4 w-4 items-center justify-center rounded-full ring-1 ring-white {{ $badge['bg'] }} {{ $badge['holiday'] ? 'opacity-40' : '' }}" title="{{ $badge['title'] }}">
                                 @if ($badge['code'])
