@@ -40,7 +40,11 @@
                 $i = $day->dayOfWeek;
                 $isCurrentMonth = $day->month === $calendarMonth->month;
                 $isSelected = $day->isSameDay($selectedDate);
-                $cellClasses = 'flex min-h-[4.5rem] items-start justify-center bg-white p-1.5 sm:min-h-[5.5rem]'
+                $matchingPatterns = $isCurrentMonth ? $defaultSchedules->filter(fn ($pattern) => $pattern->appliesTo($day)) : collect();
+                $daySessions = $isCurrentMonth ? $ownSessions->get($day->toDateString(), collect()) : collect();
+                $dayDots = $matchingPatterns->pluck('level_id')->unique()->map($levelDotFor)
+                    ->concat($daySessions->isNotEmpty() ? ['bg-brand-600'] : []);
+                $cellClasses = 'flex min-h-[4.5rem] flex-col items-center gap-1 bg-white p-1.5 sm:min-h-[5.5rem]'
                     .(! $isCurrentMonth ? ' bg-slate-50' : '')
                     .($isSelected && ! $day->isToday() ? ' ring-2 ring-inset ring-brand-600' : '');
             @endphp
@@ -53,6 +57,13 @@
                 <span class="flex h-7 w-7 items-center justify-center rounded-full text-sm font-medium {{ $day->isToday() ? 'bg-brand-600 font-semibold text-white' : ($isCurrentMonth ? $dateClassFor($i) : 'text-slate-300') }}">
                     {{ $day->day }}
                 </span>
+                @if ($dayDots->isNotEmpty())
+                    <span class="flex flex-wrap items-center justify-center gap-0.5">
+                        @foreach ($dayDots as $dot)
+                            <span class="h-1.5 w-1.5 rounded-full {{ $dot }}"></span>
+                        @endforeach
+                    </span>
+                @endif
             @if ($isCurrentMonth)
                 </a>
             @else
@@ -60,6 +71,26 @@
             @endif
         @endforeach
     </div>
+
+    @php
+        $legendLevels = $defaultSchedules->pluck('level')->filter()->unique('id')->sortBy('sort_order');
+    @endphp
+    @if ($legendLevels->isNotEmpty() || $canCreateOwnSessions)
+        <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600">
+            @foreach ($legendLevels as $level)
+                <span class="flex items-center gap-1.5">
+                    <span class="h-2 w-2 rounded-full {{ $levelDotFor($level->id) }}"></span>
+                    {{ $level->name }}
+                </span>
+            @endforeach
+            @if ($canCreateOwnSessions)
+                <span class="flex items-center gap-1.5">
+                    <span class="h-2 w-2 rounded-full bg-brand-600"></span>
+                    KBM Kelompok
+                </span>
+            @endif
+        </div>
+    @endif
 
     <div class="mt-6 rounded-xl border border-slate-200 p-4">
         <h3 class="font-semibold text-slate-950">{{ $selectedDate->translatedFormat('l, d F Y') }}</h3>
