@@ -42,10 +42,29 @@
                 $isSelected = $day->isSameDay($selectedDate);
                 $matchingPatterns = $isCurrentMonth ? $defaultSchedules->filter(fn ($pattern) => $pattern->appliesTo($day)) : collect();
                 $daySessions = $isCurrentMonth ? $ownSessions->get($day->toDateString(), collect()) : collect();
+                $hasHoliday = $matchingPatterns->contains(fn ($pattern) => $pattern->exceptionOn($day) !== null);
                 $dayBadges = $matchingPatterns->unique('level_id')
-                    ->map(fn ($pattern) => ['bg' => $levelDotFor($pattern->level_id), 'code' => $pattern->level->code])
-                    ->concat($daySessions->isNotEmpty() ? [['bg' => 'bg-brand-600', 'code' => null]] : []);
-                $cellClasses = 'flex min-h-[5rem] flex-col items-center gap-1 bg-white p-1.5 sm:min-h-[6rem]'
+                    ->map(function ($pattern) use ($day, $levelDotFor) {
+                        $exception = $pattern->exceptionOn($day);
+                        $time = $pattern->start_time ? substr($pattern->start_time, 0, 5).'–'.substr($pattern->end_time, 0, 5) : null;
+
+                        return [
+                            'bg' => $levelDotFor($pattern->level_id),
+                            'code' => $pattern->level->code,
+                            'title' => $pattern->level->name.($exception ? ' · Libur' : ($time ? ' · '.$time : '')),
+                            'holiday' => $exception !== null,
+                        ];
+                    })
+                    ->concat($daySessions->isNotEmpty() ? [[
+                        'bg' => 'bg-brand-600',
+                        'code' => null,
+                        'title' => 'Jadwal KBM Kelompok'.($daySessions->first()->start_time ? ' · '.substr($daySessions->first()->start_time, 0, 5) : ''),
+                        'holiday' => false,
+                    ]] : []);
+                $maxVisibleBadges = 4;
+                $visibleBadges = $dayBadges->take($maxVisibleBadges);
+                $hiddenBadgeCount = max(0, $dayBadges->count() - $maxVisibleBadges);
+                $cellClasses = 'relative flex min-h-[5rem] flex-col items-center gap-1 bg-white p-1.5 sm:min-h-[6rem]'
                     .(! $isCurrentMonth ? ' bg-slate-50' : '')
                     .($isSelected && ! $day->isToday() ? ' ring-2 ring-inset ring-brand-600' : '');
             @endphp
@@ -55,13 +74,16 @@
             @else
                 <div class="{{ $cellClasses }}">
             @endif
+                @if ($hasHoliday)
+                    <span class="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-rose-600" title="Ada jadwal libur"></span>
+                @endif
                 <span class="flex h-7 w-7 items-center justify-center rounded-full text-sm font-medium {{ $day->isToday() ? 'bg-brand-600 font-semibold text-white' : ($isCurrentMonth ? $dateClassFor($i) : 'text-slate-300') }}">
                     {{ $day->day }}
                 </span>
                 @if ($dayBadges->isNotEmpty())
                     <span class="flex flex-wrap items-center justify-center gap-1">
-                        @foreach ($dayBadges as $badge)
-                            <span class="flex h-4 w-4 items-center justify-center rounded-full ring-1 ring-white {{ $badge['bg'] }}">
+                        @foreach ($visibleBadges as $badge)
+                            <span class="flex h-4 w-4 items-center justify-center rounded-full ring-1 ring-white {{ $badge['bg'] }} {{ $badge['holiday'] ? 'opacity-40' : '' }}" title="{{ $badge['title'] }}">
                                 @if ($badge['code'])
                                     <x-level-icon :code="$badge['code']" class="h-2.5 w-2.5 text-white" />
                                 @else
@@ -69,6 +91,11 @@
                                 @endif
                             </span>
                         @endforeach
+                        @if ($hiddenBadgeCount > 0)
+                            <span class="flex h-4 w-4 items-center justify-center rounded-full bg-slate-300 text-[0.55rem] font-bold text-slate-700" title="{{ $hiddenBadgeCount }} jadwal lainnya">
+                                +{{ $hiddenBadgeCount }}
+                            </span>
+                        @endif
                     </span>
                 @endif
             @if ($isCurrentMonth)
