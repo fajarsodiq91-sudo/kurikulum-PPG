@@ -51,6 +51,7 @@
                         return [
                             'bg' => $levelDotFor($pattern->level_id),
                             'code' => $pattern->level->code,
+                            'label' => $pattern->level->name,
                             'title' => $pattern->level->name.($exception ? ' · Libur' : ($time ? ' · '.$time : '')),
                             'holiday' => $exception !== null,
                         ];
@@ -58,10 +59,11 @@
                     ->concat($daySessions->isNotEmpty() ? [[
                         'bg' => 'bg-brand-600',
                         'code' => null,
+                        'label' => 'KBM Kelompok',
                         'title' => 'Jadwal KBM Kelompok'.($daySessions->first()->start_time ? ' · '.substr($daySessions->first()->start_time, 0, 5) : ''),
                         'holiday' => false,
                     ]] : []);
-                $maxVisibleBadges = 4;
+                $maxVisibleBadges = 3;
                 $visibleBadges = $dayBadges->take($maxVisibleBadges);
                 $hiddenBadgeCount = max(0, $dayBadges->count() - $maxVisibleBadges);
                 $cellBg = match (true) {
@@ -69,7 +71,7 @@
                     $day->isToday() => 'bg-brand-100',
                     default => 'bg-white',
                 };
-                $cellClasses = 'relative flex min-h-[3.5rem] flex-col items-start gap-0.5 p-1.5 sm:min-h-[4.25rem] '.$cellBg
+                $cellClasses = 'relative flex min-h-[4.5rem] flex-col items-start gap-0.5 p-1.5 sm:min-h-[5.75rem] '.$cellBg
                     .($day->isToday() ? ' ring-1 ring-inset ring-brand-300' : '')
                     .($isSelected && ! $day->isToday() ? ' ring-2 ring-inset ring-brand-600' : '');
             @endphp
@@ -86,19 +88,22 @@
                     {{ $day->day }}
                 </span>
                 @if ($dayBadges->isNotEmpty())
-                    <span class="flex flex-wrap items-center gap-1">
+                    <span class="flex w-full flex-col gap-0.5">
                         @foreach ($visibleBadges as $badge)
-                            <span class="flex h-4 w-4 items-center justify-center rounded-full ring-1 ring-white {{ $badge['bg'] }} {{ $badge['holiday'] ? 'opacity-40' : '' }}" title="{{ $badge['title'] }}">
-                                @if ($badge['code'])
-                                    <x-level-icon :code="$badge['code']" class="h-2.5 w-2.5 text-white" />
-                                @else
-                                    <x-sidebar-icon name="users" class="h-2.5 w-2.5 text-white" />
-                                @endif
+                            <span class="flex items-center gap-1" title="{{ $badge['title'] }}">
+                                <span class="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full ring-1 ring-white {{ $badge['bg'] }} {{ $badge['holiday'] ? 'opacity-40' : '' }}">
+                                    @if ($badge['code'])
+                                        <x-level-icon :code="$badge['code']" class="h-2 w-2 text-white" />
+                                    @else
+                                        <x-sidebar-icon name="users" class="h-2 w-2 text-white" />
+                                    @endif
+                                </span>
+                                <span class="truncate text-[0.6rem] leading-none text-slate-600">{{ $badge['label'] }}</span>
                             </span>
                         @endforeach
                         @if ($hiddenBadgeCount > 0)
-                            <span class="flex h-4 w-4 items-center justify-center rounded-full bg-slate-300 text-[0.55rem] font-bold text-slate-700" title="{{ $hiddenBadgeCount }} jadwal lainnya">
-                                +{{ $hiddenBadgeCount }}
+                            <span class="text-[0.6rem] leading-none text-slate-400" title="{{ $hiddenBadgeCount }} jadwal lainnya">
+                                +{{ $hiddenBadgeCount }} lainnya
                             </span>
                         @endif
                     </span>
