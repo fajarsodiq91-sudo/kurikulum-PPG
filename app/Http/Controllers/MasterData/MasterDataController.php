@@ -285,6 +285,8 @@ class MasterDataController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'code' => ['nullable', 'string', 'max:50'],
             'sort_order' => ['required', 'integer', 'min:0'],
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'is_active' => ['required', 'boolean'],
         ]);
         Semester::create($validated);
@@ -299,6 +301,8 @@ class MasterDataController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'code' => ['nullable', 'string', 'max:50'],
             'sort_order' => ['required', 'integer', 'min:0'],
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'is_active' => ['required', 'boolean'],
         ]);
         $semester->update($validated);

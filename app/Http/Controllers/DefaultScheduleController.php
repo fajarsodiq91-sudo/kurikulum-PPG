@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AcademicYear;
 use App\Models\DefaultSchedule;
 use App\Models\DefaultScheduleException;
 use App\Models\Level;
 use App\Models\Semester;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
 class DefaultScheduleController extends Controller
@@ -21,26 +21,20 @@ class DefaultScheduleController extends Controller
     public function index(Request $request): View
     {
         $levelId = $request->integer('level_id') ?: null;
-        $academicYearId = $request->integer('academic_year_id') ?: null;
-        $semesterId = $request->integer('semester_id') ?: null;
 
-        $schedule = ($levelId && $academicYearId && $semesterId)
-            ? DefaultSchedule::with('exceptions')
+        $schedules = $levelId
+            ? DefaultSchedule::with(['exceptions', 'academicYear', 'semester'])
                 ->where('level_id', $levelId)
-                ->where('academic_year_id', $academicYearId)
-                ->where('semester_id', $semesterId)
-                ->first()
-            : null;
+                ->get()
+                ->sortByDesc('start_date')
+                ->values()
+            : collect();
 
         return view('default-schedules.index', [
             'levels' => Level::where('is_active', true)->orderBy('sort_order')->get(),
-            'academicYears' => AcademicYear::where('is_active', true)->get(),
-            'semesters' => Semester::where('is_active', true)->get(),
             'days' => self::DAYS,
             'levelId' => $levelId,
-            'academicYearId' => $academicYearId,
-            'semesterId' => $semesterId,
-            'schedule' => $schedule,
+            'schedules' => $schedules,
         ]);
     }
 
@@ -48,8 +42,6 @@ class DefaultScheduleController extends Controller
     {
         $validated = $request->validate([
             'level_id' => ['required', 'exists:levels,id'],
-            'academic_year_id' => ['required', 'exists:academic_years,id'],
-            'semester_id' => ['required', 'exists:semesters,id'],
             'days_of_week' => ['required', 'array', 'min:1'],
             'days_of_week.*' => ['integer', 'min:1', 'max:7'],
             'start_date' => ['required', 'date'],
@@ -58,11 +50,19 @@ class DefaultScheduleController extends Controller
             'end_time' => ['nullable', 'date_format:H:i'],
         ]);
 
+        $semester = $this->resolveSemesterFor(Carbon::parse($validated['start_date']));
+
+        if (! $semester) {
+            return back()->withInput()->withErrors([
+                'start_date' => 'Tanggal mulai tidak berada dalam periode semester mana pun. Atur dulu tanggal mulai & selesai semester di Master Data > Semester.',
+            ]);
+        }
+
         DefaultSchedule::updateOrCreate(
             [
                 'level_id' => $validated['level_id'],
-                'academic_year_id' => $validated['academic_year_id'],
-                'semester_id' => $validated['semester_id'],
+                'academic_year_id' => $semester->academic_year_id,
+                'semester_id' => $semester->id,
             ],
             [
                 'days_of_week' => array_values(array_map('intval', $validated['days_of_week'])),
@@ -73,8 +73,22 @@ class DefaultScheduleController extends Controller
             ],
         );
 
-        return redirect()->route('default-schedules.index', $request->only(['level_id', 'academic_year_id', 'semester_id']))
-            ->with('success', 'Jadwal KBM Default berhasil disimpan.');
+        return redirect()->route('default-schedules.index', ['level_id' => $validated['level_id']])
+            ->with('success', "Jadwal KBM Default berhasil disimpan untuk {$semester->name} ({$semester->academicYear->name}).");
+    }
+
+    /**
+     * The semester whose configured date range covers $date, preferring the currently active one.
+     */
+    private function resolveSemesterFor(Carbon $date): ?Semester
+    {
+        return Semester::with('academicYear')
+            ->whereNotNull('start_date')
+            ->whereNotNull('end_date')
+            ->whereDate('start_date', '<=', $date)
+            ->whereDate('end_date', '>=', $date)
+            ->orderByDesc('is_active')
+            ->first();
     }
 
     public function storeException(Request $request, DefaultSchedule $defaultSchedule): RedirectResponse
@@ -89,11 +103,8 @@ class DefaultScheduleController extends Controller
             ['reason' => $validated['reason'] ?? null],
         );
 
-        return redirect()->route('default-schedules.index', [
-            'level_id' => $defaultSchedule->level_id,
-            'academic_year_id' => $defaultSchedule->academic_year_id,
-            'semester_id' => $defaultSchedule->semester_id,
-        ])->with('success', 'Tanggal libur berhasil ditambahkan.');
+        return redirect()->route('default-schedules.index', ['level_id' => $defaultSchedule->level_id])
+            ->with('success', 'Tanggal libur berhasil ditambahkan.');
     }
 
     public function destroyException(DefaultScheduleException $defaultScheduleException): RedirectResponse
@@ -101,10 +112,7 @@ class DefaultScheduleController extends Controller
         $defaultSchedule = $defaultScheduleException->defaultSchedule;
         $defaultScheduleException->delete();
 
-        return redirect()->route('default-schedules.index', [
-            'level_id' => $defaultSchedule->level_id,
-            'academic_year_id' => $defaultSchedule->academic_year_id,
-            'semester_id' => $defaultSchedule->semester_id,
-        ])->with('success', 'Tanggal libur berhasil dihapus.');
+        return redirect()->route('default-schedules.index', ['level_id' => $defaultSchedule->level_id])
+            ->with('success', 'Tanggal libur berhasil dihapus.');
     }
 }

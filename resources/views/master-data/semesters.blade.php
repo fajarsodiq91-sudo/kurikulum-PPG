@@ -13,7 +13,7 @@
     <div class="mb-6">
         <p class="text-sm font-semibold text-amber-600">Master Data</p>
         <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Semester</h2>
-        <p class="mt-2 text-sm text-slate-500">Kelola semester pada setiap tahun akademik.</p>
+        <p class="mt-2 text-sm text-slate-500">Kelola semester pada setiap tahun akademik. Atur tanggal mulai &amp; selesai supaya sistem bisa mendeteksi otomatis semester &amp; tahun ajaran saat Anda mengatur jadwal KBM default.</p>
     </div>
 
     @if (\App\Support\Access::can('manage-master-data'))
@@ -31,6 +31,14 @@
                 <input class="{{ $inputClass }}" name="name" placeholder="Contoh Semester 1" required>
                 <input class="{{ $inputClass }}" name="code" placeholder="Kode semester">
                 <input class="{{ $inputClass }}" name="sort_order" type="number" min="0" value="0" required>
+                <div>
+                    <label class="mb-1 block text-xs font-medium text-slate-600">Tanggal Mulai</label>
+                    <input class="{{ $inputClass }}" name="start_date" type="date">
+                </div>
+                <div>
+                    <label class="mb-1 block text-xs font-medium text-slate-600">Tanggal Selesai</label>
+                    <input class="{{ $inputClass }}" name="end_date" type="date">
+                </div>
             </div>
             <input type="hidden" name="is_active" value="1">
             <button class="{{ $buttonClass }}">Tambah Semester</button>
@@ -40,7 +48,7 @@
             @foreach ($semesters as $semester)
                 <details class="border-t border-slate-100 pt-2">
                     <summary class="flex cursor-pointer list-none justify-between">
-                        <span>{{ $semester->name }} <span class="text-slate-400">/ {{ $semester->academicYear?->name }}</span></span>
+                        <span>{{ $semester->name }} <span class="text-slate-400">/ {{ $semester->academicYear?->name }}@if ($semester->start_date && $semester->end_date) · {{ $semester->start_date->translatedFormat('d M Y') }} s/d {{ $semester->end_date->translatedFormat('d M Y') }}@endif</span></span>
                         @if (\App\Support\Access::can('manage-master-data'))<span class="text-amber-600" title="Edit" aria-label="Edit"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" /></svg></span>@endif
                     </summary>
                     @if (\App\Support\Access::can('manage-master-data'))
@@ -56,6 +64,14 @@
                             <input class="{{ $inputClass }}" name="name" value="{{ $semester->name }}" required>
                             <input class="{{ $inputClass }}" name="code" value="{{ $semester->code }}">
                             <input class="{{ $inputClass }}" name="sort_order" type="number" min="0" value="{{ $semester->sort_order }}" required>
+                            <div>
+                                <label class="mb-1 block text-xs font-medium text-slate-600">Tanggal Mulai</label>
+                                <input class="{{ $inputClass }}" name="start_date" type="date" value="{{ $semester->start_date?->toDateString() }}">
+                            </div>
+                            <div>
+                                <label class="mb-1 block text-xs font-medium text-slate-600">Tanggal Selesai</label>
+                                <input class="{{ $inputClass }}" name="end_date" type="date" value="{{ $semester->end_date?->toDateString() }}">
+                            </div>
                         </div>
                         <label class="mt-3 inline-flex items-center gap-2 text-sm text-slate-700">
                             <input type="hidden" name="is_active" value="0">

@@ -27,8 +27,6 @@ class DefaultScheduleTest extends TestCase
         $this->actingAs($admin)
             ->put('/default-schedules', [
                 'level_id' => $level->id,
-                'academic_year_id' => $academicYear->id,
-                'semester_id' => $semester->id,
                 'days_of_week' => [1, 2, 3, 4, 5],
                 'start_date' => '2026-01-05',
                 'end_date' => '2026-06-30',
@@ -40,6 +38,8 @@ class DefaultScheduleTest extends TestCase
         $this->assertDatabaseCount('default_schedules', 1);
         $schedule = DefaultSchedule::first();
         $this->assertSame([1, 2, 3, 4, 5], $schedule->days_of_week);
+        $this->assertSame($academicYear->id, $schedule->academic_year_id);
+        $this->assertSame($semester->id, $schedule->semester_id);
         $this->assertTrue($schedule->occursOn(Carbon::parse('2026-01-05')));
         $this->assertFalse($schedule->occursOn(Carbon::parse('2026-01-04')));
 
@@ -65,12 +65,27 @@ class DefaultScheduleTest extends TestCase
 
         $this->actingAs($user)->put('/default-schedules', [
             'level_id' => $level->id,
-            'academic_year_id' => $academicYear->id,
-            'semester_id' => $semester->id,
             'days_of_week' => [1],
             'start_date' => '2026-01-05',
             'end_date' => '2026-06-30',
         ])->assertForbidden();
+    }
+
+    public function test_setting_the_pattern_fails_when_the_start_date_is_outside_every_configured_semester(): void
+    {
+        $admin = $this->createAdminWithPermission('manage-learning-sessions');
+        [$level] = $this->createContext();
+
+        $this->actingAs($admin)
+            ->put('/default-schedules', [
+                'level_id' => $level->id,
+                'days_of_week' => [1],
+                'start_date' => '2099-01-05',
+                'end_date' => '2099-06-30',
+            ])
+            ->assertSessionHasErrors('start_date');
+
+        $this->assertDatabaseCount('default_schedules', 0);
     }
 
     private function createAdminWithPermission(string $permissionSlug): User
@@ -109,6 +124,8 @@ class DefaultScheduleTest extends TestCase
             'name' => 'Semester Ganjil',
             'code' => 'G',
             'sort_order' => 1,
+            'start_date' => '2025-07-01',
+            'end_date' => '2026-06-30',
             'is_active' => true,
         ]);
 
