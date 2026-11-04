@@ -42,9 +42,10 @@
                 $isSelected = $day->isSameDay($selectedDate);
                 $matchingPatterns = $isCurrentMonth ? $defaultSchedules->filter(fn ($pattern) => $pattern->appliesTo($day)) : collect();
                 $daySessions = $isCurrentMonth ? $ownSessions->get($day->toDateString(), collect()) : collect();
-                $dayDots = $matchingPatterns->pluck('level_id')->unique()->map($levelDotFor)
-                    ->concat($daySessions->isNotEmpty() ? ['bg-brand-600'] : []);
-                $cellClasses = 'flex min-h-[4.5rem] flex-col items-center gap-1 bg-white p-1.5 sm:min-h-[5.5rem]'
+                $dayBadges = $matchingPatterns->unique('level_id')
+                    ->map(fn ($pattern) => ['bg' => $levelDotFor($pattern->level_id), 'code' => $pattern->level->code])
+                    ->concat($daySessions->isNotEmpty() ? [['bg' => 'bg-brand-600', 'code' => null]] : []);
+                $cellClasses = 'flex min-h-[5rem] flex-col items-center gap-1 bg-white p-1.5 sm:min-h-[6rem]'
                     .(! $isCurrentMonth ? ' bg-slate-50' : '')
                     .($isSelected && ! $day->isToday() ? ' ring-2 ring-inset ring-brand-600' : '');
             @endphp
@@ -57,10 +58,16 @@
                 <span class="flex h-7 w-7 items-center justify-center rounded-full text-sm font-medium {{ $day->isToday() ? 'bg-brand-600 font-semibold text-white' : ($isCurrentMonth ? $dateClassFor($i) : 'text-slate-300') }}">
                     {{ $day->day }}
                 </span>
-                @if ($dayDots->isNotEmpty())
+                @if ($dayBadges->isNotEmpty())
                     <span class="flex flex-wrap items-center justify-center gap-1">
-                        @foreach ($dayDots as $dot)
-                            <span class="h-2.5 w-2.5 rounded-full ring-1 ring-white {{ $dot }}"></span>
+                        @foreach ($dayBadges as $badge)
+                            <span class="flex h-4 w-4 items-center justify-center rounded-full ring-1 ring-white {{ $badge['bg'] }}">
+                                @if ($badge['code'])
+                                    <x-level-icon :code="$badge['code']" class="h-2.5 w-2.5 text-white" />
+                                @else
+                                    <x-sidebar-icon name="users" class="h-2.5 w-2.5 text-white" />
+                                @endif
+                            </span>
                         @endforeach
                     </span>
                 @endif
