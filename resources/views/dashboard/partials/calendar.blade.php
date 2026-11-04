@@ -1,7 +1,10 @@
 @php
     $dayLabels = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
-    $levelColors = ['bg-amber-400', 'bg-sky-400', 'bg-emerald-400', 'bg-violet-400', 'bg-rose-400'];
-    $levelColorFor = fn ($levelId) => $levelColors[$levelId % count($levelColors)];
+    $levelChipColors = ['bg-amber-100 text-amber-800', 'bg-sky-100 text-sky-800', 'bg-emerald-100 text-emerald-800', 'bg-violet-100 text-violet-800', 'bg-rose-100 text-rose-800'];
+    $levelDotColors = ['bg-amber-400', 'bg-sky-400', 'bg-emerald-400', 'bg-violet-400', 'bg-rose-400'];
+    $levelChipFor = fn ($levelId) => $levelChipColors[$levelId % count($levelChipColors)];
+    $levelDotFor = fn ($levelId) => $levelDotColors[$levelId % count($levelDotColors)];
+    $maxChipsPerCell = 3;
 @endphp
 
 <x-card class="mt-6">
@@ -26,18 +29,26 @@
     </div>
 
     <div class="mt-5 grid grid-cols-7 gap-px overflow-hidden rounded-xl border border-slate-200 bg-slate-200">
-        @foreach ($dayLabels as $label)
-            <div class="bg-slate-50 px-2 py-2 text-center text-xs font-semibold text-slate-500">{{ $label }}</div>
+        @foreach ($dayLabels as $i => $label)
+            <div class="bg-slate-50 px-2 py-2 text-center text-xs font-semibold {{ $i >= 5 ? 'text-rose-500' : 'text-slate-500' }}">{{ $label }}</div>
         @endforeach
 
         @foreach ($calendarDays as $day)
             @php
                 $isCurrentMonth = $day->month === $calendarMonth->month;
+                $isWeekend = $day->isoWeekday() >= 6;
                 $isSelected = $day->isSameDay($selectedDate);
                 $matchingPatterns = $isCurrentMonth ? $defaultSchedules->filter(fn ($pattern) => $pattern->appliesTo($day)) : collect();
-                $daySessionCount = $isCurrentMonth ? $ownSessions->get($day->toDateString(), collect())->count() : 0;
-                $cellClasses = 'flex min-h-[4.5rem] flex-col items-center gap-1 bg-white py-2 sm:min-h-[5.5rem]'
-                    .(! $isCurrentMonth ? ' bg-slate-50' : '')
+                $daySessions = $isCurrentMonth ? $ownSessions->get($day->toDateString(), collect()) : collect();
+                $chips = $matchingPatterns->map(fn ($pattern) => ['label' => $pattern->level->name, 'class' => $levelChipFor($pattern->level_id)])
+                    ->concat($daySessions->map(fn ($session) => [
+                        'label' => ($session->start_time ? substr($session->start_time, 0, 5).' ' : '').($session->classGrade?->name ?? 'KBM'),
+                        'class' => 'bg-brand-100 text-brand-800',
+                    ]));
+                $visibleChips = $chips->take($maxChipsPerCell);
+                $hiddenCount = max(0, $chips->count() - $maxChipsPerCell);
+                $cellClasses = 'flex min-h-[5.5rem] flex-col gap-1 bg-white p-1.5 sm:min-h-[7rem]'
+                    .(! $isCurrentMonth ? ' bg-slate-50' : ($isWeekend ? ' bg-rose-50/30' : ''))
                     .($isSelected ? ' ring-2 ring-inset ring-brand-600' : '');
             @endphp
 
@@ -46,15 +57,15 @@
             @else
                 <div class="{{ $cellClasses }}">
             @endif
-                <span class="flex h-7 w-7 items-center justify-center rounded-full text-sm font-semibold {{ $day->isToday() ? 'bg-brand-950 text-white' : ($isCurrentMonth ? 'text-slate-900' : 'text-slate-400') }}">
+                <span class="flex h-6 w-6 items-center justify-center rounded-full text-sm font-semibold {{ $day->isToday() ? 'bg-brand-950 text-white' : ($isCurrentMonth ? 'text-slate-900' : 'text-slate-400') }}">
                     {{ $day->day }}
                 </span>
-                <div class="flex items-center gap-1">
-                    @foreach ($matchingPatterns as $pattern)
-                        <span class="h-1.5 w-1.5 rounded-full {{ $levelColorFor($pattern->level_id) }}" title="{{ $pattern->level->name }}"></span>
+                <div class="flex flex-1 flex-col gap-0.5 overflow-hidden">
+                    @foreach ($visibleChips as $chip)
+                        <span class="truncate rounded px-1 py-0.5 text-[0.65rem] font-medium leading-tight {{ $chip['class'] }}">{{ $chip['label'] }}</span>
                     @endforeach
-                    @if ($daySessionCount > 0)
-                        <span class="rounded-full bg-brand-100 px-1.5 text-[0.65rem] font-semibold text-brand-700">{{ $daySessionCount }}</span>
+                    @if ($hiddenCount > 0)
+                        <span class="truncate text-[0.65rem] font-medium text-slate-500">+{{ $hiddenCount }} lainnya</span>
                     @endif
                 </div>
             @if ($isCurrentMonth)
@@ -74,7 +85,7 @@
                     @php($exception = $pattern->exceptionOn($selectedDate))
                     <div class="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm">
                         <span class="flex items-center gap-2">
-                            <span class="h-2 w-2 rounded-full {{ $levelColorFor($pattern->level_id) }}"></span>
+                            <span class="h-2 w-2 rounded-full {{ $levelDotFor($pattern->level_id) }}"></span>
                             {{ $pattern->level->name }}
                             @if ($pattern->start_time) <span class="text-slate-500">· {{ substr($pattern->start_time, 0, 5) }}–{{ substr($pattern->end_time, 0, 5) }}</span> @endif
                             @if ($exception) <span class="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-600">Libur</span> @endif
