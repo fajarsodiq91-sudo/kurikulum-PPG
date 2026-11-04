@@ -99,6 +99,10 @@
         @endforeach
     </div>
 
+    @if ($canManageDefault || $canCreateOwnSessions)
+        @include('dashboard.partials.calendar')
+    @endif
+
     @if ($canSeeResume)
         <div class="mt-8" id="resume-generus">
             <div class="mb-4 flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
@@ -277,10 +281,6 @@
             @endif
         </x-card>
     </div>
-
-    @if ($canManageDefault || $canCreateOwnSessions)
-        @include('dashboard.partials.calendar')
-    @endif
 
     @if ($generusCount === 0 && $teacherCount === 0 && $learningSessionCount === 0)
         <x-empty-state class="mt-6" title="Belum ada data operasional" description="Dashboard siap digunakan. Mulai dengan menambahkan generus, guru, atau sesi KBM melalui menu yang tersedia." />

@@ -1,17 +1,9 @@
 @php
-    $dayLabels = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    $dayLabels = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
     $levelDotColors = ['bg-amber-400', 'bg-sky-400', 'bg-emerald-400', 'bg-violet-400', 'bg-rose-400'];
     $levelDotFor = fn ($levelId) => $levelDotColors[$levelId % count($levelDotColors)];
-    $headerClassFor = fn ($i) => match (true) {
-        $i === 0 => 'bg-rose-600 text-white',
-        $i === 6 => 'bg-slate-900 text-white',
-        default => 'bg-slate-800 text-white',
-    };
-    $dateClassFor = fn ($i) => match (true) {
-        $i === 0 => 'text-rose-600',
-        $i === 6 => 'text-sky-600',
-        default => 'text-slate-900',
-    };
+    $headerClassFor = fn ($i) => $i >= 5 ? 'bg-rose-600 text-white' : 'bg-slate-800 text-white';
+    $dateClassFor = fn ($dayOfWeek) => in_array($dayOfWeek, [0, 6], true) ? 'text-rose-600' : 'text-slate-900';
 @endphp
 
 <x-card class="mt-6">

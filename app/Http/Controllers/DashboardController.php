@@ -124,15 +124,15 @@ class DashboardController extends Controller
     }
 
     /**
-     * Every day shown on the month grid: full weeks (Minggu–Sabtu) from before the 1st
+     * Every day shown on the month grid: full weeks (Senin–Minggu) from before the 1st
      * through after the last day, so the calendar has no partial rows.
      *
      * @return list<Carbon>
      */
     private function buildCalendarDays(Carbon $calendarMonth): array
     {
-        $start = $calendarMonth->copy()->startOfWeek(Carbon::SUNDAY);
-        $end = $calendarMonth->copy()->endOfMonth()->endOfWeek(Carbon::SUNDAY);
+        $start = $calendarMonth->copy()->startOfWeek(Carbon::MONDAY);
+        $end = $calendarMonth->copy()->endOfMonth()->endOfWeek(Carbon::MONDAY);
 
         $days = [];
         for ($day = $start->copy(); $day->lte($end); $day->addDay()) {
