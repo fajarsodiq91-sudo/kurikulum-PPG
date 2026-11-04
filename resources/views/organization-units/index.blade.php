@@ -20,7 +20,7 @@
         .org-node { display: inline-block; border: 1px solid #e2e8f0; border-radius: 0.75rem; background: #fff; padding: 0.75rem 1rem; min-width: 11rem; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
         .org-node--daerah { border-color: #f59e0b; background: #fffbeb; }
         .org-node--desa { border-color: #93c5fd; background: #eff6ff; }
-        .org-node-title { font-weight: 700; font-size: 0.8rem; color: #0f172a; }
+        .org-node-title { font-weight: 700; font-size: 0.8rem; color: #0f172a; text-align: center; }
         /* Pengurus dengan kedudukan setara ditampilkan sejajar (horizontal), bukan bersusun. */
         .org-node-persons { display: flex; flex-wrap: wrap; gap: 0.375rem; justify-content: center; margin-top: 0.375rem; }
         .org-node-person { border: 1px solid #e2e8f0; background: #fff; padding: 0.25rem 0.5rem; font-size: 0.7rem; color: #475569; border-radius: 0.375rem; text-align: center; }
@@ -30,7 +30,7 @@
         .org-leaf-frame-title { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: #64748b; text-align: center; margin-bottom: 0.5rem; }
         .org-leaf-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
         .org-leaf { border: 1px solid #e2e8f0; border-radius: 0.5rem; background: #f8fafc; padding: 0.5rem 0.75rem; min-width: 8rem; }
-        .org-leaf-title { font-size: 0.75rem; font-weight: 600; color: #0f172a; }
+        .org-leaf-title { font-size: 0.75rem; font-weight: 600; color: #0f172a; text-align: center; }
         .org-leaf-persons { display: flex; flex-wrap: wrap; gap: 0.25rem; justify-content: center; margin-top: 0.25rem; }
         .org-leaf-person { border: 1px solid #e2e8f0; background: #fff; padding: 0.125rem 0.375rem; font-size: 0.7rem; color: #475569; border-radius: 0.375rem; text-align: center; }
         .org-leaf-person:hover { border-color: #cbd5e1; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
