@@ -1,6 +1,6 @@
 @php
     $dayLabels = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
-    $levelDotColors = ['bg-amber-400', 'bg-sky-400', 'bg-emerald-400', 'bg-violet-400', 'bg-rose-400'];
+    $levelDotColors = ['bg-amber-500', 'bg-sky-600', 'bg-emerald-600', 'bg-violet-600', 'bg-rose-600', 'bg-orange-500', 'bg-teal-600'];
     $levelDotFor = fn ($levelId) => $levelDotColors[$levelId % count($levelDotColors)];
     $headerClassFor = fn ($i) => $i >= 5 ? 'bg-rose-600 text-white' : 'bg-slate-800 text-white';
     $dateClassFor = fn ($dayOfWeek) => in_array($dayOfWeek, [0, 6], true) ? 'text-rose-600' : 'text-slate-900';
@@ -58,9 +58,9 @@
                     {{ $day->day }}
                 </span>
                 @if ($dayDots->isNotEmpty())
-                    <span class="flex flex-wrap items-center justify-center gap-0.5">
+                    <span class="flex flex-wrap items-center justify-center gap-1">
                         @foreach ($dayDots as $dot)
-                            <span class="h-1.5 w-1.5 rounded-full {{ $dot }}"></span>
+                            <span class="h-2.5 w-2.5 rounded-full ring-1 ring-white {{ $dot }}"></span>
                         @endforeach
                     </span>
                 @endif
@@ -76,16 +76,16 @@
         $legendLevels = $defaultSchedules->pluck('level')->filter()->unique('id')->sortBy('sort_order');
     @endphp
     @if ($legendLevels->isNotEmpty() || $canCreateOwnSessions)
-        <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600">
+        <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-slate-700">
             @foreach ($legendLevels as $level)
-                <span class="flex items-center gap-1.5">
-                    <span class="h-2 w-2 rounded-full {{ $levelDotFor($level->id) }}"></span>
+                <span class="flex items-center gap-2">
+                    <span class="h-3 w-3 rounded-full {{ $levelDotFor($level->id) }}"></span>
                     {{ $level->name }}
                 </span>
             @endforeach
             @if ($canCreateOwnSessions)
-                <span class="flex items-center gap-1.5">
-                    <span class="h-2 w-2 rounded-full bg-brand-600"></span>
+                <span class="flex items-center gap-2">
+                    <span class="h-3 w-3 rounded-full bg-brand-600"></span>
                     KBM Kelompok
                 </span>
             @endif
