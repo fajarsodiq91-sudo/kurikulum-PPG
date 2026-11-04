@@ -64,9 +64,13 @@
                 $maxVisibleBadges = 4;
                 $visibleBadges = $dayBadges->take($maxVisibleBadges);
                 $hiddenBadgeCount = max(0, $dayBadges->count() - $maxVisibleBadges);
-                $cellClasses = 'relative flex min-h-[3.5rem] flex-col items-start gap-0.5 bg-white p-1.5 sm:min-h-[4.25rem]'
-                    .(! $isCurrentMonth ? ' bg-slate-50' : '')
-                    .($day->isToday() ? ' bg-brand-100 ring-1 ring-inset ring-brand-300' : '')
+                $cellBg = match (true) {
+                    ! $isCurrentMonth => 'bg-slate-50',
+                    $day->isToday() => 'bg-brand-100',
+                    default => 'bg-white',
+                };
+                $cellClasses = 'relative flex min-h-[3.5rem] flex-col items-start gap-0.5 p-1.5 sm:min-h-[4.25rem] '.$cellBg
+                    .($day->isToday() ? ' ring-1 ring-inset ring-brand-300' : '')
                     .($isSelected && ! $day->isToday() ? ' ring-2 ring-inset ring-brand-600' : '');
             @endphp
 
