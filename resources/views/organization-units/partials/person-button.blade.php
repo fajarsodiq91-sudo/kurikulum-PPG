@@ -14,4 +14,4 @@
         'taskUrl' => $canManageTasks ? route('tasks.index', ['assign_to' => $pengurus->user_id]) : null,
     ];
 @endphp
-<button type="button" class="{{ $class }} block w-full cursor-pointer text-left" data-person-detail="{{ json_encode($detail) }}">{{ $pengurus->user_name }}<span>{{ $pengurus->jabatan ?? 'Tanpa jabatan' }}</span></button>
+<button type="button" class="{{ $class }} cursor-pointer" data-person-detail="{{ json_encode($detail) }}">{{ $pengurus->user_name }}<span>{{ $pengurus->jabatan ?? 'Tanpa jabatan' }}</span></button>

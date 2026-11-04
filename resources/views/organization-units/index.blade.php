@@ -21,16 +21,19 @@
         .org-node--daerah { border-color: #f59e0b; background: #fffbeb; }
         .org-node--desa { border-color: #93c5fd; background: #eff6ff; }
         .org-node-title { font-weight: 700; font-size: 0.8rem; color: #0f172a; }
-        .org-node-person { border: none; background: none; padding: 0.25rem 0.25rem; margin-top: 0.25rem; font-size: 0.7rem; color: #475569; border-radius: 0.375rem; }
-        .org-node-person:hover { background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+        /* Pengurus dengan kedudukan setara ditampilkan sejajar (horizontal), bukan bersusun. */
+        .org-node-persons { display: flex; flex-wrap: wrap; gap: 0.375rem; justify-content: center; margin-top: 0.375rem; }
+        .org-node-person { border: 1px solid #e2e8f0; background: #fff; padding: 0.25rem 0.5rem; font-size: 0.7rem; color: #475569; border-radius: 0.375rem; text-align: center; }
+        .org-node-person:hover { border-color: #cbd5e1; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
         .org-node-person span { display: block; color: #94a3b8; }
         .org-leaf-frame { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 2px solid #cbd5e1; width: 100%; }
         .org-leaf-frame-title { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: #64748b; text-align: center; margin-bottom: 0.5rem; }
         .org-leaf-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
         .org-leaf { border: 1px solid #e2e8f0; border-radius: 0.5rem; background: #f8fafc; padding: 0.5rem 0.75rem; min-width: 8rem; }
         .org-leaf-title { font-size: 0.75rem; font-weight: 600; color: #0f172a; }
-        .org-leaf-person { border: none; background: none; padding: 0.125rem 0.25rem; font-size: 0.7rem; color: #475569; border-radius: 0.375rem; }
-        .org-leaf-person:hover { background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+        .org-leaf-persons { display: flex; flex-wrap: wrap; gap: 0.25rem; justify-content: center; margin-top: 0.25rem; }
+        .org-leaf-person { border: 1px solid #e2e8f0; background: #fff; padding: 0.125rem 0.375rem; font-size: 0.7rem; color: #475569; border-radius: 0.375rem; text-align: center; }
+        .org-leaf-person:hover { border-color: #cbd5e1; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
         .org-leaf-person span { display: block; color: #94a3b8; }
         .org-leaf-empty { font-size: 0.7rem; color: #94a3b8; }
     </style>
@@ -61,11 +64,13 @@
                         <li>
                             <div class="org-node org-node--daerah">
                                 <p class="org-node-title">PPG {{ $region?->name ?? 'Daerah' }}</p>
-                                @forelse ($daerahPengurus as $pengurus)
-                                    @include('organization-units.partials.person-button', ['pengurus' => $pengurus, 'class' => 'org-node-person', 'canManageTasks' => $canManageTasks])
-                                @empty
-                                    <p class="org-node-person">Belum ada pengurus aktif</p>
-                                @endforelse
+                                <div class="org-node-persons">
+                                    @forelse ($daerahPengurus as $pengurus)
+                                        @include('organization-units.partials.person-button', ['pengurus' => $pengurus, 'class' => 'org-node-person', 'canManageTasks' => $canManageTasks])
+                                    @empty
+                                        <p class="org-node-person">Belum ada pengurus aktif</p>
+                                    @endforelse
+                                </div>
                             </div>
 
                             @if ($villages->isNotEmpty())
@@ -75,11 +80,13 @@
                                         <li>
                                             <div class="org-node org-node--desa">
                                                 <p class="org-node-title">Desa {{ $village->name }}</p>
-                                                @forelse ($desaPengurus as $pengurus)
-                                                    @include('organization-units.partials.person-button', ['pengurus' => $pengurus, 'class' => 'org-node-person', 'canManageTasks' => $canManageTasks])
-                                                @empty
-                                                    <p class="org-node-person">Belum ada perwakilan aktif</p>
-                                                @endforelse
+                                                <div class="org-node-persons">
+                                                    @forelse ($desaPengurus as $pengurus)
+                                                        @include('organization-units.partials.person-button', ['pengurus' => $pengurus, 'class' => 'org-node-person', 'canManageTasks' => $canManageTasks])
+                                                    @empty
+                                                        <p class="org-node-person">Belum ada perwakilan aktif</p>
+                                                    @endforelse
+                                                </div>
                                             </div>
 
                                             @if ($village->groups->isNotEmpty())
@@ -90,11 +97,13 @@
                                                             @php $kelompokPengurus = $pelaksanaKelompok->get($group->id, collect()); @endphp
                                                             <div class="org-leaf">
                                                                 <p class="org-leaf-title">Kelompok {{ $group->name }}</p>
-                                                                @forelse ($kelompokPengurus as $pengurus)
-                                                                    @include('organization-units.partials.person-button', ['pengurus' => $pengurus, 'class' => 'org-leaf-person', 'canManageTasks' => $canManageTasks])
-                                                                @empty
-                                                                    <p class="org-leaf-empty">Belum ada pengurus aktif</p>
-                                                                @endforelse
+                                                                <div class="org-leaf-persons">
+                                                                    @forelse ($kelompokPengurus as $pengurus)
+                                                                        @include('organization-units.partials.person-button', ['pengurus' => $pengurus, 'class' => 'org-leaf-person', 'canManageTasks' => $canManageTasks])
+                                                                    @empty
+                                                                        <p class="org-leaf-empty">Belum ada pengurus aktif</p>
+                                                                    @endforelse
+                                                                </div>
                                                             </div>
                                                         @endforeach
                                                     </div>
