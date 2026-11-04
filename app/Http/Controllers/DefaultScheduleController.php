@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\DefaultSchedule;
 use App\Models\DefaultScheduleException;
 use App\Models\Level;
-use App\Models\Semester;
+use App\Support\SemesterResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -50,7 +50,7 @@ class DefaultScheduleController extends Controller
             'end_time' => ['nullable', 'date_format:H:i'],
         ]);
 
-        $semester = $this->resolveSemesterFor(Carbon::parse($validated['start_date']));
+        $semester = SemesterResolver::resolveFor(Carbon::parse($validated['start_date']));
 
         if (! $semester) {
             return back()->withInput()->withErrors([
@@ -75,20 +75,6 @@ class DefaultScheduleController extends Controller
 
         return redirect()->route('default-schedules.index', ['level_id' => $validated['level_id']])
             ->with('success', "Jadwal KBM Default berhasil disimpan untuk {$semester->name} ({$semester->academicYear->name}).");
-    }
-
-    /**
-     * The semester whose configured date range covers $date, preferring the currently active one.
-     */
-    private function resolveSemesterFor(Carbon $date): ?Semester
-    {
-        return Semester::with('academicYear')
-            ->whereNotNull('start_date')
-            ->whereNotNull('end_date')
-            ->whereDate('start_date', '<=', $date)
-            ->whereDate('end_date', '>=', $date)
-            ->orderByDesc('is_active')
-            ->first();
     }
 
     public function storeException(Request $request, DefaultSchedule $defaultSchedule): RedirectResponse

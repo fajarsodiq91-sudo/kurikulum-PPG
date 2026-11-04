@@ -18,6 +18,9 @@
             @if (\App\Support\Access::can('view-learning-sessions') || \App\Support\Access::can('manage-learning-sessions'))
                 <a href="{{ route('default-schedules.index') }}" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Jadwal KBM Default</a>
             @endif
+            @if (\App\Support\Access::can('manage-own-default-schedule'))
+                <a href="{{ route('group-default-schedules.index') }}" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Jadwal KBM Default Kelompok</a>
+            @endif
         </div>
     </div>
 

@@ -18,6 +18,7 @@ use App\Http\Controllers\EvaluationScoreController;
 use App\Http\Controllers\FaceEnrollmentController;
 use App\Http\Controllers\FollowUpController;
 use App\Http\Controllers\GenerusController;
+use App\Http\Controllers\GroupDefaultScheduleController;
 use App\Http\Controllers\GuardianController;
 use App\Http\Controllers\KontrolController;
 use App\Http\Controllers\LearningJournalController;
@@ -418,6 +419,19 @@ Route::middleware(['auth', 'permission:manage-learning-sessions'])->group(functi
 Route::middleware(['auth', 'permission:manage-own-learning-sessions'])->group(function () {
     Route::post('/learning-sessions/own', [LearningSessionController::class, 'storeOwn'])
         ->name('learning-sessions.store-own');
+});
+
+Route::middleware(['auth', 'permission:manage-own-default-schedule'])->group(function () {
+    Route::get('/group-default-schedules', [GroupDefaultScheduleController::class, 'index'])
+        ->name('group-default-schedules.index');
+    Route::put('/group-default-schedules', [GroupDefaultScheduleController::class, 'update'])
+        ->name('group-default-schedules.update');
+    Route::post('/group-default-schedules/{groupDefaultSchedule}/exceptions', [GroupDefaultScheduleController::class, 'storeException'])
+        ->whereNumber('groupDefaultSchedule')
+        ->name('group-default-schedules.exceptions.store');
+    Route::delete('/group-default-schedule-exceptions/{groupDefaultScheduleException}', [GroupDefaultScheduleController::class, 'destroyException'])
+        ->whereNumber('groupDefaultScheduleException')
+        ->name('group-default-schedules.exceptions.destroy');
 });
 
 Route::middleware(['auth', 'permission:manage-learning-sessions,manage-learning-attendance'])->group(function () {

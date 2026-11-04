@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasRecurringSchedulePattern;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
 
 class DefaultSchedule extends Model
 {
+    use HasRecurringSchedulePattern;
+
     protected $fillable = [
         'level_id',
         'academic_year_id',
@@ -44,31 +46,5 @@ class DefaultSchedule extends Model
     public function exceptions(): HasMany
     {
         return $this->hasMany(DefaultScheduleException::class);
-    }
-
-    /**
-     * Whether this pattern applies to $date: within its date range and on one of its weekdays.
-     * True even on a date marked as a holiday — use occursOn() to also exclude those.
-     */
-    public function appliesTo(Carbon $date): bool
-    {
-        if ($date->lt($this->start_date) || $date->gt($this->end_date)) {
-            return false;
-        }
-
-        return in_array($date->isoWeekday(), $this->days_of_week ?? [], true);
-    }
-
-    /**
-     * Whether this pattern lands on $date: applies to it, and not marked as a holiday.
-     */
-    public function occursOn(Carbon $date): bool
-    {
-        return $this->appliesTo($date) && ! $this->exceptionOn($date);
-    }
-
-    public function exceptionOn(Carbon $date): ?DefaultScheduleException
-    {
-        return $this->exceptions->first(fn (DefaultScheduleException $exception): bool => $exception->exception_date->isSameDay($date));
     }
 }

@@ -218,7 +218,16 @@ class User extends Authenticatable
      */
     private function rolesGrantingPermission(string $permissionSlug): EloquentCollection
     {
-        $this->activeRolesWithPermissions ??= $this->roles()
+        return $this->activeRoles()
+            ->filter(fn (Role $role): bool => $role->permissions->contains('slug', $permissionSlug));
+    }
+
+    /**
+     * @return EloquentCollection<int, Role>
+     */
+    private function activeRoles(): EloquentCollection
+    {
+        return $this->activeRolesWithPermissions ??= $this->roles()
             ->whereNull('roles.deleted_at')
             ->where('roles.is_active', true)
             ->where('user_roles.is_active', true)
@@ -226,9 +235,24 @@ class User extends Authenticatable
                 ->whereNull('permissions.deleted_at')
                 ->where('permissions.is_active', true)])
             ->get();
+    }
 
-        return $this->activeRolesWithPermissions
-            ->filter(fn (Role $role): bool => $role->permissions->contains('slug', $permissionSlug));
+    /**
+     * Every scope (from the `user_roles` pivot) this user's active roles carry, regardless of
+     * which permission grants it — e.g. for features scoped by the organisational tier itself
+     * (global/village/group) rather than by a specific permission.
+     *
+     * @return Collection<int, array{type: string, id: int|null}>
+     */
+    public function activeScopes(): Collection
+    {
+        if ($this->status !== 'active') {
+            return collect();
+        }
+
+        return $this->activeRoles()
+            ->map(fn (Role $role): array => ['type' => $role->pivot->scope_type, 'id' => $role->pivot->scope_id])
+            ->values();
     }
 
     protected function casts(): array
