@@ -76,16 +76,20 @@
         $legendLevels = $defaultSchedules->pluck('level')->filter()->unique('id')->sortBy('sort_order');
     @endphp
     @if ($legendLevels->isNotEmpty() || $canCreateOwnSessions)
-        <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-slate-700">
+        <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-700">
             @foreach ($legendLevels as $level)
                 <span class="flex items-center gap-2">
-                    <span class="h-3 w-3 rounded-full {{ $levelDotFor($level->id) }}"></span>
+                    <span class="flex h-6 w-6 items-center justify-center rounded-full {{ $levelDotFor($level->id) }}">
+                        <x-level-icon :code="$level->code" class="h-3.5 w-3.5 text-white" />
+                    </span>
                     {{ $level->name }}
                 </span>
             @endforeach
             @if ($canCreateOwnSessions)
                 <span class="flex items-center gap-2">
-                    <span class="h-3 w-3 rounded-full bg-brand-600"></span>
+                    <span class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-600">
+                        <x-sidebar-icon name="users" class="h-3.5 w-3.5 text-white" />
+                    </span>
                     KBM Kelompok
                 </span>
             @endif
@@ -101,7 +105,9 @@
                     @php($exception = $pattern->exceptionOn($selectedDate))
                     <div class="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm">
                         <span class="flex items-center gap-2">
-                            <span class="h-2 w-2 rounded-full {{ $levelDotFor($pattern->level_id) }}"></span>
+                            <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full {{ $levelDotFor($pattern->level_id) }}">
+                                <x-level-icon :code="$pattern->level->code" class="h-4 w-4 text-white" />
+                            </span>
                             {{ $pattern->level->name }}
                             @if ($pattern->start_time) <span class="text-slate-500">· {{ substr($pattern->start_time, 0, 5) }}–{{ substr($pattern->end_time, 0, 5) }}</span> @endif
                             @if ($exception) <span class="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-600">Libur</span> @endif
