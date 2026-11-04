@@ -1,32 +1,33 @@
 @php
     $dayLabels = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
-    $levelChipColors = ['bg-amber-100 text-amber-800', 'bg-sky-100 text-sky-800', 'bg-emerald-100 text-emerald-800', 'bg-violet-100 text-violet-800', 'bg-rose-100 text-rose-800'];
     $levelDotColors = ['bg-amber-400', 'bg-sky-400', 'bg-emerald-400', 'bg-violet-400', 'bg-rose-400'];
-    $levelChipFor = fn ($levelId) => $levelChipColors[$levelId % count($levelChipColors)];
     $levelDotFor = fn ($levelId) => $levelDotColors[$levelId % count($levelDotColors)];
     $maxChipsPerCell = 3;
 @endphp
 
 <x-card class="mt-6">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-        <div>
-            <h2 class="font-bold text-slate-950">Kalender KBM — {{ $calendarMonth->translatedFormat('F Y') }}</h2>
-            <p class="mt-1 text-sm text-slate-500">
-                @if ($canManageDefault)
-                    Jadwal KBM default per jenjang. <a href="{{ route('default-schedules.index') }}" class="font-semibold text-brand-700 hover:text-brand-900">Atur pola jadwal default</a>.
-                @else
-                    Referensi jadwal KBM default
-                    @if ($canCreateOwnSessions) dan jadwal KBM kelompok Anda. @endif
-                @endif
-                Klik tanggal untuk melihat detail.
-            </p>
+    <p class="text-sm font-semibold text-amber-600">Kalender KBM</p>
+    <div class="mt-1 flex flex-wrap items-center gap-3">
+        <a href="{{ route('dashboard') }}" class="rounded-full border border-slate-300 px-4 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Hari Ini</a>
+        <div class="flex items-center">
+            <a href="{{ route('dashboard', ['month' => $calendarMonth->copy()->subMonth()->format('Y-m')]) }}" class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100" aria-label="Bulan sebelumnya">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+            </a>
+            <a href="{{ route('dashboard', ['month' => $calendarMonth->copy()->addMonth()->format('Y-m')]) }}" class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100" aria-label="Bulan berikutnya">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+            </a>
         </div>
-        <div class="flex items-center gap-2 text-sm font-semibold">
-            <a href="{{ route('dashboard', ['month' => $calendarMonth->copy()->subMonth()->format('Y-m')]) }}" class="rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50">&laquo;</a>
-            <a href="{{ route('dashboard') }}" class="rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50">Hari Ini</a>
-            <a href="{{ route('dashboard', ['month' => $calendarMonth->copy()->addMonth()->format('Y-m')]) }}" class="rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50">&raquo;</a>
-        </div>
+        <h2 class="text-xl font-semibold text-slate-950">{{ $calendarMonth->translatedFormat('F Y') }}</h2>
     </div>
+    <p class="mt-2 text-sm text-slate-500">
+        @if ($canManageDefault)
+            Jadwal KBM default per jenjang. <a href="{{ route('default-schedules.index') }}" class="font-semibold text-brand-700 hover:text-brand-900">Atur pola jadwal default</a>.
+        @else
+            Referensi jadwal KBM default
+            @if ($canCreateOwnSessions) dan jadwal KBM kelompok Anda. @endif
+        @endif
+        Klik tanggal untuk melihat detail.
+    </p>
 
     <div class="mt-5 grid grid-cols-7 gap-px overflow-hidden rounded-xl border border-slate-200 bg-slate-200">
         @foreach ($dayLabels as $i => $label)
@@ -36,36 +37,38 @@
         @foreach ($calendarDays as $day)
             @php
                 $isCurrentMonth = $day->month === $calendarMonth->month;
-                $isWeekend = $day->isoWeekday() >= 6;
                 $isSelected = $day->isSameDay($selectedDate);
                 $matchingPatterns = $isCurrentMonth ? $defaultSchedules->filter(fn ($pattern) => $pattern->appliesTo($day)) : collect();
                 $daySessions = $isCurrentMonth ? $ownSessions->get($day->toDateString(), collect()) : collect();
-                $chips = $matchingPatterns->map(fn ($pattern) => ['label' => $pattern->level->name, 'class' => $levelChipFor($pattern->level_id)])
+                $chips = $matchingPatterns->map(fn ($pattern) => ['label' => $pattern->level->name, 'dot' => $levelDotFor($pattern->level_id)])
                     ->concat($daySessions->map(fn ($session) => [
                         'label' => ($session->start_time ? substr($session->start_time, 0, 5).' ' : '').($session->classGrade?->name ?? 'KBM'),
-                        'class' => 'bg-brand-100 text-brand-800',
+                        'dot' => 'bg-brand-600',
                     ]));
                 $visibleChips = $chips->take($maxChipsPerCell);
                 $hiddenCount = max(0, $chips->count() - $maxChipsPerCell);
                 $cellClasses = 'flex min-h-[5.5rem] flex-col gap-1 bg-white p-1.5 sm:min-h-[7rem]'
-                    .(! $isCurrentMonth ? ' bg-slate-50' : ($isWeekend ? ' bg-rose-50/30' : ''))
-                    .($isSelected ? ' ring-2 ring-inset ring-brand-600' : '');
+                    .(! $isCurrentMonth ? ' bg-slate-50' : '')
+                    .($isSelected && ! $day->isToday() ? ' ring-2 ring-inset ring-brand-600' : '');
             @endphp
 
             @if ($isCurrentMonth)
-                <a href="{{ route('dashboard', ['month' => $calendarMonth->format('Y-m'), 'date' => $day->toDateString()]) }}" class="{{ $cellClasses }} transition hover:bg-amber-50">
+                <a href="{{ route('dashboard', ['month' => $calendarMonth->format('Y-m'), 'date' => $day->toDateString()]) }}" class="{{ $cellClasses }} transition hover:bg-slate-50">
             @else
                 <div class="{{ $cellClasses }}">
             @endif
-                <span class="flex h-6 w-6 items-center justify-center rounded-full text-sm font-semibold {{ $day->isToday() ? 'bg-brand-950 text-white' : ($isCurrentMonth ? 'text-slate-900' : 'text-slate-400') }}">
+                <span class="flex h-6 w-6 items-center justify-center rounded-full text-sm {{ $day->isToday() ? 'bg-brand-600 font-semibold text-white' : ($isCurrentMonth ? 'text-slate-900' : 'text-slate-400') }}">
                     {{ $day->day }}
                 </span>
                 <div class="flex flex-1 flex-col gap-0.5 overflow-hidden">
                     @foreach ($visibleChips as $chip)
-                        <span class="truncate rounded px-1 py-0.5 text-[0.65rem] font-medium leading-tight {{ $chip['class'] }}">{{ $chip['label'] }}</span>
+                        <span class="flex items-center gap-1 truncate text-[0.7rem] leading-tight text-slate-700">
+                            <span class="h-1.5 w-1.5 shrink-0 rounded-full {{ $chip['dot'] }}"></span>
+                            <span class="truncate">{{ $chip['label'] }}</span>
+                        </span>
                     @endforeach
                     @if ($hiddenCount > 0)
-                        <span class="truncate text-[0.65rem] font-medium text-slate-500">+{{ $hiddenCount }} lainnya</span>
+                        <span class="truncate text-[0.7rem] text-slate-500">+{{ $hiddenCount }} lainnya</span>
                     @endif
                 </div>
             @if ($isCurrentMonth)
