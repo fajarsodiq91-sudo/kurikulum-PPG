@@ -211,5 +211,22 @@
                 </form>
             </div>
         @endif
+
+        @if (! $canManageDefault && ! $canCreateOwnSessions)
+            <div class="mt-3 space-y-2">
+                @forelse ($selectedPatterns as $pattern)
+                    <div class="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full {{ $levelDotFor($pattern->level_id) }}">
+                            <x-level-icon :code="$pattern->level->code" class="h-4 w-4 text-white" />
+                        </span>
+                        {{ $pattern->level->name }}
+                        @if ($pattern->start_time) <span class="text-slate-500">· {{ substr($pattern->start_time, 0, 5) }}–{{ substr($pattern->end_time, 0, 5) }}</span> @endif
+                        @if ($pattern->exceptionOn($selectedDate)) <span class="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-600">Libur</span> @endif
+                    </div>
+                @empty
+                    <p class="text-sm text-slate-500">Tidak ada jadwal KBM default pada tanggal ini.</p>
+                @endforelse
+            </div>
+        @endif
     </div>
 </x-card>

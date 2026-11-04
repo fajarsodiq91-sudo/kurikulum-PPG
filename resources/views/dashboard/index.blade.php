@@ -99,9 +99,7 @@
         @endforeach
     </div>
 
-    @if ($canManageDefault || $canCreateOwnSessions)
-        @include('dashboard.partials.calendar')
-    @endif
+    @include('dashboard.partials.calendar')
 
     @if ($canSeeResume)
         <div class="mt-8" id="resume-generus">
