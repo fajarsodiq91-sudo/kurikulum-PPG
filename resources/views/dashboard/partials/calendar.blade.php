@@ -54,7 +54,7 @@
             Jadwal KBM default per jenjang. <a href="{{ route('default-schedules.index') }}" class="font-semibold text-brand-700 hover:text-brand-900">Atur pola jadwal default</a>.
         @else
             Referensi jadwal KBM default
-            @if ($canCreateOwnSessions) dan jadwal KBM kelompok Anda. @endif
+            @if ($canCreateOwnSessions) dan jadwal KBM Anda. @endif
         @endif
         Klik tanggal untuk melihat detail.
     </p>
@@ -88,8 +88,8 @@
                     ->concat($daySessions->isNotEmpty() ? [[
                         'bg' => 'bg-brand-600',
                         'code' => null,
-                        'label' => 'KBM Kelompok',
-                        'title' => 'Jadwal KBM Kelompok'.($daySessions->first()->start_time ? ' · '.substr($daySessions->first()->start_time, 0, 5) : ''),
+                        'label' => 'Jadwal Sendiri',
+                        'title' => 'Jadwal KBM Anda'.($daySessions->first()->start_time ? ' · '.substr($daySessions->first()->start_time, 0, 5) : ''),
                         'holiday' => false,
                     ]] : []);
                 $maxVisibleBadges = 3;
@@ -163,7 +163,7 @@
                     <span class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-600">
                         <x-sidebar-icon name="users" class="h-3.5 w-3.5 text-white" />
                     </span>
-                    KBM Kelompok
+                    Jadwal Sendiri
                 </span>
             @endif
         </div>
@@ -225,42 +225,81 @@
 
         @if ($canCreateOwnSessions)
             <div class="mt-4 border-t border-slate-100 pt-4">
-                <h4 class="text-sm font-semibold text-slate-700">Jadwal KBM Kelompok</h4>
+                <h4 class="text-sm font-semibold text-slate-700">Jadwal KBM Anda</h4>
                 <div class="mt-2 space-y-2">
                     @forelse ($selectedOwnSessions as $session)
                         <div class="rounded-lg border border-slate-200 px-3 py-2 text-sm">
-                            {{ $session->start_time ? substr($session->start_time, 0, 5).'–'.substr($session->end_time ?? '', 0, 5) : 'Jam belum diisi' }}
-                            · {{ $session->classGrade?->name ?? 'Semua kelas' }}
-                            <span class="ml-1 text-xs text-slate-400">({{ $session->status }})</span>
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <span>
+                                    <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">{{ $session->level === \App\Models\LearningSession::LEVEL_VILLAGE ? 'Desa' : 'Kelompok' }}</span>
+                                    {{ $session->start_time ? substr($session->start_time, 0, 5).'–'.substr($session->end_time ?? '', 0, 5) : 'Jam belum diisi' }}
+                                    · {{ $session->classGrade?->name ?? 'Semua kelas' }}
+                                    <span class="ml-1 text-xs text-slate-400">({{ $session->status }})</span>
+                                </span>
+                            </div>
+                            <div class="mt-2 flex flex-wrap gap-2">
+                                <a href="{{ route('learning-sessions.attendance.edit', $session) }}" class="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50">Isi Daftar Hadir &amp; Jurnal</a>
+                                @if ($canFillKontrolHarian && $session->group_id)
+                                    <a href="{{ route('kontrol.bacaan', ['group_id' => $session->group_id, 'class_grade_id' => $session->class_grade_id]) }}" class="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50">Kontrol Harian</a>
+                                @endif
+                            </div>
                         </div>
                     @empty
-                        <p class="text-sm text-slate-500">Belum ada jadwal KBM kelompok di tanggal ini.</p>
+                        <p class="text-sm text-slate-500">Belum ada jadwal KBM di tanggal ini.</p>
                     @endforelse
                 </div>
 
-                <form method="POST" action="{{ route('learning-sessions.store-own') }}" class="mt-3 flex flex-wrap items-end gap-3">
-                    @csrf
-                    <input type="hidden" name="group_id" value="{{ $myGroupId }}">
-                    <input type="hidden" name="session_date" value="{{ $selectedDate->toDateString() }}">
-                    <div>
-                        <label class="mb-1 block text-xs font-medium text-slate-600">Kelas KBM</label>
-                        <select name="class_grade_id" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm">
-                            <option value="">-- Semua kelas --</option>
-                            @foreach ($calendarClassGrades as $classGrade)
-                                <option value="{{ $classGrade->id }}">{{ $classGrade->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="mb-1 block text-xs font-medium text-slate-600">Jam Mulai</label>
-                        <input type="time" name="start_time" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm">
-                    </div>
-                    <div>
-                        <label class="mb-1 block text-xs font-medium text-slate-600">Jam Selesai</label>
-                        <input type="time" name="end_time" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm">
-                    </div>
-                    <button type="submit" class="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-brand-700">+ Tambah Jadwal</button>
-                </form>
+                @if ($myVillageId)
+                    <form method="POST" action="{{ route('learning-sessions.store-own-village') }}" class="mt-3 flex flex-wrap items-end gap-3">
+                        @csrf
+                        <input type="hidden" name="village_id" value="{{ $myVillageId }}">
+                        <input type="hidden" name="session_date" value="{{ $selectedDate->toDateString() }}">
+                        <div>
+                            <label class="mb-1 block text-xs font-medium text-slate-600">Kelas KBM</label>
+                            <select name="class_grade_id" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm">
+                                <option value="">-- Semua kelas --</option>
+                                @foreach ($calendarClassGrades as $classGrade)
+                                    <option value="{{ $classGrade->id }}">{{ $classGrade->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-xs font-medium text-slate-600">Jam Mulai</label>
+                            <input type="time" name="start_time" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm">
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-xs font-medium text-slate-600">Jam Selesai</label>
+                            <input type="time" name="end_time" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm">
+                        </div>
+                        <button type="submit" class="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-brand-700">+ Tambah Jadwal Desa</button>
+                    </form>
+                @endif
+
+                @if ($myGroupId)
+                    <form method="POST" action="{{ route('learning-sessions.store-own') }}" class="mt-3 flex flex-wrap items-end gap-3">
+                        @csrf
+                        <input type="hidden" name="group_id" value="{{ $myGroupId }}">
+                        <input type="hidden" name="session_date" value="{{ $selectedDate->toDateString() }}">
+                        <div>
+                            <label class="mb-1 block text-xs font-medium text-slate-600">Kelas KBM</label>
+                            <select name="class_grade_id" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm">
+                                <option value="">-- Semua kelas --</option>
+                                @foreach ($calendarClassGrades as $classGrade)
+                                    <option value="{{ $classGrade->id }}">{{ $classGrade->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-xs font-medium text-slate-600">Jam Mulai</label>
+                            <input type="time" name="start_time" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm">
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-xs font-medium text-slate-600">Jam Selesai</label>
+                            <input type="time" name="end_time" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm">
+                        </div>
+                        <button type="submit" class="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-brand-700">+ Tambah Jadwal Kelompok</button>
+                    </form>
+                @endif
             </div>
         @endif
     </div>

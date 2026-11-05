@@ -88,7 +88,68 @@ class DashboardCalendarTest extends TestCase
         $user->assignRole($role->id, 'group', $group->id);
 
         $this->actingAs($user)->get('/dashboard')
-            ->assertOk()->assertSee('Kalender KBM')->assertSee('Jadwal KBM Kelompok')->assertSee($classGrade->name);
+            ->assertOk()->assertSee('Kalender KBM')->assertSee('Jadwal KBM Anda')->assertSee($classGrade->name);
+    }
+
+    public function test_a_desa_user_can_create_and_see_their_own_village_level_session_from_the_calendar(): void
+    {
+        $region = Region::create(['name' => 'Daerah Test', 'code' => 'RT', 'slug' => 'daerah-test', 'is_active' => true]);
+        $village = Village::create(['region_id' => $region->id, 'name' => 'Desa Test', 'code' => 'DT', 'slug' => 'desa-test', 'is_active' => true]);
+
+        $role = Role::create(['name' => 'Perwakilan Desa', 'slug' => 'perwakilan-desa-'.$village->id, 'is_active' => true]);
+        $permission = Permission::firstOrCreate(
+            ['slug' => 'manage-own-learning-sessions'],
+            ['name' => 'Manage Own Learning Sessions', 'module' => 'learning-sessions', 'is_active' => true],
+        );
+        $viewDashboard = Permission::firstOrCreate(
+            ['slug' => 'view-dashboard'],
+            ['name' => 'View Dashboard', 'module' => 'dashboard', 'is_active' => true],
+        );
+        $role->permissions()->attach([$permission->id, $viewDashboard->id]);
+        $user = User::create(['name' => 'Siti', 'email' => 'siti@ppg.test', 'password' => Hash::make('password123'), 'status' => 'active']);
+        $user->assignRole($role->id, 'village', $village->id);
+
+        $this->actingAs($user)->get('/dashboard')
+            ->assertOk()->assertSee('Jadwal KBM Anda')->assertSee('+ Tambah Jadwal Desa');
+
+        $this->actingAs($user)
+            ->post('/learning-sessions/own-village', [
+                'village_id' => $village->id,
+                'session_date' => now()->toDateString(),
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('learning_sessions', [
+            'level' => LearningSession::LEVEL_VILLAGE,
+            'village_id' => $village->id,
+            'group_id' => null,
+        ]);
+
+        $this->actingAs($user)->get('/dashboard')
+            ->assertOk()->assertSee('Isi Daftar Hadir &amp; Jurnal', false);
+    }
+
+    public function test_a_desa_user_cannot_create_a_session_for_another_villages_scope(): void
+    {
+        $region = Region::create(['name' => 'Daerah Test', 'code' => 'RT', 'slug' => 'daerah-test', 'is_active' => true]);
+        $village = Village::create(['region_id' => $region->id, 'name' => 'Desa Test', 'code' => 'DT', 'slug' => 'desa-test', 'is_active' => true]);
+        $otherVillage = Village::create(['region_id' => $region->id, 'name' => 'Desa Lain', 'code' => 'DL', 'slug' => 'desa-lain', 'is_active' => true]);
+
+        $role = Role::create(['name' => 'Perwakilan Desa', 'slug' => 'perwakilan-desa-'.$village->id, 'is_active' => true]);
+        $permission = Permission::firstOrCreate(
+            ['slug' => 'manage-own-learning-sessions'],
+            ['name' => 'Manage Own Learning Sessions', 'module' => 'learning-sessions', 'is_active' => true],
+        );
+        $role->permissions()->attach($permission->id);
+        $user = User::create(['name' => 'Siti', 'email' => 'siti@ppg.test', 'password' => Hash::make('password123'), 'status' => 'active']);
+        $user->assignRole($role->id, 'village', $village->id);
+
+        $this->actingAs($user)
+            ->post('/learning-sessions/own-village', [
+                'village_id' => $otherVillage->id,
+                'session_date' => now()->toDateString(),
+            ])
+            ->assertSessionHasErrors('village_id');
     }
 
     public function test_a_global_viewer_can_switch_to_the_kelompok_source_and_see_any_groups_own_schedule(): void

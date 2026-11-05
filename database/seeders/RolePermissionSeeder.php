@@ -41,7 +41,7 @@ class RolePermissionSeeder extends Seeder
      *
      * @var list<string>
      */
-    private const VILLAGE_MANAGE = ['manage-learning-attendance', 'manage-tasks'];
+    private const VILLAGE_MANAGE = ['manage-learning-attendance', 'manage-tasks', 'manage-own-learning-sessions', 'manage-ujian'];
 
     public function run(): void
     {

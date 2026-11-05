@@ -86,7 +86,9 @@ class DashboardController extends Controller
         $activeAcademicYear = AcademicYear::where('is_active', true)->first();
         $activeSemester = Semester::where('is_active', true)->first();
 
-        $myGroupIds = $user?->scopedPlacementIds(LearningSession::OWN_MANAGE_PERMISSION)['group_id'] ?? [];
+        $ownPlacements = $user?->scopedPlacementIds(LearningSession::OWN_MANAGE_PERMISSION) ?? [];
+        $myGroupIds = $ownPlacements['group_id'] ?? [];
+        $myVillageIds = $ownPlacements['village_id'] ?? [];
         $ownGroupIdsForSchedule = $user?->scopedPlacementIds(GroupDefaultScheduleController::PERMISSION)['group_id'] ?? [];
 
         $calendarGroups = $this->groupsWithOwnSchedule($user, $ownGroupIdsForSchedule);
@@ -109,8 +111,10 @@ class DashboardController extends Controller
                     ->get()
                 : collect());
 
-        $ownSessions = $myGroupIds !== []
-            ? LearningSession::whereIn('group_id', $myGroupIds)
+        $ownSessionsQuery = $this->ownSessionsQuery($myGroupIds, $myVillageIds);
+
+        $ownSessions = $ownSessionsQuery
+            ? $ownSessionsQuery
                 ->whereBetween('session_date', [$calendarMonth->toDateString(), $calendarMonth->copy()->endOfMonth()->toDateString()])
                 ->with('classGrade')
                 ->get()
@@ -131,16 +135,44 @@ class DashboardController extends Controller
             'calendarGroupId' => $calendarGroupId,
             'canManageOwnDefaultSchedule' => in_array($calendarGroupId, $ownGroupIdsForSchedule, true),
             'canManageDefault' => $user?->hasGlobalAccess(LearningSession::MANAGE_PERMISSION) ?? false,
-            'canCreateOwnSessions' => $myGroupIds !== [],
+            'canCreateOwnSessions' => $myGroupIds !== [] || $myVillageIds !== [],
             'myGroupId' => $myGroupIds[0] ?? null,
+            'myVillageId' => $myVillageIds[0] ?? null,
+            'canFillKontrolHarian' => $user?->hasPermission('manage-ujian') ?? false,
             'ownSessions' => $ownSessions,
-            'calendarClassGrades' => $myGroupIds !== [] ? ClassGrade::where('is_active', true)->orderBy('sort_order')->get() : collect(),
+            'calendarClassGrades' => ($myGroupIds !== [] || $myVillageIds !== []) ? ClassGrade::where('is_active', true)->orderBy('sort_order')->get() : collect(),
             'selectedDate' => $selectedDate,
             'selectedPatterns' => $defaultSchedules->filter(fn ($pattern): bool => $pattern->appliesTo($selectedDate)),
-            'selectedOwnSessions' => $myGroupIds !== []
-                ? LearningSession::whereIn('group_id', $myGroupIds)->where('session_date', $selectedDate->toDateString())->with('classGrade')->get()
-                : collect(),
+            'selectedOwnSessions' => $this->ownSessionsQuery($myGroupIds, $myVillageIds)
+                ?->where('session_date', $selectedDate->toDateString())->with('classGrade')->get() ?? collect(),
         ];
+    }
+
+    /**
+     * Sessions in the viewer's own group and/or village placements (from
+     * manage-own-learning-sessions), or null when they hold neither.
+     *
+     * @param  list<int>  $groupIds
+     * @param  list<int>  $villageIds
+     * @return Builder<LearningSession>|null
+     */
+    private function ownSessionsQuery(array $groupIds, array $villageIds): ?Builder
+    {
+        if ($groupIds === [] && $villageIds === []) {
+            return null;
+        }
+
+        return LearningSession::where(function (Builder $scoped) use ($groupIds, $villageIds): void {
+            $scoped->whereRaw('1 = 0');
+
+            if ($groupIds !== []) {
+                $scoped->orWhere(fn (Builder $q) => $q->where('level', LearningSession::LEVEL_GROUP)->whereIn('group_id', $groupIds));
+            }
+
+            if ($villageIds !== []) {
+                $scoped->orWhere(fn (Builder $q) => $q->where('level', LearningSession::LEVEL_VILLAGE)->whereIn('village_id', $villageIds));
+            }
+        });
     }
 
     /**

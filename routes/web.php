@@ -419,6 +419,8 @@ Route::middleware(['auth', 'permission:manage-learning-sessions'])->group(functi
 Route::middleware(['auth', 'permission:manage-own-learning-sessions'])->group(function () {
     Route::post('/learning-sessions/own', [LearningSessionController::class, 'storeOwn'])
         ->name('learning-sessions.store-own');
+    Route::post('/learning-sessions/own-village', [LearningSessionController::class, 'storeOwnVillage'])
+        ->name('learning-sessions.store-own-village');
 });
 
 Route::middleware(['auth', 'permission:manage-own-default-schedule'])->group(function () {

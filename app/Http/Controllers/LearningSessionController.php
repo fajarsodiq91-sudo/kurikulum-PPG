@@ -95,6 +95,35 @@ class LearningSessionController extends Controller
     }
 
     /**
+     * A desa representative's own village-level session, mirroring storeOwn() for a village
+     * placement instead of a group one.
+     */
+    public function storeOwnVillage(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        $myVillageIds = $user?->scopedPlacementIds(LearningSession::OWN_MANAGE_PERMISSION)['village_id'] ?? [];
+        abort_if($myVillageIds === [], 403, 'Anda belum ditempatkan di desa manapun.');
+
+        $validated = $request->validate([
+            'village_id' => ['required', 'integer', Rule::in($myVillageIds)],
+            'class_grade_id' => ['nullable', 'exists:class_grades,id'],
+            'session_date' => ['required', 'date'],
+            'start_time' => ['nullable', 'date_format:H:i'],
+            'end_time' => ['nullable', 'date_format:H:i'],
+            'location' => ['nullable', 'string', 'max:255'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        LearningSession::create([
+            ...$validated,
+            'level' => LearningSession::LEVEL_VILLAGE,
+            'status' => 'scheduled',
+        ]);
+
+        return redirect()->route('dashboard')->with('success', 'Jadwal KBM Desa berhasil ditambahkan.');
+    }
+
+    /**
      * The teacher's own daily attendance session: found or created for the given date (today
      * by default) in their fixed group. When they teach more than one Kelas KBM, they must
      * say which one first.
