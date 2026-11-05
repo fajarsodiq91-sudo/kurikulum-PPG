@@ -441,6 +441,41 @@ class GenerusTest extends TestCase
         Excel::assertDownloaded('generus.xlsx', fn (GenerusExport $export): bool => $export->query()->pluck('registration_number')->all() === ['PPG-SCOPE-001']);
     }
 
+    public function test_view_only_region_scoped_user_can_export_only_their_region(): void
+    {
+        [, $region, , $group] = $this->createGenerusImportContext();
+        $otherRegion = Region::create([
+            'name' => 'Daerah Lain',
+            'code' => fake()->unique()->bothify('DRL-###'),
+            'is_active' => true,
+        ]);
+        $otherVillage = Village::create([
+            'region_id' => $otherRegion->id,
+            'name' => 'Desa Lain',
+            'code' => fake()->unique()->bothify('DSL-###'),
+            'is_active' => true,
+        ]);
+        $otherGroup = $this->createGroupIn($otherVillage);
+        $this->createPlacedGenerus($group, 'PPG-DAERAH-001', 'Generus Daerah Sendiri');
+        $this->createPlacedGenerus($otherGroup, 'PPG-DAERAH-002', 'Generus Daerah Lain');
+
+        Permission::firstOrCreate(['slug' => 'view-generus'], ['name' => 'View Generus', 'module' => 'generus', 'is_active' => true]);
+
+        $viewer = $this->createScopedUser('region', $region->id, 'view-generus');
+
+        $this->actingAs($viewer)
+            ->get('/generus')
+            ->assertOk()
+            ->assertSee('Generus Daerah Sendiri')
+            ->assertDontSee('Generus Daerah Lain');
+
+        Excel::fake();
+
+        $this->actingAs($viewer)->get('/generus/export')->assertOk();
+
+        Excel::assertDownloaded('generus.xlsx', fn (GenerusExport $export): bool => $export->query()->pluck('registration_number')->all() === ['PPG-DAERAH-001']);
+    }
+
     public function test_generus_forms_have_no_region_field_and_region_is_karawang_timur(): void
     {
         [$user, $region, $village, $group, $level] = $this->createGenerusImportContext();
@@ -1030,7 +1065,7 @@ class GenerusTest extends TestCase
         );
     }
 
-    private function createScopedUser(string $scopeType, int $scopeId): User
+    private function createScopedUser(string $scopeType, int $scopeId, string $permissionSlug = 'manage-generus'): User
     {
         $role = Role::create([
             'name' => 'Admin Wilayah',
@@ -1038,7 +1073,7 @@ class GenerusTest extends TestCase
             'is_active' => true,
         ]);
 
-        $role->permissions()->attach(Permission::query()->where('slug', 'manage-generus')->value('id'));
+        $role->permissions()->attach(Permission::query()->where('slug', $permissionSlug)->value('id'));
 
         $user = User::create([
             'name' => 'Admin Wilayah',

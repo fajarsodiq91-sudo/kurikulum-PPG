@@ -253,6 +253,12 @@ Route::middleware(['permission:view-generus,manage-generus'])->group(function ()
         ->name('generus.show');
 });
 
+// Export mirrors the index's visibility scope, but requires login since it downloads the full data set.
+Route::middleware(['auth', 'permission:view-generus,manage-generus'])->group(function () {
+    Route::get('/generus/export', [GenerusController::class, 'export'])
+        ->name('generus.export');
+});
+
 Route::middleware(['auth', 'permission:manage-generus'])->group(function () {
     Route::get('/generus/create', [GenerusController::class, 'create'])
         ->name('generus.create');
@@ -266,8 +272,6 @@ Route::middleware(['auth', 'permission:manage-generus'])->group(function () {
         ->name('generus.receive-transfer');
     Route::post('/generus/import', [GenerusController::class, 'import'])
         ->name('generus.import');
-    Route::get('/generus/export', [GenerusController::class, 'export'])
-        ->name('generus.export');
     Route::get('/generus/{generus}/id-card', [GenerusController::class, 'idCard'])
         ->whereNumber('generus')
         ->name('generus.id-card');

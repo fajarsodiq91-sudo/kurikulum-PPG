@@ -11,12 +11,16 @@
             <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Data Generus</h2>
             <p class="mt-2 text-sm text-slate-500">Kelola identitas dan riwayat penempatan generus.</p>
         </div>
-        @if (\App\Support\Access::can('manage-generus'))
+        @auth
             <div class="flex flex-wrap gap-3">
-                <a href="{{ route('generus.export') }}" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Export XLSX</a>
-                <a href="{{ route('generus.create') }}" class="inline-flex items-center justify-center rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800">Tambah Generus</a>
+                @if (\App\Support\Access::can('view-generus', 'manage-generus'))
+                    <a href="{{ route('generus.export') }}" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Export XLSX</a>
+                @endif
+                @if (\App\Support\Access::can('manage-generus'))
+                    <a href="{{ route('generus.create') }}" class="inline-flex items-center justify-center rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800">Tambah Generus</a>
+                @endif
             </div>
-        @endif
+        @endauth
     </div>
 
     @if (\App\Support\Access::can('manage-generus'))
