@@ -24,6 +24,7 @@ use App\Http\Controllers\KontrolController;
 use App\Http\Controllers\LearningJournalController;
 use App\Http\Controllers\LearningMaterialController;
 use App\Http\Controllers\LearningSessionController;
+use App\Http\Controllers\LegalController;
 use App\Http\Controllers\MasterData\MasterDataController;
 use App\Http\Controllers\MaterialCategoryController;
 use App\Http\Controllers\MaterialChapterController;
@@ -52,6 +53,9 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', fn () => redirect()->route('dashboard'));
 
 Route::get('/tutorial', [TutorialController::class, 'index'])->name('tutorial');
+
+Route::get('/privasi', [LegalController::class, 'privacy'])->name('legal.privacy');
+Route::get('/syarat-ketentuan', [LegalController::class, 'terms'])->name('legal.terms');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
