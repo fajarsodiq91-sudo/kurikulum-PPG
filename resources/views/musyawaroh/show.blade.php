@@ -24,18 +24,30 @@
 
     <div class="grid gap-6 lg:grid-cols-3">
         <x-card class="lg:col-span-1">
-            <h3 class="mb-4 text-sm font-semibold text-slate-700">Daftar Hadir ({{ $musyawaroh->attendees->count() }})</h3>
+            @php
+                $statusBadgeClass = [
+                    'hadir' => 'bg-emerald-100 text-emerald-700',
+                    'izin' => 'bg-amber-100 text-amber-700',
+                    'alpha' => 'bg-rose-100 text-rose-700',
+                ];
+                $hadirCount = $musyawaroh->attendees->where('status', 'hadir')->count();
+            @endphp
+            <h3 class="mb-4 text-sm font-semibold text-slate-700">
+                Daftar Hadir ({{ $hadirCount }}/{{ $musyawaroh->attendees->count() }})
+            </h3>
             @if ($musyawaroh->attendees->isEmpty())
                 <p class="text-sm text-slate-400">Belum ada data kehadiran.</p>
             @else
                 <ul class="space-y-2">
-                    @foreach ($musyawaroh->attendees as $attendee)
-                        <li class="flex items-center gap-2 text-sm text-slate-700">
-                            <span class="h-1.5 w-1.5 shrink-0 rounded-full {{ $attendee->user_id ? 'bg-emerald-500' : 'bg-slate-300' }}"></span>
-                            {{ $attendee->displayName() }}
-                            @if (! $attendee->user_id)
-                                <span class="text-xs text-slate-400">(tamu)</span>
-                            @endif
+                    @foreach ($musyawaroh->attendees->sortBy('status') as $attendee)
+                        <li class="flex items-center justify-between gap-2 text-sm text-slate-700">
+                            <span class="min-w-0 truncate">
+                                {{ $attendee->displayName() }}
+                                @if (! $attendee->user_id)
+                                    <span class="text-xs text-slate-400">(tamu)</span>
+                                @endif
+                            </span>
+                            <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium {{ $statusBadgeClass[$attendee->status] ?? 'bg-slate-100 text-slate-600' }}">{{ $attendee->statusLabel() }}</span>
                         </li>
                     @endforeach
                 </ul>

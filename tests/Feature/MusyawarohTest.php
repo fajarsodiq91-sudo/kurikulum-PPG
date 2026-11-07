@@ -104,6 +104,30 @@ class MusyawarohTest extends TestCase
         $response->assertOk()->assertDontSee('>Daerah<', false);
     }
 
+    public function test_attendance_tree_has_a_search_box_and_starts_collapsed_for_daerah_and_desa_but_open_for_kelompok(): void
+    {
+        $village = $this->makeVillage('Desa A');
+        $group = $this->makeGroup($village, 'Kelompok A1');
+
+        $daerahUser = $this->makeUser('Daerah', $this->daerahRole, 'global', null);
+        $desaUser = $this->makeUser('Desa A', $this->desaRole, 'village', $village->id);
+        $kelompokUser = $this->makeUser('Kelompok A1', $this->kelompokRole, 'group', $group->id);
+
+        $this->actingAs($daerahUser)->get('/musyawaroh/create')
+            ->assertOk()
+            ->assertSee('data-attendance-search', false)
+            ->assertSee('data-default-collapsed="1"', false);
+
+        $this->actingAs($desaUser)->get('/musyawaroh/create')
+            ->assertOk()
+            ->assertSee('data-default-collapsed="1"', false);
+
+        $this->actingAs($kelompokUser)->get('/musyawaroh/create')
+            ->assertOk()
+            ->assertSee('data-default-collapsed="0"', false)
+            ->assertDontSee('data-default-collapsed="1"', false);
+    }
+
     public function test_a_musyawaroh_can_be_created_with_registered_attendees_and_manual_names(): void
     {
         $village = $this->makeVillage('Desa A');
@@ -115,7 +139,7 @@ class MusyawarohTest extends TestCase
             'title' => 'Musyawaroh Pengurus',
             'meeting_date' => '2026-11-10',
             'location' => 'Sekretariat',
-            'attendee_user_ids' => [$kelompokUser->id],
+            'attendance' => [$kelompokUser->id => 'hadir'],
             'manual_names' => ['Tamu Undangan'],
         ]);
 
@@ -129,14 +153,37 @@ class MusyawarohTest extends TestCase
         $this->assertDatabaseHas('musyawaroh_attendees', [
             'musyawaroh_id' => $musyawaroh->id,
             'user_id' => $kelompokUser->id,
+            'status' => 'hadir',
         ]);
         $this->assertDatabaseHas('musyawaroh_attendees', [
             'musyawaroh_id' => $musyawaroh->id,
             'manual_name' => 'Tamu Undangan',
+            'status' => 'hadir',
         ]);
     }
 
-    public function test_a_musyawaroh_cannot_be_created_with_an_attendee_outside_the_creators_reach(): void
+    public function test_a_musyawaroh_can_record_izin_and_alpha_for_attendees(): void
+    {
+        $village = $this->makeVillage('Desa A');
+        $group = $this->makeGroup($village, 'Kelompok A1');
+        $desaUser = $this->makeUser('Desa A', $this->desaRole, 'village', $village->id);
+        $izinUser = $this->makeUser('Izin Orang', $this->kelompokRole, 'group', $group->id);
+        $alphaUser = $this->makeUser('Alpha Orang', $this->kelompokRole, 'group', $group->id);
+
+        $this->actingAs($desaUser)->post('/musyawaroh', [
+            'meeting_date' => '2026-11-10',
+            'attendance' => [
+                $izinUser->id => 'izin',
+                $alphaUser->id => 'alpha',
+            ],
+        ])->assertRedirect();
+
+        $musyawaroh = Musyawaroh::first();
+        $this->assertDatabaseHas('musyawaroh_attendees', ['musyawaroh_id' => $musyawaroh->id, 'user_id' => $izinUser->id, 'status' => 'izin']);
+        $this->assertDatabaseHas('musyawaroh_attendees', ['musyawaroh_id' => $musyawaroh->id, 'user_id' => $alphaUser->id, 'status' => 'alpha']);
+    }
+
+    public function test_an_attendee_outside_the_creators_reach_is_silently_ignored(): void
     {
         $villageA = $this->makeVillage('Desa A');
         $villageB = $this->makeVillage('Desa B');
@@ -147,10 +194,10 @@ class MusyawarohTest extends TestCase
 
         $this->actingAs($desaAUser)->post('/musyawaroh', [
             'meeting_date' => '2026-11-10',
-            'attendee_user_ids' => [$kelompokB1User->id],
-        ])->assertSessionHasErrors('attendee_user_ids.0');
+            'attendance' => [$kelompokB1User->id => 'hadir'],
+        ])->assertRedirect();
 
-        $this->assertDatabaseCount('musyawarohs', 0);
+        $this->assertDatabaseCount('musyawaroh_attendees', 0);
     }
 
     public function test_musyawaroh_is_visible_within_the_creators_vertical_hierarchy_but_not_to_a_sibling_branch(): void

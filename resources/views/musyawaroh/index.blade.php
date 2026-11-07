@@ -40,7 +40,7 @@
                             @endif
                         </p>
                         <div class="mt-3 flex items-center gap-4 text-xs text-slate-500">
-                            <span>{{ $musyawaroh->attendees->count() }} hadir</span>
+                            <span>{{ $musyawaroh->attendees->where('status', 'hadir')->count() }} hadir</span>
                             <span>Notulen {{ $doneCount }}/{{ $totalNotulen }}</span>
                         </div>
                         <p class="mt-2 text-xs text-slate-400">oleh {{ $musyawaroh->createdBy?->name ?? '-' }}</p>

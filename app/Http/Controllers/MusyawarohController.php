@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Musyawaroh;
 use App\Models\MusyawarohAttendee;
+use App\Models\User;
 use App\Support\MusyawarohHierarchy;
 use App\Support\TaskHierarchy;
 use Illuminate\Http\RedirectResponse;
@@ -33,6 +34,7 @@ class MusyawarohController extends Controller
         return view('musyawaroh.create', [
             'tree' => MusyawarohHierarchy::treeFor($request->user()),
             'bucketSuggestions' => TaskHierarchy::bucketSuggestionsFor($request->user()),
+            'defaultCollapsed' => $this->defaultCollapsedFor($request->user()),
         ]);
     }
 
@@ -47,8 +49,8 @@ class MusyawarohController extends Controller
             'start_time' => ['nullable', 'date_format:H:i'],
             'end_time' => ['nullable', 'date_format:H:i', 'after:start_time'],
             'location' => ['nullable', 'string', 'max:255'],
-            'attendee_user_ids' => ['nullable', 'array'],
-            'attendee_user_ids.*' => ['integer', Rule::in($allowedUserIds)],
+            'attendance' => ['nullable', 'array'],
+            'attendance.*' => ['nullable', 'string', Rule::in(MusyawarohAttendee::STATUSES)],
             'manual_names' => ['nullable', 'array'],
             'manual_names.*' => ['nullable', 'string', 'max:255'],
         ]);
@@ -62,10 +64,15 @@ class MusyawarohController extends Controller
             'created_by_id' => $user->id,
         ]);
 
-        foreach (array_unique($validated['attendee_user_ids'] ?? []) as $attendeeId) {
+        foreach ($validated['attendance'] ?? [] as $userId => $status) {
+            if (blank($status) || ! in_array((int) $userId, $allowedUserIds, true)) {
+                continue;
+            }
+
             MusyawarohAttendee::create([
                 'musyawaroh_id' => $musyawaroh->id,
-                'user_id' => $attendeeId,
+                'user_id' => (int) $userId,
+                'status' => $status,
             ]);
         }
 
@@ -73,6 +80,7 @@ class MusyawarohController extends Controller
             MusyawarohAttendee::create([
                 'musyawaroh_id' => $musyawaroh->id,
                 'manual_name' => $manualName,
+                'status' => MusyawarohAttendee::STATUS_HADIR,
             ]);
         }
 
@@ -87,5 +95,16 @@ class MusyawarohController extends Controller
             'musyawaroh' => $musyawaroh->load(['createdBy', 'attendees.user', 'notulens.createdBy', 'notulens.checkedBy', 'notulens.task.assignees']),
             'recipients' => TaskHierarchy::assignableRecipients($request->user()),
         ]);
+    }
+
+    /**
+     * Daerah and desa trees span several branches, so they start collapsed to avoid an
+     * overwhelming wall of names; a kelompok's tree is just their own small group, so it
+     * starts open.
+     */
+    private function defaultCollapsedFor(User $user): bool
+    {
+        return $user->permissionScopes(TaskHierarchy::PERMISSION)
+            ->contains(fn (array $scope): bool => in_array($scope['type'], ['global', 'region', 'village'], true));
     }
 }

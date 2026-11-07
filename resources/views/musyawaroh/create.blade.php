@@ -47,10 +47,12 @@
 
         <x-card>
             <h3 class="mb-1 text-sm font-semibold text-slate-700">Daftar Hadir</h3>
-            <p class="mb-4 text-xs text-slate-500">Centang nama yang hadir. Centang pada judul kelompok untuk memilih semua anggotanya.</p>
+            <p class="mb-3 text-xs text-slate-500">Cari nama lalu tandai Hadir/Izin/Alpha, atau centang judul kelompok untuk menandai semua anggotanya Hadir sekaligus.</p>
+
+            <input type="text" data-attendance-search placeholder="Cari nama pengurus..." class="mb-4 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
 
             @forelse ($tree as $node)
-                @include('musyawaroh.partials.attendance-tree', ['node' => $node, 'level' => 0])
+                @include('musyawaroh.partials.attendance-tree', ['node' => $node, 'level' => 0, 'collapsed' => $defaultCollapsed])
             @empty
                 <p class="text-sm text-slate-400">Tidak ada data kepengurusan yang bisa ditampilkan untuk akun Anda.</p>
             @endforelse
@@ -67,6 +69,7 @@
                     @endforeach
                 </div>
                 <button type="button" data-add-manual-name class="mt-2 text-sm font-semibold text-brand-600 hover:text-brand-700">+ Tambah nama</button>
+                <p class="mt-1 text-xs text-slate-400">Nama di sini otomatis tercatat Hadir (tamu di luar kepengurusan).</p>
             </div>
         </x-card>
 
@@ -77,21 +80,78 @@
         document.addEventListener('DOMContentLoaded', function () {
             document.querySelectorAll('[data-attendance-group]').forEach(function (group) {
                 const toggle = group.querySelector('[data-group-toggle]');
-                const members = group.querySelectorAll('[data-group-member]');
+                const hadirRadios = group.querySelectorAll('[data-group-member]');
+                const allRadios = group.querySelectorAll('[data-attendance-control] input[type="radio"]');
 
                 function syncToggle() {
-                    const checkedCount = Array.from(members).filter((m) => m.checked).length;
-                    toggle.checked = checkedCount === members.length && members.length > 0;
-                    toggle.indeterminate = checkedCount > 0 && checkedCount < members.length;
+                    const hadirCount = Array.from(hadirRadios).filter((r) => r.checked).length;
+                    const anyMarked = Array.from(allRadios).some((r) => r.checked);
+                    toggle.checked = hadirRadios.length > 0 && hadirCount === hadirRadios.length;
+                    toggle.indeterminate = anyMarked && !toggle.checked;
                 }
 
                 toggle.addEventListener('change', function () {
-                    members.forEach((m) => { m.checked = toggle.checked; });
+                    if (toggle.checked) {
+                        hadirRadios.forEach((r) => { r.checked = true; });
+                    } else {
+                        allRadios.forEach((r) => { r.checked = false; });
+                    }
+                    syncToggle();
                 });
 
-                members.forEach((m) => m.addEventListener('change', syncToggle));
+                allRadios.forEach((r) => r.addEventListener('change', syncToggle));
                 syncToggle();
             });
+
+            document.querySelectorAll('[data-clear-attendance]').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    const control = button.closest('[data-attendance-control]');
+                    control.querySelectorAll('input[type="radio"]').forEach(function (radio) {
+                        radio.checked = false;
+                        radio.dispatchEvent(new Event('change', { bubbles: true }));
+                    });
+                });
+            });
+
+            document.querySelectorAll('[data-node-toggle]').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    const node = button.closest('[data-attendance-node]');
+                    node.querySelector('[data-node-body]').classList.toggle('hidden');
+                    node.querySelector('[data-node-chevron]').classList.toggle('rotate-90');
+                });
+            });
+
+            const searchInput = document.querySelector('[data-attendance-search]');
+
+            if (searchInput) {
+                searchInput.addEventListener('input', function () {
+                    const query = searchInput.value.trim().toLowerCase();
+
+                    document.querySelectorAll('[data-member-row]').forEach(function (row) {
+                        row.classList.toggle('hidden', query !== '' && !row.dataset.memberName.includes(query));
+                    });
+
+                    document.querySelectorAll('[data-attendance-node]').forEach(function (node) {
+                        const body = node.querySelector('[data-node-body]');
+                        const chevron = node.querySelector('[data-node-chevron]');
+
+                        if (query === '') {
+                            const collapsed = node.dataset.defaultCollapsed === '1';
+                            body.classList.toggle('hidden', collapsed);
+                            chevron.classList.toggle('rotate-90', !collapsed);
+
+                            return;
+                        }
+
+                        const hasVisibleMember = Array.from(node.querySelectorAll('[data-member-row]')).some((row) => !row.classList.contains('hidden'));
+
+                        if (hasVisibleMember) {
+                            body.classList.remove('hidden');
+                            chevron.classList.add('rotate-90');
+                        }
+                    });
+                });
+            }
 
             const rowsContainer = document.querySelector('[data-manual-names-rows]');
             const addButton = document.querySelector('[data-add-manual-name]');
