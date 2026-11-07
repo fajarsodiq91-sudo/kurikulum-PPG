@@ -27,7 +27,8 @@
         $navigationGroups = [
             ['label' => 'Utama', 'sections' => [
                 ['label' => 'Dashboard', 'permission' => 'view-dashboard', 'route' => 'dashboard', 'icon' => 'home'],
-                ['label' => 'Musyawaroh', 'permission' => ['view-tasks', 'manage-tasks'], 'route' => 'tasks.index', 'icon' => 'clipboard-check'],
+                ['label' => 'Musyawaroh', 'permission' => ['view-tasks', 'manage-tasks'], 'route' => 'musyawaroh.index', 'icon' => 'clipboard-check'],
+                ['label' => 'Tugas & Notulen', 'permission' => ['view-tasks', 'manage-tasks'], 'route' => 'tasks.index', 'icon' => 'book-open'],
                 ['label' => 'Persetujuan Pendaftaran', 'permission' => ['manage-users', 'approve-registrations'], 'route' => 'registrations.pending', 'icon' => 'user-check'],
             ]],
             ['label' => 'Kesiswaan', 'sections' => [

@@ -56,6 +56,7 @@ class TaskController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $this->validateTask($request, $request->user());
+        $notulen = $this->resolveNotulenForTask($request, $validated);
 
         $task = Task::create([
             'title' => $validated['title'],
@@ -67,6 +68,7 @@ class TaskController extends Controller
             'due_date' => $validated['due_date'] ?? now()->addDays(Task::DEFAULT_DUE_DATE_DAYS)->toDateString(),
             'assigned_by_id' => $request->user()->id,
             'status' => 'todo',
+            'notulen_id' => $notulen?->id,
         ]);
 
         $task->assignees()->sync($validated['assignees']);
@@ -78,6 +80,10 @@ class TaskController extends Controller
                 'task_id' => $task->id,
                 'exception' => $e,
             ]);
+        }
+
+        if ($notulen !== null) {
+            return redirect()->route('musyawaroh.show', $notulen->musyawaroh)->with('success', 'Tugas berhasil dibuat dari notulen.');
         }
 
         return redirect()->route('tasks.index')->with('success', 'Tugas berhasil dibuat.');
@@ -154,7 +160,7 @@ class TaskController extends Controller
 
     public function updateStatus(Request $request, Task $task): RedirectResponse
     {
-        abort_unless($task->isEditableBy($request->user()), 403);
+        abort_unless($task->isStatusUpdatableBy($request->user()), 403);
 
         $validated = $request->validate([
             'status' => ['required', Rule::in(Task::STATUSES)],
@@ -240,7 +246,28 @@ class TaskController extends Controller
             'due_date' => ['nullable', 'date'],
             'assignees' => ['required', 'array', 'min:1'],
             'assignees.*' => ['integer', Rule::in($recipientIds)],
+            'notulen_id' => ['nullable', 'integer', Rule::exists('notulens', 'id')],
         ]);
+    }
+
+    /**
+     * Resolves the notulen a new task is being created from, if any - only when it is still
+     * unclaimed (no task of its own yet) and visible to the current user's musyawaroh reach.
+     *
+     * @param  array<string, mixed>  $validated
+     */
+    private function resolveNotulenForTask(Request $request, array $validated): ?Notulen
+    {
+        if (! isset($validated['notulen_id'])) {
+            return null;
+        }
+
+        $notulen = Notulen::with('musyawaroh')->findOrFail($validated['notulen_id']);
+
+        abort_if($notulen->task !== null, 422, 'Notulen ini sudah memiliki tugas.');
+        abort_unless($notulen->isCheckableBy($request->user()), 403);
+
+        return $notulen;
     }
 
     private function storeAttachment(?UploadedFile $attachment): ?string

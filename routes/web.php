@@ -30,6 +30,7 @@ use App\Http\Controllers\MaterialCategoryController;
 use App\Http\Controllers\MaterialChapterController;
 use App\Http\Controllers\MilestoneController;
 use App\Http\Controllers\MunaqosahController;
+use App\Http\Controllers\MusyawarohController;
 use App\Http\Controllers\NotulenController;
 use App\Http\Controllers\OrganizationUnitController;
 use App\Http\Controllers\ParentCommunicationController;
@@ -825,8 +826,18 @@ Route::middleware(['auth', 'permission:manage-tasks'])->group(function () {
         ->name('tasks.attachment');
     Route::post('/notulen', [NotulenController::class, 'store'])
         ->name('notulen.store');
+    Route::patch('/notulen/{notulen}/toggle', [NotulenController::class, 'toggle'])
+        ->name('notulen.toggle');
     Route::delete('/notulen/{notulen}', [NotulenController::class, 'destroy'])
         ->name('notulen.destroy');
+    Route::get('/musyawaroh', [MusyawarohController::class, 'index'])
+        ->name('musyawaroh.index');
+    Route::get('/musyawaroh/create', [MusyawarohController::class, 'create'])
+        ->name('musyawaroh.create');
+    Route::post('/musyawaroh', [MusyawarohController::class, 'store'])
+        ->name('musyawaroh.store');
+    Route::get('/musyawaroh/{musyawaroh}', [MusyawarohController::class, 'show'])
+        ->name('musyawaroh.show');
 });
 
 Route::middleware(['auth', 'permission:manage-users,approve-registrations'])->group(function () {

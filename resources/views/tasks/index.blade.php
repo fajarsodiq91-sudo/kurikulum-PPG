@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
-@section('title', 'Musyawaroh')
-@section('page-title', 'Musyawaroh')
-@section('breadcrumb', 'Musyawaroh')
+@section('title', 'Tugas & Notulen')
+@section('page-title', 'Tugas & Notulen')
+@section('breadcrumb', 'Tugas & Notulen')
 
 @section('content')
     @php
@@ -27,7 +27,7 @@
 
     <div class="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
-            <p class="text-sm font-semibold text-amber-600">Musyawaroh</p>
+            <p class="text-sm font-semibold text-amber-600">Pengurus</p>
             <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Papan Tugas &amp; Notulen</h2>
             <p class="mt-2 text-sm text-slate-500">Catat dan pantau tugas atau action plan, serta notulen hasil musyawarah/rapat pengurus, sesuai hirarki kepengurusan.</p>
         </div>

@@ -39,6 +39,7 @@ class Task extends Model
         'due_date',
         'completed_at',
         'due_reminder_sent_on',
+        'notulen_id',
     ];
 
     protected function casts(): array
@@ -53,6 +54,11 @@ class Task extends Model
     public function assignedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_by_id');
+    }
+
+    public function notulen(): BelongsTo
+    {
+        return $this->belongsTo(Notulen::class);
     }
 
     public function assignees(): BelongsToMany
@@ -94,5 +100,24 @@ class Task extends Model
     public function isDeletableBy(User $user): bool
     {
         return $user->isSuperAdmin() || $this->assigned_by_id === $user->id;
+    }
+
+    /**
+     * Who can move a task's status along. A task born from a musyawaroh notulen item is
+     * stricter than an ordinary task: only its assignees (not the creator, unless they're
+     * also an assignee) may report progress on it. An ordinary task keeps the looser rule -
+     * its creator or any assignee.
+     */
+    public function isStatusUpdatableBy(User $user): bool
+    {
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($this->notulen_id !== null) {
+            return $this->assignees->contains('id', $user->id);
+        }
+
+        return $this->isEditableBy($user);
     }
 }
