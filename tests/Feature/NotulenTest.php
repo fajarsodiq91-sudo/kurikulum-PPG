@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Group;
+use App\Models\Musyawaroh;
 use App\Models\Notulen;
 use App\Models\Permission;
 use App\Models\Region;
@@ -129,5 +130,42 @@ class NotulenTest extends TestCase
 
         $this->actingAs($desaUser)->delete("/notulen/{$notulen->id}")->assertRedirect('/tasks');
         $this->assertDatabaseMissing('notulens', ['id' => $notulen->id]);
+    }
+
+    public function test_a_notulen_checklist_item_can_be_added_to_a_musyawaroh_from_the_tasks_and_notulen_menu(): void
+    {
+        $village = $this->makeVillage('Desa A');
+        $desaUser = $this->makeUser('Desa A', $this->desaRole, 'village', $village->id);
+
+        $musyawaroh = Musyawaroh::create([
+            'title' => 'Musyawaroh Pengurus',
+            'meeting_date' => now()->toDateString(),
+            'created_by_id' => $desaUser->id,
+        ]);
+
+        // The dropdown on /tasks lists every musyawaroh visible to the user.
+        $this->actingAs($desaUser)->get('/tasks')->assertSee('Musyawaroh Pengurus');
+
+        // Picking it from there attaches the new checklist item to that musyawaroh.
+        $this->actingAs($desaUser)->post('/notulen', [
+            'title' => 'Poin kedua rapat',
+            'musyawaroh_id' => $musyawaroh->id,
+            'action' => 'draft',
+        ])->assertRedirect(route('musyawaroh.show', $musyawaroh));
+
+        $this->assertDatabaseHas('notulens', [
+            'title' => 'Poin kedua rapat',
+            'musyawaroh_id' => $musyawaroh->id,
+            'status' => 'draft',
+        ]);
+
+        // A second checklist item for the same musyawaroh is created the same way.
+        $this->actingAs($desaUser)->post('/notulen', [
+            'title' => 'Poin ketiga rapat',
+            'musyawaroh_id' => $musyawaroh->id,
+            'action' => 'draft',
+        ])->assertRedirect(route('musyawaroh.show', $musyawaroh));
+
+        $this->assertEquals(2, Notulen::where('musyawaroh_id', $musyawaroh->id)->count());
     }
 }

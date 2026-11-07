@@ -21,7 +21,7 @@
         $doneCount = $tasksByStatus->get('done', collect())->count();
         $progressPercent = $totalTasks > 0 ? (int) round($doneCount / $totalTasks * 100) : 0;
         $preselectedAssigneeId = request('assign_to');
-        $notulenFormShouldOpen = $errors->has('content');
+        $notulenFormShouldOpen = $errors->has('content') || $errors->has('musyawaroh_id');
         $formShouldOpen = ($errors->any() && ! $notulenFormShouldOpen) || $preselectedAssigneeId !== null;
     @endphp
 
@@ -117,11 +117,22 @@
                 <x-card class="relative">
                     <button type="button" class="absolute right-4 top-4 text-xl leading-none text-slate-400 hover:text-slate-700" aria-label="Tutup" data-create-notulen-close>&times;</button>
                     <h2 id="create-notulen-title" class="mb-4 text-xl font-semibold">Tambah Notulen</h2>
-                    <p class="mb-4 text-sm text-slate-500">Catat hasil musyawaroh yang tidak perlu ditindaklanjuti sebagai tugas.</p>
+                    <p class="mb-4 text-sm text-slate-500">Pilih musyawaroh agar notulen ini jadi bagian ceklis notulen musyawaroh tersebut (satu musyawaroh bisa punya banyak ceklis). Kosongkan jika ini catatan umum yang tidak terkait musyawaroh.</p>
                     <form method="POST" action="{{ route('notulen.store') }}" class="grid gap-4 md:grid-cols-2">
                         @csrf
                         <div class="md:col-span-2">
-                            <label class="block text-sm font-medium mb-2" for="notulen-title">Judul</label>
+                            <label class="block text-sm font-medium mb-2" for="notulen-musyawaroh">Terkait Musyawaroh (opsional)</label>
+                            <select id="notulen-musyawaroh" name="musyawaroh_id" class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                                <option value="">- Catatan umum, tidak terkait musyawaroh -</option>
+                                @foreach ($musyawarohs as $musyawarohOption)
+                                    <option value="{{ $musyawarohOption->id }}" @selected((string) old('musyawaroh_id') === (string) $musyawarohOption->id)>
+                                        {{ $musyawarohOption->title ?: 'Musyawaroh' }} &middot; {{ $musyawarohOption->meeting_date->translatedFormat('d M Y') }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium mb-2" for="notulen-title">Judul / Poin Notulen</label>
                             <input id="notulen-title" name="title" type="text" required class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('title') }}">
                         </div>
                         <div>
@@ -129,15 +140,16 @@
                             <input id="notulen-bucket" name="bucket" type="text" list="bucket-suggestions" placeholder="Hasil Musyawaroh Pengurus Oktober 2026" class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('bucket') }}">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium mb-2" for="notulen-meeting-date">Tanggal Musyawaroh</label>
+                            <label class="block text-sm font-medium mb-2" for="notulen-meeting-date">Tanggal</label>
                             <input id="notulen-meeting-date" name="meeting_date" type="date" class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('meeting_date', now()->format('Y-m-d')) }}">
                         </div>
                         <div class="md:col-span-2">
-                            <label class="block text-sm font-medium mb-2" for="notulen-content">Isi Notulen</label>
-                            <textarea id="notulen-content" name="content" rows="5" required class="w-full rounded-lg border border-slate-300 px-3 py-2">{{ old('content') }}</textarea>
+                            <label class="block text-sm font-medium mb-2" for="notulen-content">Catatan (opsional)</label>
+                            <textarea id="notulen-content" name="content" rows="4" class="w-full rounded-lg border border-slate-300 px-3 py-2">{{ old('content') }}</textarea>
                         </div>
-                        <div class="md:col-span-2">
-                            <button type="submit" class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Simpan Notulen</button>
+                        <div class="md:col-span-2 flex gap-2">
+                            <button type="submit" name="action" value="draft" class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Simpan Draft</button>
+                            <button type="submit" name="action" value="final" onclick="return confirm('Kirim notulen ini? Setelah dikirim, notulen tidak bisa diubah lagi.')" class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Kirim</button>
                         </div>
                     </form>
                 </x-card>
@@ -156,7 +168,14 @@
                         <div class="rounded-lg border border-slate-200 p-4">
                             <div class="flex flex-wrap items-start justify-between gap-2">
                                 <div>
-                                    <p class="font-medium text-slate-900">{{ $notulen->title }}</p>
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <p class="font-medium text-slate-900">{{ $notulen->title }}</p>
+                                        @if ($notulen->status === \App\Models\Notulen::STATUS_FINAL)
+                                            <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700">Terkirim</span>
+                                        @else
+                                            <span class="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700">Draft</span>
+                                        @endif
+                                    </div>
                                     <p class="mt-0.5 text-xs text-slate-500">
                                         {{ $notulen->bucket ?: 'Tanpa Kategori' }}
                                         @if ($notulen->meeting_date)
@@ -164,6 +183,11 @@
                                         @endif
                                         &middot; oleh {{ $notulen->createdBy?->name ?? '-' }}
                                     </p>
+                                    @if ($notulen->musyawaroh)
+                                        <a href="{{ route('musyawaroh.show', $notulen->musyawaroh) }}" class="mt-1 inline-block text-xs font-medium text-brand-600 hover:underline">
+                                            Bagian dari musyawaroh: {{ $notulen->musyawaroh->title ?: 'Musyawaroh' }} &rarr;
+                                        </a>
+                                    @endif
                                 </div>
                                 @if ($notulen->isEditableBy($user))
                                     <form method="POST" action="{{ route('notulen.destroy', $notulen) }}" onsubmit="return confirm('Hapus notulen ini?')">
@@ -173,7 +197,9 @@
                                     </form>
                                 @endif
                             </div>
-                            <p class="mt-2 whitespace-pre-line text-sm text-slate-600">{{ $notulen->content }}</p>
+                            @if ($notulen->content && $notulen->content !== $notulen->title)
+                                <p class="mt-2 whitespace-pre-line text-sm text-slate-600">{{ $notulen->content }}</p>
+                            @endif
                         </div>
                     @endforeach
                 </div>

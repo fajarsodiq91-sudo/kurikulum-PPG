@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Musyawaroh;
 use App\Models\Notulen;
 use App\Models\Task;
 use App\Models\User;
@@ -37,7 +38,12 @@ class TaskController extends Controller
             ->sortBy(fn (Collection $group, string $bucket): array => [$bucket === 'Tanpa Kategori' ? 1 : 0, $bucket]);
 
         $notulens = Notulen::visibleTo($user)
-            ->with('createdBy')
+            ->with(['createdBy', 'musyawaroh'])
+            ->latest('meeting_date')
+            ->latest('id')
+            ->get();
+
+        $musyawarohs = Musyawaroh::visibleTo($user)
             ->latest('meeting_date')
             ->latest('id')
             ->get();
@@ -50,6 +56,7 @@ class TaskController extends Controller
             'recipients' => TaskHierarchy::assignableRecipients($user),
             'bucketSuggestions' => TaskHierarchy::bucketSuggestionsFor($user),
             'notulens' => $notulens,
+            'musyawarohs' => $musyawarohs,
         ]);
     }
 
