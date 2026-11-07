@@ -311,7 +311,7 @@
                                 <td class="px-4 py-3 {{ $isOverdue ? 'font-medium text-rose-600' : 'text-slate-600' }}">{{ $task->due_date?->translatedFormat('d M Y') ?? '-' }}</td>
                                 <td class="px-4 py-3 text-right">
                                     <div class="flex items-center justify-end gap-2">
-                                        @if ($task->isEditableBy($user) && $meta)
+                                        @if ($task->isStatusUpdatableBy($user) && $meta)
                                             @if ($meta['next'])
                                                 <form method="POST" action="{{ route('tasks.update-status', $task) }}">
                                                     @csrf

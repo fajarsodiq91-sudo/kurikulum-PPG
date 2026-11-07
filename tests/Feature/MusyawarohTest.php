@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Dapukan;
 use App\Models\Group;
 use App\Models\Musyawaroh;
+use App\Models\MusyawarohAttendee;
 use App\Models\Notulen;
 use App\Models\Permission;
 use App\Models\Region;
@@ -12,8 +13,10 @@ use App\Models\Role;
 use App\Models\Task;
 use App\Models\User;
 use App\Models\Village;
+use App\Notifications\NotulenFinalized;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class MusyawarohTest extends TestCase
@@ -302,5 +305,75 @@ class MusyawarohTest extends TestCase
 
         $this->actingAs($desaUser)->patch("/tasks/{$task->id}/status", ['status' => 'in_progress'])->assertRedirect();
         $this->assertEquals('in_progress', $task->refresh()->status);
+    }
+
+    public function test_a_notulen_can_be_saved_as_a_draft_and_stays_editable(): void
+    {
+        $village = $this->makeVillage('Desa A');
+        $desaUser = $this->makeUser('Desa A', $this->desaRole, 'village', $village->id);
+
+        $musyawaroh = Musyawaroh::create(['meeting_date' => now()->toDateString(), 'created_by_id' => $desaUser->id]);
+
+        $this->actingAs($desaUser)->post('/notulen', [
+            'title' => 'Draf poin rapat',
+            'musyawaroh_id' => $musyawaroh->id,
+            'action' => 'draft',
+        ])->assertRedirect(route('musyawaroh.show', $musyawaroh));
+
+        $notulen = Notulen::first();
+        $this->assertEquals(Notulen::STATUS_DRAFT, $notulen->status);
+        $this->assertTrue($notulen->isContentEditableBy($desaUser));
+
+        $this->actingAs($desaUser)->put("/notulen/{$notulen->id}", [
+            'title' => 'Draf poin rapat (revisi)',
+        ])->assertRedirect();
+
+        $this->assertEquals('Draf poin rapat (revisi)', $notulen->refresh()->title);
+    }
+
+    public function test_sending_a_notulen_locks_it_and_notifies_the_whole_attendance_reach_including_absentees(): void
+    {
+        Notification::fake();
+
+        $village = $this->makeVillage('Desa A');
+        $group = $this->makeGroup($village, 'Kelompok A1');
+        $desaUser = $this->makeUser('Desa A', $this->desaRole, 'village', $village->id);
+        $presentUser = $this->makeUser('Kelompok A1', $this->kelompokRole, 'group', $group->id);
+        $absentUser = $this->makeUser('Kelompok A1 Lain', $this->kelompokRole, 'group', $group->id);
+
+        $musyawaroh = Musyawaroh::create(['meeting_date' => now()->toDateString(), 'created_by_id' => $desaUser->id]);
+        MusyawarohAttendee::create(['musyawaroh_id' => $musyawaroh->id, 'user_id' => $presentUser->id]);
+
+        $notulen = Notulen::create([
+            'title' => 'Draf poin rapat',
+            'content' => 'Draf poin rapat',
+            'musyawaroh_id' => $musyawaroh->id,
+            'created_by_id' => $desaUser->id,
+        ]);
+
+        $this->actingAs($desaUser)->patch("/notulen/{$notulen->id}/send")->assertRedirect();
+
+        $notulen->refresh();
+        $this->assertEquals(Notulen::STATUS_FINAL, $notulen->status);
+        $this->assertNotNull($notulen->sent_at);
+        $this->assertFalse($notulen->isContentEditableBy($desaUser));
+
+        // Notified both the present attendee and the absent pengurus within reach.
+        Notification::assertSentTo($presentUser, NotulenFinalized::class);
+        Notification::assertSentTo($absentUser, NotulenFinalized::class);
+        // The sender themselves is not notified.
+        Notification::assertNotSentTo($desaUser, NotulenFinalized::class);
+
+        // Locked: content can no longer be edited, nor sent again.
+        $this->actingAs($desaUser)->put("/notulen/{$notulen->id}", ['title' => 'Coba ubah'])->assertForbidden();
+        $this->actingAs($desaUser)->patch("/notulen/{$notulen->id}/send")->assertForbidden();
+
+        // "Jadikan Tugas" must still work on a finalised notulen.
+        $this->actingAs($desaUser)->post('/tasks', [
+            'title' => $notulen->title,
+            'priority' => 'medium',
+            'notulen_id' => $notulen->id,
+            'assignees' => [$presentUser->id],
+        ])->assertRedirect(route('musyawaroh.show', $musyawaroh));
     }
 }

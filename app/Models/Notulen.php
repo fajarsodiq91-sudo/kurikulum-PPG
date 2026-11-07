@@ -11,6 +11,15 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Notulen extends Model
 {
+    public const STATUS_DRAFT = 'draft';
+
+    public const STATUS_FINAL = 'final';
+
+    /**
+     * @var list<string>
+     */
+    public const STATUSES = [self::STATUS_DRAFT, self::STATUS_FINAL];
+
     protected $fillable = [
         'title',
         'content',
@@ -21,6 +30,8 @@ class Notulen extends Model
         'is_done',
         'checked_by_id',
         'checked_at',
+        'status',
+        'sent_at',
     ];
 
     protected function casts(): array
@@ -29,6 +40,7 @@ class Notulen extends Model
             'meeting_date' => 'date',
             'is_done' => 'boolean',
             'checked_at' => 'datetime',
+            'sent_at' => 'datetime',
         ];
     }
 
@@ -80,6 +92,15 @@ class Notulen extends Model
     public function isEditableBy(User $user): bool
     {
         return $user->isSuperAdmin() || $this->created_by_id === $user->id;
+    }
+
+    /**
+     * A notulen's title/content can only be changed while it's still a draft - once sent
+     * (final), it's locked, even for its creator.
+     */
+    public function isContentEditableBy(User $user): bool
+    {
+        return $this->status === self::STATUS_DRAFT && $this->isEditableBy($user);
     }
 
     /**

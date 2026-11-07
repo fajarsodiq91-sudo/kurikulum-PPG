@@ -44,14 +44,16 @@
 
         <div class="space-y-4 lg:col-span-2">
             <x-card>
-                <h3 class="mb-4 text-sm font-semibold text-slate-700">Tambah Notulen</h3>
-                <form method="POST" action="{{ route('notulen.store') }}" class="grid gap-3 sm:grid-cols-[1fr_auto]">
+                <h3 class="mb-1 text-sm font-semibold text-slate-700">Tambah Notulen</h3>
+                <p class="mb-4 text-xs text-slate-500">Simpan sebagai draft untuk melanjutkan nanti, atau kirim langsung jika sudah final. Notulen yang dikirim tidak bisa diubah lagi dan otomatis diberitahukan ke seluruh daftar hadir musyawaroh ini (termasuk yang tidak hadir).</p>
+                <form method="POST" action="{{ route('notulen.store') }}" class="grid gap-3 sm:grid-cols-[1fr_auto_auto]">
                     @csrf
                     <input type="hidden" name="musyawaroh_id" value="{{ $musyawaroh->id }}">
                     <input type="hidden" name="meeting_date" value="{{ $musyawaroh->meeting_date->format('Y-m-d') }}">
                     <input type="hidden" name="bucket" value="{{ $musyawaroh->title }}">
                     <input type="text" name="title" required placeholder="Poin notulen, misal: Persiapan KBM semester baru" class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                    <button type="submit" class="rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Tambah</button>
+                    <button type="submit" name="action" value="draft" class="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Simpan Draft</button>
+                    <button type="submit" name="action" value="final" onclick="return confirm('Kirim notulen ini? Setelah dikirim, notulen tidak bisa diubah lagi dan akan diberitahukan ke seluruh daftar hadir musyawaroh.')" class="rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Kirim</button>
                 </form>
             </x-card>
 
@@ -70,7 +72,14 @@
                                         <input type="checkbox" onchange="this.form.requestSubmit()" @checked($notulen->is_done) class="mt-1 h-4 w-4 rounded border-slate-300">
                                     </form>
                                     <div class="min-w-0 flex-1">
-                                        <p class="text-sm font-medium {{ $notulen->is_done ? 'text-slate-400 line-through' : 'text-slate-900' }}">{{ $notulen->title }}</p>
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <p class="text-sm font-medium {{ $notulen->is_done ? 'text-slate-400 line-through' : 'text-slate-900' }}">{{ $notulen->title }}</p>
+                                            @if ($notulen->status === \App\Models\Notulen::STATUS_FINAL)
+                                                <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700">Terkirim</span>
+                                            @else
+                                                <span class="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700">Draft</span>
+                                            @endif
+                                        </div>
                                         @if ($notulen->content && $notulen->content !== $notulen->title)
                                             <p class="mt-1 whitespace-pre-line text-sm text-slate-600">{{ $notulen->content }}</p>
                                         @endif
@@ -79,17 +88,33 @@
                                             @if ($notulen->is_done && $notulen->checkedBy)
                                                 &middot; ditandai selesai oleh {{ $notulen->checkedBy->name }}
                                             @endif
+                                            @if ($notulen->status === \App\Models\Notulen::STATUS_FINAL && $notulen->sent_at)
+                                                &middot; dikirim {{ $notulen->sent_at->translatedFormat('d M Y H:i') }}
+                                            @endif
                                         </p>
 
-                                        @if ($notulen->task)
-                                            <span class="mt-2 inline-flex items-center gap-1 rounded-full bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-700">
-                                                Tugas: {{ $notulen->task->title }} ({{ $notulen->task->assignees->pluck('name')->join(', ') }})
-                                            </span>
-                                        @else
-                                            <button type="button" data-open-task-modal="task-modal-{{ $notulen->id }}" class="mt-2 text-xs font-semibold text-brand-600 hover:text-brand-700">
-                                                + Jadikan Tugas
-                                            </button>
-                                        @endif
+                                        <div class="mt-2 flex flex-wrap items-center gap-3">
+                                            @if ($notulen->task)
+                                                <span class="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-700">
+                                                    Tugas: {{ $notulen->task->title }} ({{ $notulen->task->assignees->pluck('name')->join(', ') }})
+                                                </span>
+                                            @else
+                                                <button type="button" data-open-task-modal="task-modal-{{ $notulen->id }}" class="text-xs font-semibold text-brand-600 hover:text-brand-700">
+                                                    + Jadikan Tugas
+                                                </button>
+                                            @endif
+
+                                            @if ($notulen->isContentEditableBy($user))
+                                                <button type="button" data-open-task-modal="edit-modal-{{ $notulen->id }}" class="text-xs font-semibold text-slate-500 hover:text-slate-800">
+                                                    Edit
+                                                </button>
+                                                <form method="POST" action="{{ route('notulen.send', $notulen) }}" onsubmit="return confirm('Kirim notulen ini? Setelah dikirim, notulen tidak bisa diubah lagi dan akan diberitahukan ke seluruh daftar hadir musyawaroh.')">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button type="submit" class="text-xs font-semibold text-emerald-600 hover:text-emerald-800">Kirim</button>
+                                                </form>
+                                            @endif
+                                        </div>
                                     </div>
 
                                     @if ($notulen->isEditableBy($user))
@@ -100,6 +125,30 @@
                                         </form>
                                     @endif
                                 </div>
+
+                                @if ($notulen->isContentEditableBy($user))
+                                    <div id="edit-modal-{{ $notulen->id }}" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4" role="dialog" aria-modal="true">
+                                        <div class="w-full max-w-lg">
+                                            <x-card class="relative">
+                                                <button type="button" data-close-task-modal class="absolute right-4 top-4 text-xl leading-none text-slate-400 hover:text-slate-700" aria-label="Tutup">&times;</button>
+                                                <h4 class="mb-4 text-lg font-semibold">Edit Notulen</h4>
+                                                <form method="POST" action="{{ route('notulen.update', $notulen) }}" class="space-y-3">
+                                                    @csrf
+                                                    @method('PUT')
+                                                    <div>
+                                                        <label class="mb-1 block text-sm font-medium">Judul</label>
+                                                        <input type="text" name="title" required value="{{ $notulen->title }}" class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                                                    </div>
+                                                    <div>
+                                                        <label class="mb-1 block text-sm font-medium">Catatan (opsional)</label>
+                                                        <textarea name="content" rows="3" class="w-full rounded-lg border border-slate-300 px-3 py-2">{{ $notulen->content !== $notulen->title ? $notulen->content : '' }}</textarea>
+                                                    </div>
+                                                    <button type="submit" class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Simpan Perubahan</button>
+                                                </form>
+                                            </x-card>
+                                        </div>
+                                    </div>
+                                @endif
 
                                 @if (! $notulen->task)
                                     <div id="task-modal-{{ $notulen->id }}" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4" role="dialog" aria-modal="true">

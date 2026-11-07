@@ -826,6 +826,10 @@ Route::middleware(['auth', 'permission:manage-tasks'])->group(function () {
         ->name('tasks.attachment');
     Route::post('/notulen', [NotulenController::class, 'store'])
         ->name('notulen.store');
+    Route::put('/notulen/{notulen}', [NotulenController::class, 'update'])
+        ->name('notulen.update');
+    Route::patch('/notulen/{notulen}/send', [NotulenController::class, 'send'])
+        ->name('notulen.send');
     Route::patch('/notulen/{notulen}/toggle', [NotulenController::class, 'toggle'])
         ->name('notulen.toggle');
     Route::delete('/notulen/{notulen}', [NotulenController::class, 'destroy'])
