@@ -27,6 +27,8 @@
         'manage-learning-materials' => 'Kelola Kurikulum / Materi',
         'view-progress-tracking' => 'Lihat Progress Tracking',
         'manage-progress-tracking' => 'Kelola Progress Tracking',
+        'view-personality-items' => 'Lihat Item Kepribadian',
+        'manage-personality-items' => 'Kelola Item Kepribadian',
         'view-download-files' => 'Lihat Download File',
         'manage-download-files' => 'Kelola Download File',
         'view-activity-schedules' => 'Lihat Jadwal Program',
@@ -83,6 +85,7 @@
         'Kurikulum & Pembinaan' => [
             'Master Data' => ['view-master-data', 'manage-master-data'],
             'Kurikulum » Materi' => ['view-learning-materials', 'manage-learning-materials'],
+            'Kurikulum » Item Kepribadian' => ['view-personality-items', 'manage-personality-items'],
             'Kurikulum » Progress Tracking' => ['view-progress-tracking', 'manage-progress-tracking'],
             'Kurikulum » Download File' => ['view-download-files', 'manage-download-files'],
             'Kegiatan Pembinaan » Jadwal Program' => ['view-activity-schedules', 'manage-activity-schedules'],

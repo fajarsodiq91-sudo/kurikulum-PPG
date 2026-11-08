@@ -24,6 +24,7 @@ class LearningMaterialController extends Controller
         $search = trim((string) $request->query('q', ''));
         $chapterId = $request->query('material_chapter_id', '');
         $academicYearId = $request->query('academic_year_id', '');
+        $jenis = $request->query('jenis', '');
 
         $materials = LearningMaterial::with(['materialChapter.materialCategory.classGrade', 'materialChapter.materialCategory.semester', 'academicYear'])
             ->when($search !== '', function ($query) use ($search): void {
@@ -32,6 +33,7 @@ class LearningMaterialController extends Controller
             })
             ->when($chapterId !== '', fn ($query) => $query->where('material_chapter_id', $chapterId))
             ->when($academicYearId !== '', fn ($query) => $query->where('academic_year_id', $academicYearId))
+            ->when($jenis !== '', fn ($query) => $query->where('jenis', $jenis))
             ->orderBy('material_chapter_id')
             ->orderBy('week_number')
             ->orderBy('sort_order')
@@ -46,6 +48,7 @@ class LearningMaterialController extends Controller
                 ->orderBy('sort_order')
                 ->get(),
             'academicYears' => AcademicYear::where('is_active', true)->get(),
+            'categories' => KontrolController::CATEGORIES,
         ]);
     }
 
@@ -55,6 +58,7 @@ class LearningMaterialController extends Controller
             'material_chapter_id' => ['required', 'exists:material_chapters,id'],
             'title' => ['required', 'string', 'max:255'],
             'code' => ['required', 'string', 'max:50', 'unique:learning_materials,code'],
+            'jenis' => ['nullable', 'string', Rule::in(array_keys(KontrolController::CATEGORIES))],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'week_number' => ['nullable', 'integer', 'min:1', 'max:52'],
             'academic_year_id' => ['nullable', 'exists:academic_years,id'],
@@ -75,6 +79,7 @@ class LearningMaterialController extends Controller
             'material_chapter_id' => ['required', 'exists:material_chapters,id'],
             'title' => ['required', 'string', 'max:255'],
             'code' => ['required', 'string', 'max:50', Rule::unique('learning_materials', 'code')->ignore($learning_material->id)],
+            'jenis' => ['nullable', 'string', Rule::in(array_keys(KontrolController::CATEGORIES))],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'week_number' => ['nullable', 'integer', 'min:1', 'max:52'],
             'academic_year_id' => ['nullable', 'exists:academic_years,id'],

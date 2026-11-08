@@ -13,6 +13,7 @@ class LearningMaterial extends Model
         'material_chapter_id',
         'title',
         'code',
+        'jenis',
         'sort_order',
         'week_number',
         'academic_year_id',

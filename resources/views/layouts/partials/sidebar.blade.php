@@ -64,6 +64,8 @@
                     ['label' => 'Kategori Materi', 'route' => 'material-categories.index', 'permission' => ['view-learning-materials', 'manage-learning-materials']],
                     ['label' => 'Bab Materi', 'route' => 'material-chapters.index', 'permission' => ['view-learning-materials', 'manage-learning-materials']],
                     ['label' => 'Materi', 'route' => 'learning-materials.index', 'permission' => ['view-learning-materials', 'manage-learning-materials']],
+                    ['label' => 'Klasifikasi Materi', 'route' => 'material-classifications.index', 'permission' => ['view-learning-materials', 'manage-learning-materials']],
+                    ['label' => 'Item Kepribadian', 'route' => 'personality-items.index', 'permission' => ['view-personality-items', 'manage-personality-items']],
                     ['label' => 'Progress Tracking', 'route' => 'progress-tracks.index', 'permission' => ['view-progress-tracking', 'manage-progress-tracking']],
                     ['label' => 'Download File', 'route' => 'download-files.index', 'permission' => ['view-download-files', 'manage-download-files']],
                 ]],

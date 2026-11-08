@@ -28,12 +28,14 @@ use App\Http\Controllers\LegalController;
 use App\Http\Controllers\MasterData\MasterDataController;
 use App\Http\Controllers\MaterialCategoryController;
 use App\Http\Controllers\MaterialChapterController;
+use App\Http\Controllers\MaterialClassificationController;
 use App\Http\Controllers\MilestoneController;
 use App\Http\Controllers\MunaqosahController;
 use App\Http\Controllers\MusyawarohController;
 use App\Http\Controllers\NotulenController;
 use App\Http\Controllers\OrganizationUnitController;
 use App\Http\Controllers\ParentCommunicationController;
+use App\Http\Controllers\PersonalityItemController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProgressTrackController;
 use App\Http\Controllers\RegistrationApprovalController;
@@ -357,6 +359,13 @@ Route::middleware(['auth', 'permission:view-learning-materials,manage-learning-m
         ->name('learning-materials.index');
     Route::get('/learning-materials/export', [LearningMaterialController::class, 'export'])
         ->name('learning-materials.export');
+    Route::get('/material-classifications', [MaterialClassificationController::class, 'index'])
+        ->name('material-classifications.index');
+});
+
+Route::middleware(['auth', 'permission:view-personality-items,manage-personality-items'])->group(function () {
+    Route::get('/personality-items', [PersonalityItemController::class, 'index'])
+        ->name('personality-items.index');
 });
 
 Route::middleware(['permission:view-download-files,manage-download-files'])->group(function () {
@@ -398,6 +407,17 @@ Route::middleware(['auth', 'permission:manage-learning-materials'])->group(funct
         ->name('learning-materials.destroy');
     Route::post('/learning-materials/import', [LearningMaterialController::class, 'import'])
         ->name('learning-materials.import');
+    Route::put('/material-classifications/{learning_material}', [MaterialClassificationController::class, 'update'])
+        ->name('material-classifications.update');
+});
+
+Route::middleware(['auth', 'permission:manage-personality-items'])->group(function () {
+    Route::post('/personality-items', [PersonalityItemController::class, 'store'])
+        ->name('personality-items.store');
+    Route::put('/personality-items/{personality_item}', [PersonalityItemController::class, 'update'])
+        ->name('personality-items.update');
+    Route::delete('/personality-items/{personality_item}', [PersonalityItemController::class, 'destroy'])
+        ->name('personality-items.destroy');
 });
 
 Route::middleware(['auth', 'permission:view-learning-sessions,manage-learning-sessions'])->group(function () {

@@ -46,6 +46,7 @@
     <x-filter-bar :action="route('learning-materials.index')" search-placeholder="Cari judul atau kode materi...">
         <x-filter-select name="material_chapter_id" label="Bab" :options="$chapters" option-label="name" />
         <x-filter-select name="academic_year_id" label="Tahun" :options="$academicYears" />
+        <x-filter-select name="jenis" label="Jenis" :options="$categories" />
     </x-filter-bar>
 
     @if (\App\Support\Access::can('manage-learning-materials'))
@@ -76,6 +77,15 @@
                         <div class="mb-4">
                             <label class="block text-sm font-medium mb-2" for="code">Kode</label>
                             <input id="code" name="code" type="text" required class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('code') }}">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-2" for="jenis">Jenis (opsional)</label>
+                            <select id="jenis" name="jenis" class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                                <option value="">-- Pilih --</option>
+                                @foreach($categories as $value => $label)
+                                    <option value="{{ $value }}" @selected(old('jenis') === $value)>{{ $label }}</option>
+                                @endforeach
+                            </select>
                         </div>
                         <details class="mb-4 rounded-lg border border-slate-200 px-3 py-2">
                             <summary class="cursor-pointer text-sm font-medium text-slate-600">Opsional: Minggu ke- (untuk Generate Jadwal KBM)</summary>
@@ -141,6 +151,15 @@
                             <label class="block text-sm font-medium mb-2" for="edit_code">Kode</label>
                             <input id="edit_code" name="code" type="text" required class="w-full rounded-lg border border-slate-300 px-3 py-2">
                         </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-2" for="edit_jenis">Jenis (opsional)</label>
+                            <select id="edit_jenis" name="jenis" class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                                <option value="">-- Pilih --</option>
+                                @foreach($categories as $value => $label)
+                                    <option value="{{ $value }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                         <details class="mb-4 rounded-lg border border-slate-200 px-3 py-2">
                             <summary class="cursor-pointer text-sm font-medium text-slate-600">Opsional: Minggu ke- (untuk Generate Jadwal KBM)</summary>
                             <div class="mt-3">
@@ -188,6 +207,7 @@
                             <th class="py-3 pr-4">Bab</th>
                             <th class="py-3 pr-4">Materi</th>
                             <th class="py-3 pr-4">Kode</th>
+                            <th class="py-3 pr-4">Jenis</th>
                             <th class="py-3 pr-4">Tahun</th>
                             <th class="py-3 pr-4">Status</th>
                             @if (\App\Support\Access::can('manage-learning-materials'))
@@ -204,6 +224,7 @@
                                 <td class="py-3 pr-4">{{ $material->materialChapter->name }}</td>
                                 <td class="py-3 pr-4">{{ $material->title }}</td>
                                 <td class="py-3 pr-4">{{ $material->code }}</td>
+                                <td class="py-3 pr-4">{{ $categories[$material->jenis] ?? '-' }}</td>
                                 <td class="py-3 pr-4">{{ $material->academicYear?->name ?? '-' }}</td>
                                 <td class="py-3 pr-4">
                                     @if($material->is_active)
@@ -224,6 +245,7 @@
                                                 data-material-chapter-id="{{ $material->material_chapter_id }}"
                                                 data-title="{{ $material->title }}"
                                                 data-code="{{ $material->code }}"
+                                                data-jenis="{{ $material->jenis }}"
                                                 data-week-number="{{ $material->week_number }}"
                                                 data-academic-year-id="{{ $material->academic_year_id }}"
                                                 data-description="{{ $material->description }}"
@@ -240,7 +262,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="py-6 text-center text-slate-500">Belum ada materi pembelajaran.</td>
+                                <td colspan="10" class="py-6 text-center text-slate-500">Belum ada materi pembelajaran.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -315,6 +337,7 @@
                     form.querySelector('#edit_material_chapter_id').value = button.dataset.materialChapterId;
                     form.querySelector('#edit_title').value = button.dataset.title;
                     form.querySelector('#edit_code').value = button.dataset.code;
+                    form.querySelector('#edit_jenis').value = button.dataset.jenis;
                     form.querySelector('#edit_week_number').value = button.dataset.weekNumber;
                     form.querySelector('#edit_academic_year_id').value = button.dataset.academicYearId;
                     form.querySelector('#edit_description').value = button.dataset.description;
