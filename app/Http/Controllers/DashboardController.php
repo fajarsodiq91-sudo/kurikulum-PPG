@@ -13,6 +13,7 @@ use App\Models\GroupDefaultSchedule;
 use App\Models\LearningSession;
 use App\Models\Level;
 use App\Models\Munaqosah;
+use App\Models\Musyawaroh;
 use App\Models\Semester;
 use App\Models\Teacher;
 use App\Models\Training;
@@ -126,6 +127,19 @@ class DashboardController extends Controller
             ? Carbon::createFromFormat('Y-m-d', $dateParam)
             : now()->startOfDay();
 
+        $monthStart = $calendarMonth->toDateString();
+        $monthEnd = $calendarMonth->copy()->endOfMonth()->toDateString();
+
+        $calendarEvents = $this->eventsQuery($user)
+            ->whereBetween('event_date', [$monthStart, $monthEnd])
+            ->get()
+            ->groupBy(fn (Announcement $event): string => $event->event_date->toDateString());
+
+        $calendarMusyawarohs = $this->musyawarohsQuery($user)
+            ->whereBetween('meeting_date', [$monthStart, $monthEnd])
+            ->get()
+            ->groupBy(fn (Musyawaroh $musyawaroh): string => $musyawaroh->meeting_date->toDateString());
+
         return [
             'calendarMonth' => $calendarMonth,
             'calendarDays' => $this->buildCalendarDays($calendarMonth),
@@ -145,7 +159,49 @@ class DashboardController extends Controller
             'selectedPatterns' => $defaultSchedules->filter(fn ($pattern): bool => $pattern->appliesTo($selectedDate)),
             'selectedOwnSessions' => $this->ownSessionsQuery($myGroupIds, $myVillageIds)
                 ?->where('session_date', $selectedDate->toDateString())->with('classGrade')->get() ?? collect(),
+            'calendarEvents' => $calendarEvents,
+            'calendarMusyawarohs' => $calendarMusyawarohs,
+            'selectedEvents' => $calendarEvents->get($selectedDate->toDateString(), collect()),
+            'selectedMusyawarohs' => $calendarMusyawarohs->get($selectedDate->toDateString(), collect()),
+            'canCreateEvent' => $user?->hasPermission('manage-announcements') ?? false,
+            'canCreateMusyawaroh' => $user?->hasPermission('manage-tasks') ?? false,
         ];
+    }
+
+    /**
+     * Published, date-anchored announcements the viewer may see on the calendar: every one for
+     * a manage-announcements holder, otherwise only those with no chosen audience (public to
+     * all) or where the viewer is one of the chosen recipients.
+     *
+     * @return Builder<Announcement>
+     */
+    private function eventsQuery(?User $user): Builder
+    {
+        $query = Announcement::published()->whereNotNull('event_date');
+
+        if ($user?->hasPermission('manage-announcements')) {
+            return $query;
+        }
+
+        return $query->where(function (Builder $scoped) use ($user): void {
+            $scoped->whereDoesntHave('recipients');
+
+            if ($user !== null) {
+                $scoped->orWhereHas('recipients', fn (Builder $r) => $r->whereKey($user->id));
+            }
+        });
+    }
+
+    /**
+     * @return Builder<Musyawaroh>
+     */
+    private function musyawarohsQuery(?User $user): Builder
+    {
+        if ($user === null) {
+            return Musyawaroh::whereRaw('1 = 0');
+        }
+
+        return Musyawaroh::visibleTo($user);
     }
 
     /**

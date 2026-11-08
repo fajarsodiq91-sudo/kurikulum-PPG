@@ -13,6 +13,7 @@ use App\Models\Role;
 use App\Models\Task;
 use App\Models\User;
 use App\Models\Village;
+use App\Notifications\MusyawarohInvited;
 use App\Notifications\NotulenFinalized;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -160,6 +161,26 @@ class MusyawarohTest extends TestCase
             'manual_name' => 'Tamu Undangan',
             'status' => 'hadir',
         ]);
+    }
+
+    public function test_creating_a_musyawaroh_emails_the_invited_registered_attendees_only(): void
+    {
+        Notification::fake();
+
+        $village = $this->makeVillage('Desa A');
+        $group = $this->makeGroup($village, 'Kelompok A1');
+        $desaUser = $this->makeUser('Desa A', $this->desaRole, 'village', $village->id);
+        $kelompokUser = $this->makeUser('Kelompok A1', $this->kelompokRole, 'group', $group->id);
+
+        $this->actingAs($desaUser)->post('/musyawaroh', [
+            'title' => 'Musyawaroh Pengurus',
+            'meeting_date' => '2026-11-10',
+            'attendance' => [$kelompokUser->id => 'hadir'],
+            'manual_names' => ['Tamu Undangan'],
+        ]);
+
+        Notification::assertSentTo($kelompokUser, MusyawarohInvited::class);
+        Notification::assertNotSentTo($desaUser, MusyawarohInvited::class);
     }
 
     public function test_a_musyawaroh_can_record_izin_and_alpha_for_attendees(): void

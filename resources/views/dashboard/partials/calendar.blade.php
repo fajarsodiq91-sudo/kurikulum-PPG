@@ -71,6 +71,8 @@
                 $isSelected = $day->isSameDay($selectedDate);
                 $matchingPatterns = $isCurrentMonth ? $defaultSchedules->filter(fn ($pattern) => $pattern->appliesTo($day)) : collect();
                 $daySessions = $isCurrentMonth ? $ownSessions->get($day->toDateString(), collect()) : collect();
+                $dayEvents = $isCurrentMonth ? $calendarEvents->get($day->toDateString(), collect()) : collect();
+                $dayMusyawarohs = $isCurrentMonth ? $calendarMusyawarohs->get($day->toDateString(), collect()) : collect();
                 $hasHoliday = $matchingPatterns->contains(fn ($pattern) => $pattern->exceptionOn($day) !== null);
                 $dayBadges = $matchingPatterns->unique('level_id')
                     ->map(function ($pattern) use ($day, $levelDotFor) {
@@ -88,10 +90,27 @@
                     ->concat($daySessions->isNotEmpty() ? [[
                         'bg' => 'bg-brand-600',
                         'code' => null,
+                        'icon' => 'users',
                         'label' => 'Jadwal Sendiri',
                         'title' => 'Jadwal KBM Anda'.($daySessions->first()->start_time ? ' · '.substr($daySessions->first()->start_time, 0, 5) : ''),
                         'holiday' => false,
-                    ]] : []);
+                    ]] : [])
+                    ->concat($dayEvents->map(fn ($event) => [
+                        'bg' => 'bg-amber-500',
+                        'code' => null,
+                        'icon' => 'envelope',
+                        'label' => $event->title,
+                        'title' => 'Event: '.$event->title,
+                        'holiday' => false,
+                    ]))
+                    ->concat($dayMusyawarohs->map(fn ($musyawaroh) => [
+                        'bg' => 'bg-indigo-600',
+                        'code' => null,
+                        'icon' => 'clipboard-check',
+                        'label' => $musyawaroh->title ?: 'Musyawaroh',
+                        'title' => 'Musyawaroh: '.($musyawaroh->title ?: 'Tanpa judul'),
+                        'holiday' => false,
+                    ]));
                 $maxVisibleBadges = 3;
                 $visibleBadges = $dayBadges->take($maxVisibleBadges);
                 $hiddenBadgeCount = max(0, $dayBadges->count() - $maxVisibleBadges);
@@ -105,8 +124,13 @@
                     .($isSelected && ! $day->isToday() ? ' ring-2 ring-inset ring-brand-600' : '');
             @endphp
 
+            @php
+                $dayHref = $dayMusyawarohs->isNotEmpty()
+                    ? route('musyawaroh.show', $dayMusyawarohs->first())
+                    : route('dashboard', ['month' => $calendarMonth->format('Y-m'), 'date' => $day->toDateString(), 'source' => $calendarSource, 'group_id' => $calendarGroupId]);
+            @endphp
             @if ($isCurrentMonth)
-                <a href="{{ route('dashboard', ['month' => $calendarMonth->format('Y-m'), 'date' => $day->toDateString(), 'source' => $calendarSource, 'group_id' => $calendarGroupId]) }}" class="{{ $cellClasses }} transition hover:bg-slate-50">
+                <a href="{{ $dayHref }}" class="{{ $cellClasses }} transition hover:bg-slate-50" @if ($dayMusyawarohs->isNotEmpty()) title="Buka Musyawaroh" @endif>
             @else
                 <div class="{{ $cellClasses }}">
             @endif
@@ -124,7 +148,7 @@
                                     @if ($badge['code'])
                                         <x-level-icon :code="$badge['code']" class="h-2 w-2 text-white" />
                                     @else
-                                        <x-sidebar-icon name="users" class="h-2 w-2 text-white" />
+                                        <x-sidebar-icon :name="$badge['icon'] ?? 'users'" class="h-2 w-2 text-white" />
                                     @endif
                                 </span>
                                 <span class="truncate text-[0.6rem] leading-none text-slate-600">{{ $badge['label'] }}</span>
@@ -171,6 +195,49 @@
 
     <div class="mt-6 rounded-xl border border-slate-200 p-4">
         <h3 class="font-semibold text-slate-950">{{ $selectedDate->translatedFormat('l, d F Y') }}</h3>
+
+        @if ($selectedMusyawarohs->isNotEmpty())
+            <div class="mt-3 space-y-2">
+                @foreach ($selectedMusyawarohs as $musyawaroh)
+                    <a href="{{ route('musyawaroh.show', $musyawaroh) }}" class="flex items-center gap-3 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm transition hover:bg-indigo-100">
+                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600">
+                            <x-sidebar-icon name="clipboard-check" class="h-4 w-4 text-white" />
+                        </span>
+                        <span>
+                            <span class="block font-semibold text-indigo-900">{{ $musyawaroh->title ?: 'Musyawaroh' }}</span>
+                            <span class="block text-xs text-indigo-700">Isi daftar hadir &amp; notulen &rarr;</span>
+                        </span>
+                    </a>
+                @endforeach
+            </div>
+        @endif
+
+        @if ($selectedEvents->isNotEmpty())
+            <div class="mt-3 space-y-2">
+                @foreach ($selectedEvents as $event)
+                    <div class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm">
+                        <span class="flex items-center gap-2">
+                            <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-500">
+                                <x-sidebar-icon name="envelope" class="h-4 w-4 text-white" />
+                            </span>
+                            <span class="font-semibold text-amber-900">{{ $event->title }}</span>
+                        </span>
+                        <p class="mt-1 text-xs text-amber-800">{{ \Illuminate\Support\Str::limit($event->body, 120) }}</p>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+
+        @if ($canCreateEvent || $canCreateMusyawaroh)
+            <div class="mt-3 flex flex-wrap gap-2">
+                @if ($canCreateEvent)
+                    <a href="{{ route('announcements.index', ['event_date' => $selectedDate->toDateString()]) }}#tulis-berita" class="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">+ Buat Event di Tanggal Ini</a>
+                @endif
+                @if ($canCreateMusyawaroh)
+                    <a href="{{ route('musyawaroh.create', ['meeting_date' => $selectedDate->toDateString()]) }}" class="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">+ Undang Musyawaroh di Tanggal Ini</a>
+                @endif
+            </div>
+        @endif
 
         @if ($calendarSource === 'daerah' && $canManageDefault)
             <div class="mt-3 space-y-2">

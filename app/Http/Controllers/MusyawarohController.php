@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Musyawaroh;
 use App\Models\MusyawarohAttendee;
 use App\Models\User;
+use App\Notifications\MusyawarohInvited;
 use App\Support\MusyawarohHierarchy;
 use App\Support\TaskHierarchy;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -33,6 +35,7 @@ class MusyawarohController extends Controller
     {
         return view('musyawaroh.create', [
             'tree' => MusyawarohHierarchy::treeFor($request->user()),
+            'defaultMeetingDate' => $request->string('meeting_date')->value() ?: null,
             'bucketSuggestions' => TaskHierarchy::bucketSuggestionsFor($request->user()),
             'defaultCollapsed' => $this->defaultCollapsedFor($request->user()),
         ]);
@@ -64,6 +67,8 @@ class MusyawarohController extends Controller
             'created_by_id' => $user->id,
         ]);
 
+        $invitedUserIds = [];
+
         foreach ($validated['attendance'] ?? [] as $userId => $status) {
             if (blank($status) || ! in_array((int) $userId, $allowedUserIds, true)) {
                 continue;
@@ -74,6 +79,8 @@ class MusyawarohController extends Controller
                 'user_id' => (int) $userId,
                 'status' => $status,
             ]);
+
+            $invitedUserIds[] = (int) $userId;
         }
 
         foreach (array_filter($validated['manual_names'] ?? []) as $manualName) {
@@ -84,7 +91,14 @@ class MusyawarohController extends Controller
             ]);
         }
 
-        return redirect()->route('musyawaroh.show', $musyawaroh)->with('success', 'Musyawaroh berhasil dibuat.');
+        if ($invitedUserIds !== []) {
+            Notification::send(
+                User::where('status', 'active')->whereIn('id', $invitedUserIds)->get(),
+                new MusyawarohInvited($musyawaroh),
+            );
+        }
+
+        return redirect()->route('musyawaroh.show', $musyawaroh)->with('success', 'Musyawaroh berhasil dibuat dan undangan terkirim.');
     }
 
     public function show(Request $request, Musyawaroh $musyawaroh): View

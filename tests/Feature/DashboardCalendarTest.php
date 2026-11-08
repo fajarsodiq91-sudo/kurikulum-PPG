@@ -3,12 +3,14 @@
 namespace Tests\Feature;
 
 use App\Models\AcademicYear;
+use App\Models\Announcement;
 use App\Models\ClassGrade;
 use App\Models\DefaultSchedule;
 use App\Models\Group;
 use App\Models\GroupDefaultSchedule;
 use App\Models\LearningSession;
 use App\Models\Level;
+use App\Models\Musyawaroh;
 use App\Models\Permission;
 use App\Models\Region;
 use App\Models\Role;
@@ -249,6 +251,44 @@ class DashboardCalendarTest extends TestCase
 
         // Even requesting it directly falls back to the Daerah source, since no groups are in scope.
         $this->get('/dashboard?source=kelompok')->assertOk()->assertDontSee($group->name);
+    }
+
+    public function test_a_published_event_shows_on_the_calendar_on_its_event_date(): void
+    {
+        $user = $this->createUserWithGlobalPermission('manage-announcements');
+
+        Announcement::create([
+            'title' => 'Rapat Akbar Tahunan',
+            'body' => 'Seluruh pengurus diharapkan hadir.',
+            'status' => 'published',
+            'published_at' => now(),
+            'event_date' => now()->toDateString(),
+        ]);
+
+        $this->actingAs($user)->get('/dashboard')
+            ->assertOk()->assertSee('Rapat Akbar Tahunan');
+    }
+
+    public function test_a_musyawaroh_shows_on_the_calendar_and_its_date_links_straight_to_it(): void
+    {
+        $role = Role::create(['name' => 'PPG', 'slug' => 'ppg', 'is_active' => true]);
+        $role->permissions()->attach([
+            Permission::firstOrCreate(['slug' => 'manage-tasks'], ['name' => 'Manage Tasks', 'module' => 'tasks', 'is_active' => true])->id,
+            Permission::firstOrCreate(['slug' => 'view-dashboard'], ['name' => 'View Dashboard', 'module' => 'dashboard', 'is_active' => true])->id,
+        ]);
+        $user = User::create(['name' => 'Admin PPG', 'email' => 'ppg-daerah@ppg.test', 'password' => Hash::make('password123'), 'status' => 'active']);
+        $user->assignRole($role->id, 'global', null);
+
+        $musyawaroh = Musyawaroh::create([
+            'title' => 'Musyawaroh Pengurus',
+            'meeting_date' => now()->toDateString(),
+            'created_by_id' => $user->id,
+        ]);
+
+        $response = $this->actingAs($user)->get('/dashboard');
+
+        $response->assertOk()->assertSee('Musyawaroh Pengurus');
+        $response->assertSee(route('musyawaroh.show', $musyawaroh), false);
     }
 
     /**

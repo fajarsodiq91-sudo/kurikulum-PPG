@@ -15,7 +15,7 @@
 
     <div class="grid gap-6 lg:grid-cols-[minmax(20rem,0.9fr)_minmax(0,1.5fr)]">
         @if (\App\Support\Access::can('manage-announcements'))
-            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-1">
+            <div id="tulis-berita" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-1">
                 <h3 class="text-lg font-semibold text-slate-950">Tulis Berita</h3>
                 <form method="POST" action="{{ route('announcements.store') }}" enctype="multipart/form-data" class="mt-4">
                     @csrf

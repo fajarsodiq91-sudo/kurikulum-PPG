@@ -28,7 +28,7 @@
                 </div>
                 <div>
                     <label class="mb-2 block text-sm font-medium" for="meeting_date">Hari &amp; Tanggal</label>
-                    <input id="meeting_date" name="meeting_date" type="date" class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('meeting_date', now()->format('Y-m-d')) }}">
+                    <input id="meeting_date" name="meeting_date" type="date" class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('meeting_date', $defaultMeetingDate ?? now()->format('Y-m-d')) }}">
                 </div>
                 <div>
                     <label class="mb-2 block text-sm font-medium" for="location">Lokasi (opsional)</label>

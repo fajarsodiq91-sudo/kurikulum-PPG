@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Announcement extends Model
 {
@@ -29,18 +30,29 @@ class Announcement extends Model
         'template',
         'status',
         'published_at',
+        'event_date',
     ];
 
     protected function casts(): array
     {
         return [
             'published_at' => 'datetime',
+            'event_date' => 'date',
         ];
     }
 
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * The hierarchy-picked audience for this announcement's email notification. Empty means
+     * every active user (the original, un-targeted behaviour).
+     */
+    public function recipients(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'announcement_recipients');
     }
 
     public function scopePublished(Builder $query): Builder

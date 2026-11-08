@@ -117,11 +117,7 @@ class User extends Authenticatable
             return false;
         }
 
-        return $this->roles()
-            ->where('roles.is_active', true)
-            ->where('user_roles.is_active', true)
-            ->where('roles.slug', 'super-admin')
-            ->exists();
+        return $this->activeRoles()->contains('slug', 'super-admin');
     }
 
     /**

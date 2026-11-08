@@ -20,10 +20,15 @@ class AnnouncementPublished extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)
+        $message = (new MailMessage)
             ->subject('Berita Baru: '.$this->announcement->title)
             ->greeting('Halo '.$notifiable->name.',')
-            ->line('Ada berita baru yang baru saja dipublikasikan: "'.$this->announcement->title.'".')
-            ->action('Lihat Berita', route('announcements.index'));
+            ->line('Ada berita baru yang baru saja dipublikasikan: "'.$this->announcement->title.'".');
+
+        if ($this->announcement->event_date) {
+            $message->line('Tanggal acara: '.$this->announcement->event_date->translatedFormat('l, d F Y').'.');
+        }
+
+        return $message->action('Lihat Berita', route('announcements.index'));
     }
 }

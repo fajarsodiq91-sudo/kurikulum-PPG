@@ -120,6 +120,34 @@ class AnnouncementTest extends TestCase
         Notification::assertNotSentTo($inactiveUser, AnnouncementPublished::class);
     }
 
+    public function test_publishing_an_event_with_chosen_recipients_emails_only_those_recipients(): void
+    {
+        Notification::fake();
+
+        $role = Role::create(['name' => 'PPG', 'slug' => 'ppg', 'is_active' => true]);
+        $role->permissions()->attach([
+            Permission::firstOrCreate(['slug' => 'manage-announcements'], ['name' => 'Manage Announcements', 'module' => 'announcements', 'is_active' => true])->id,
+            Permission::firstOrCreate(['slug' => 'manage-tasks'], ['name' => 'Manage Tasks', 'module' => 'tasks', 'is_active' => true])->id,
+        ]);
+
+        $author = User::create(['name' => 'Admin PPG Daerah', 'email' => 'ppg-daerah-'.uniqid().'@ppg.test', 'status' => 'active']);
+        $author->assignRole($role->id, 'global', null);
+        $otherActiveUser = User::create(['name' => 'Warga', 'email' => 'warga-'.uniqid().'@ppg.test', 'status' => 'active']);
+
+        $this->actingAs($author)->post('/announcements', [
+            'title' => 'Rapat Akbar',
+            'body' => 'Acara tahunan.',
+            'template' => 'default',
+            'status' => 'published',
+            'event_date' => '2026-12-01',
+            'recipients' => [$author->id],
+        ])->assertRedirect('/announcements');
+
+        $this->assertDatabaseHas('announcement_recipients', ['user_id' => $author->id]);
+        Notification::assertSentTo($author, AnnouncementPublished::class);
+        Notification::assertNotSentTo($otherActiveUser, AnnouncementPublished::class);
+    }
+
     public function test_editing_an_already_published_announcement_does_not_resend_the_email(): void
     {
         $author = $this->authorizedAnnouncementUser();

@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\HandlesSheets;
 use App\Models\Announcement;
 use App\Models\User;
 use App\Notifications\AnnouncementPublished;
+use App\Support\MusyawarohHierarchy;
 use App\Support\Sheets\AnnouncementSheet;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,11 +22,13 @@ class AnnouncementController extends Controller
 {
     use HandlesSheets;
 
-    public function index(): View
+    public function index(Request $request): View
     {
         return view('announcements.index', [
             'announcements' => Announcement::with('author')->latest('published_at')->paginate(25),
             'templates' => Announcement::TEMPLATES,
+            'tree' => MusyawarohHierarchy::treeFor($request->user()),
+            'defaultEventDate' => $request->string('event_date')->value() ?: null,
         ]);
     }
 
@@ -35,11 +38,13 @@ class AnnouncementController extends Controller
         $imagePath = $this->storeImage($validated['image'] ?? null);
 
         $announcement = Announcement::create([
-            ...Arr::except($validated, ['image']),
+            ...Arr::except($validated, ['image', 'recipients']),
             'image' => $imagePath,
             'user_id' => $request->user()->id,
             'published_at' => $validated['published_at'] ?? ($validated['status'] === 'published' ? now() : null),
         ]);
+
+        $announcement->recipients()->sync($validated['recipients'] ?? []);
 
         if ($announcement->status === 'published') {
             $this->notifyPublished($announcement);
@@ -48,11 +53,12 @@ class AnnouncementController extends Controller
         return redirect()->route('announcements.index')->with('success', 'Berita berhasil dipublikasikan.');
     }
 
-    public function edit(Announcement $announcement): View
+    public function edit(Request $request, Announcement $announcement): View
     {
         return view('announcements.edit', [
-            'announcement' => $announcement,
+            'announcement' => $announcement->load('recipients'),
             'templates' => Announcement::TEMPLATES,
+            'tree' => MusyawarohHierarchy::treeFor($request->user()),
         ]);
     }
 
@@ -64,10 +70,12 @@ class AnnouncementController extends Controller
         $wasPublished = $announcement->status === 'published';
 
         $announcement->update([
-            ...Arr::except($validated, ['image']),
+            ...Arr::except($validated, ['image', 'recipients']),
             ...($newImagePath !== null ? ['image' => $newImagePath] : []),
             'published_at' => $validated['published_at'] ?? ($validated['status'] === 'published' ? ($announcement->published_at ?? now()) : null),
         ]);
+
+        $announcement->recipients()->sync($validated['recipients'] ?? []);
 
         if (! $wasPublished && $announcement->status === 'published') {
             $this->notifyPublished($announcement);
@@ -81,11 +89,17 @@ class AnnouncementController extends Controller
     }
 
     /**
-     * First publish only (not every subsequent edit) notifies every active user by email.
+     * First publish only (not every subsequent edit) notifies by email: the chosen audience,
+     * or every active user when none was picked (the original, un-targeted behaviour).
      */
     private function notifyPublished(Announcement $announcement): void
     {
-        Notification::send(User::where('status', 'active')->get(), new AnnouncementPublished($announcement));
+        $recipients = $announcement->recipients()->where('status', 'active')->get();
+
+        Notification::send(
+            $recipients->isNotEmpty() ? $recipients : User::where('status', 'active')->get(),
+            new AnnouncementPublished($announcement),
+        );
     }
 
     public function destroy(Announcement $announcement): RedirectResponse
@@ -104,6 +118,8 @@ class AnnouncementController extends Controller
      */
     private function validateAnnouncement(Request $request, ?Announcement $announcement = null): array
     {
+        $allowedRecipientIds = MusyawarohHierarchy::allowedUserIds($request->user());
+
         return $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'body' => ['required', 'string'],
@@ -111,6 +127,9 @@ class AnnouncementController extends Controller
             'template' => ['required', Rule::in(array_keys(Announcement::TEMPLATES))],
             'status' => ['required', Rule::in(['draft', 'published'])],
             'published_at' => ['nullable', 'date'],
+            'event_date' => ['nullable', 'date'],
+            'recipients' => ['nullable', 'array'],
+            'recipients.*' => ['integer', Rule::in($allowedRecipientIds)],
         ]);
     }
 
