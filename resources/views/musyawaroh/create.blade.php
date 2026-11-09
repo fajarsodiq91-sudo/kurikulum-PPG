@@ -8,7 +8,7 @@
     <div class="mb-6">
         <p class="text-sm font-semibold text-amber-600">Pengurus</p>
         <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">Buat Musyawaroh</h2>
-        <p class="mt-2 text-sm text-slate-500">Isi daftar hadir sesuai jalur kepengurusan Anda, lalu lanjutkan mencatat notulen setelah musyawaroh dibuat.</p>
+        <p class="mt-2 text-sm text-slate-500">Pilih siapa saja yang akan diundang, lalu lanjutkan mengisi daftar hadir (Hadir/Izin/Alpha) di halaman musyawaroh setelah undangan ini dibuat.</p>
     </div>
 
     <form method="POST" action="{{ route('musyawaroh.store') }}" class="space-y-6">
@@ -46,8 +46,8 @@
         </x-card>
 
         <x-card>
-            <h3 class="mb-1 text-sm font-semibold text-slate-700">Daftar Hadir</h3>
-            <p class="mb-3 text-xs text-slate-500">Cari nama lalu tandai Hadir/Izin/Alpha, atau centang judul kelompok untuk menandai semua anggotanya Hadir sekaligus.</p>
+            <h3 class="mb-1 text-sm font-semibold text-slate-700">Undang Peserta</h3>
+            <p class="mb-3 text-xs text-slate-500">Cari nama lalu centang untuk mengundang, atau centang judul kelompok untuk mengundang semua anggotanya sekaligus.</p>
 
             <input type="text" data-attendance-search placeholder="Cari nama pengurus..." class="mb-4 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
 
@@ -69,7 +69,7 @@
                     @endforeach
                 </div>
                 <button type="button" data-add-manual-name class="mt-2 text-sm font-semibold text-brand-600 hover:text-brand-700">+ Tambah nama</button>
-                <p class="mt-1 text-xs text-slate-400">Nama di sini otomatis tercatat Hadir (tamu di luar kepengurusan).</p>
+                <p class="mt-1 text-xs text-slate-400">Nama di sini otomatis diundang (tamu di luar kepengurusan).</p>
             </div>
         </x-card>
 
@@ -80,37 +80,21 @@
         document.addEventListener('DOMContentLoaded', function () {
             document.querySelectorAll('[data-attendance-group]').forEach(function (group) {
                 const toggle = group.querySelector('[data-group-toggle]');
-                const hadirRadios = group.querySelectorAll('[data-group-member]');
-                const allRadios = group.querySelectorAll('[data-attendance-control] input[type="radio"]');
+                const memberCheckboxes = group.querySelectorAll('[data-group-member]');
 
                 function syncToggle() {
-                    const hadirCount = Array.from(hadirRadios).filter((r) => r.checked).length;
-                    const anyMarked = Array.from(allRadios).some((r) => r.checked);
-                    toggle.checked = hadirRadios.length > 0 && hadirCount === hadirRadios.length;
-                    toggle.indeterminate = anyMarked && !toggle.checked;
+                    const checkedCount = Array.from(memberCheckboxes).filter((c) => c.checked).length;
+                    toggle.checked = memberCheckboxes.length > 0 && checkedCount === memberCheckboxes.length;
+                    toggle.indeterminate = checkedCount > 0 && !toggle.checked;
                 }
 
                 toggle.addEventListener('change', function () {
-                    if (toggle.checked) {
-                        hadirRadios.forEach((r) => { r.checked = true; });
-                    } else {
-                        allRadios.forEach((r) => { r.checked = false; });
-                    }
+                    memberCheckboxes.forEach((c) => { c.checked = toggle.checked; });
                     syncToggle();
                 });
 
-                allRadios.forEach((r) => r.addEventListener('change', syncToggle));
+                memberCheckboxes.forEach((c) => c.addEventListener('change', syncToggle));
                 syncToggle();
-            });
-
-            document.querySelectorAll('[data-clear-attendance]').forEach(function (button) {
-                button.addEventListener('click', function () {
-                    const control = button.closest('[data-attendance-control]');
-                    control.querySelectorAll('input[type="radio"]').forEach(function (radio) {
-                        radio.checked = false;
-                        radio.dispatchEvent(new Event('change', { bubbles: true }));
-                    });
-                });
             });
 
             document.querySelectorAll('[data-node-toggle]').forEach(function (button) {

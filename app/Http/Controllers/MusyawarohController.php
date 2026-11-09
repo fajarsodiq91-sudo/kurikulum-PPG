@@ -52,8 +52,8 @@ class MusyawarohController extends Controller
             'start_time' => ['nullable', 'date_format:H:i'],
             'end_time' => ['nullable', 'date_format:H:i', 'after:start_time'],
             'location' => ['nullable', 'string', 'max:255'],
-            'attendance' => ['nullable', 'array'],
-            'attendance.*' => ['nullable', 'string', Rule::in(MusyawarohAttendee::STATUSES)],
+            'invitees' => ['nullable', 'array'],
+            'invitees.*' => ['nullable', 'boolean'],
             'manual_names' => ['nullable', 'array'],
             'manual_names.*' => ['nullable', 'string', 'max:255'],
         ]);
@@ -69,15 +69,15 @@ class MusyawarohController extends Controller
 
         $invitedUserIds = [];
 
-        foreach ($validated['attendance'] ?? [] as $userId => $status) {
-            if (blank($status) || ! in_array((int) $userId, $allowedUserIds, true)) {
+        foreach ($validated['invitees'] ?? [] as $userId => $invited) {
+            if (! $invited || ! in_array((int) $userId, $allowedUserIds, true)) {
                 continue;
             }
 
             MusyawarohAttendee::create([
                 'musyawaroh_id' => $musyawaroh->id,
                 'user_id' => (int) $userId,
-                'status' => $status,
+                'status' => MusyawarohAttendee::STATUS_DIUNDANG,
             ]);
 
             $invitedUserIds[] = (int) $userId;
@@ -87,7 +87,7 @@ class MusyawarohController extends Controller
             MusyawarohAttendee::create([
                 'musyawaroh_id' => $musyawaroh->id,
                 'manual_name' => $manualName,
-                'status' => MusyawarohAttendee::STATUS_HADIR,
+                'status' => MusyawarohAttendee::STATUS_DIUNDANG,
             ]);
         }
 
@@ -109,6 +109,25 @@ class MusyawarohController extends Controller
             'musyawaroh' => $musyawaroh->load(['createdBy', 'attendees.user', 'notulens.createdBy', 'notulens.checkedBy', 'notulens.task.assignees']),
             'recipients' => TaskHierarchy::assignableRecipients($request->user()),
         ]);
+    }
+
+    public function updateAttendance(Request $request, Musyawaroh $musyawaroh): RedirectResponse
+    {
+        abort_unless($musyawaroh->isVisibleTo($request->user()), 403);
+
+        $validated = $request->validate([
+            'status' => ['required', 'array'],
+            'status.*' => ['required', 'string', Rule::in(MusyawarohAttendee::STATUSES)],
+        ]);
+
+        $attendeeIds = array_map('intval', array_keys($validated['status']));
+
+        $musyawaroh->attendees()
+            ->whereIn('id', $attendeeIds)
+            ->get()
+            ->each(fn (MusyawarohAttendee $attendee) => $attendee->update(['status' => $validated['status'][$attendee->id]]));
+
+        return redirect()->route('musyawaroh.show', $musyawaroh)->with('success', 'Daftar hadir berhasil diperbarui.');
     }
 
     /**

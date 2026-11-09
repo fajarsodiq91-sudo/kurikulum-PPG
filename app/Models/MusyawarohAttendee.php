@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class MusyawarohAttendee extends Model
 {
+    public const STATUS_DIUNDANG = 'diundang';
+
     public const STATUS_HADIR = 'hadir';
 
     public const STATUS_IZIN = 'izin';
@@ -43,9 +45,10 @@ class MusyawarohAttendee extends Model
     public function statusLabel(): string
     {
         return match ($this->status) {
+            self::STATUS_HADIR => 'Hadir',
             self::STATUS_IZIN => 'Izin',
             self::STATUS_ALPHA => 'Alpha',
-            default => 'Hadir',
+            default => 'Diundang',
         };
     }
 }

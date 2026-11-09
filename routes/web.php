@@ -862,6 +862,8 @@ Route::middleware(['auth', 'permission:manage-tasks'])->group(function () {
         ->name('musyawaroh.store');
     Route::get('/musyawaroh/{musyawaroh}', [MusyawarohController::class, 'show'])
         ->name('musyawaroh.show');
+    Route::patch('/musyawaroh/{musyawaroh}/attendance', [MusyawarohController::class, 'updateAttendance'])
+        ->name('musyawaroh.attendance.update');
 });
 
 Route::middleware(['auth', 'permission:manage-users,approve-registrations'])->group(function () {

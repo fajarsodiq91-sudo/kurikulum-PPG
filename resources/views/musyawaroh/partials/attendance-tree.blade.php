@@ -1,8 +1,8 @@
 {{--
-    Recursive node of the attendance hierarchy: $node (key, label, groups, children), $level
+    Recursive node of the invite hierarchy: $node (key, label, groups, children), $level
     (0 = the user's own top node), and $collapsed (whether this node starts collapsed - daerah
     and desa start collapsed to avoid a wall of names, kelompok starts open). Each member gets
-    a 3-way Hadir/Izin/Alpha control; the search box above the tree filters by member name and
+    a single "invite" checkbox; the search box above the tree filters by member name and
     auto-expands any node containing a match.
 --}}
 <div class="rounded-lg border border-slate-200 p-3 {{ $level > 0 ? 'ml-4 mt-2 bg-slate-50/50' : 'mb-3' }}" data-attendance-node data-default-collapsed="{{ $collapsed ? '1' : '0' }}">
@@ -29,23 +29,10 @@
                                     <span class="text-xs text-slate-400">({{ $member->jabatan }})</span>
                                 @endif
                             </span>
-                            <div class="flex shrink-0 items-center gap-1" data-attendance-control>
-                                <div class="inline-flex overflow-hidden rounded-md border border-slate-300 text-[11px] font-medium">
-                                    <label class="cursor-pointer px-2 py-1 has-[:checked]:bg-emerald-100 has-[:checked]:text-emerald-700">
-                                        <input type="radio" name="attendance[{{ $member->user_id }}]" value="hadir" class="sr-only" data-group-member>
-                                        Hadir
-                                    </label>
-                                    <label class="cursor-pointer border-l border-slate-300 px-2 py-1 has-[:checked]:bg-amber-100 has-[:checked]:text-amber-700">
-                                        <input type="radio" name="attendance[{{ $member->user_id }}]" value="izin" class="sr-only">
-                                        Izin
-                                    </label>
-                                    <label class="cursor-pointer border-l border-slate-300 px-2 py-1 has-[:checked]:bg-rose-100 has-[:checked]:text-rose-700">
-                                        <input type="radio" name="attendance[{{ $member->user_id }}]" value="alpha" class="sr-only">
-                                        Alpha
-                                    </label>
-                                </div>
-                                <button type="button" data-clear-attendance class="px-1 text-slate-300 hover:text-slate-600" aria-label="Kosongkan">&times;</button>
-                            </div>
+                            <label class="flex shrink-0 cursor-pointer items-center gap-1.5 text-xs font-medium text-slate-600">
+                                <input type="checkbox" name="invitees[{{ $member->user_id }}]" value="1" class="h-4 w-4 rounded border-slate-300" data-group-member>
+                                Undang
+                            </label>
                         </div>
                     @endforeach
                 </div>

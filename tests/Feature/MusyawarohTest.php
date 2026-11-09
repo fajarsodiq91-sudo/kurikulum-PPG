@@ -129,7 +129,7 @@ class MusyawarohTest extends TestCase
             ->assertDontSee('data-default-collapsed="1"', false);
     }
 
-    public function test_a_musyawaroh_can_be_created_with_registered_attendees_and_manual_names(): void
+    public function test_a_musyawaroh_can_be_created_with_invited_attendees_and_manual_names(): void
     {
         $village = $this->makeVillage('Desa A');
         $group = $this->makeGroup($village, 'Kelompok A1');
@@ -140,7 +140,7 @@ class MusyawarohTest extends TestCase
             'title' => 'Musyawaroh Pengurus',
             'meeting_date' => '2026-11-10',
             'location' => 'Sekretariat',
-            'attendance' => [$kelompokUser->id => 'hadir'],
+            'invitees' => [$kelompokUser->id => '1'],
             'manual_names' => ['Tamu Undangan'],
         ]);
 
@@ -154,12 +154,12 @@ class MusyawarohTest extends TestCase
         $this->assertDatabaseHas('musyawaroh_attendees', [
             'musyawaroh_id' => $musyawaroh->id,
             'user_id' => $kelompokUser->id,
-            'status' => 'hadir',
+            'status' => MusyawarohAttendee::STATUS_DIUNDANG,
         ]);
         $this->assertDatabaseHas('musyawaroh_attendees', [
             'musyawaroh_id' => $musyawaroh->id,
             'manual_name' => 'Tamu Undangan',
-            'status' => 'hadir',
+            'status' => MusyawarohAttendee::STATUS_DIUNDANG,
         ]);
     }
 
@@ -175,7 +175,7 @@ class MusyawarohTest extends TestCase
         $this->actingAs($desaUser)->post('/musyawaroh', [
             'title' => 'Musyawaroh Pengurus',
             'meeting_date' => '2026-11-10',
-            'attendance' => [$kelompokUser->id => 'hadir'],
+            'invitees' => [$kelompokUser->id => '1'],
             'manual_names' => ['Tamu Undangan'],
         ]);
 
@@ -183,7 +183,7 @@ class MusyawarohTest extends TestCase
         Notification::assertNotSentTo($desaUser, MusyawarohInvited::class);
     }
 
-    public function test_a_musyawaroh_can_record_izin_and_alpha_for_attendees(): void
+    public function test_an_invited_attendees_presence_can_be_recorded_as_hadir_izin_or_alpha_after_creation(): void
     {
         $village = $this->makeVillage('Desa A');
         $group = $this->makeGroup($village, 'Kelompok A1');
@@ -193,18 +193,30 @@ class MusyawarohTest extends TestCase
 
         $this->actingAs($desaUser)->post('/musyawaroh', [
             'meeting_date' => '2026-11-10',
-            'attendance' => [
-                $izinUser->id => 'izin',
-                $alphaUser->id => 'alpha',
+            'invitees' => [
+                $izinUser->id => '1',
+                $alphaUser->id => '1',
             ],
         ])->assertRedirect();
 
         $musyawaroh = Musyawaroh::first();
-        $this->assertDatabaseHas('musyawaroh_attendees', ['musyawaroh_id' => $musyawaroh->id, 'user_id' => $izinUser->id, 'status' => 'izin']);
-        $this->assertDatabaseHas('musyawaroh_attendees', ['musyawaroh_id' => $musyawaroh->id, 'user_id' => $alphaUser->id, 'status' => 'alpha']);
+        $izinAttendee = MusyawarohAttendee::where('musyawaroh_id', $musyawaroh->id)->where('user_id', $izinUser->id)->first();
+        $alphaAttendee = MusyawarohAttendee::where('musyawaroh_id', $musyawaroh->id)->where('user_id', $alphaUser->id)->first();
+
+        $this->assertEquals(MusyawarohAttendee::STATUS_DIUNDANG, $izinAttendee->status);
+
+        $this->actingAs($desaUser)->patch("/musyawaroh/{$musyawaroh->id}/attendance", [
+            'status' => [
+                $izinAttendee->id => 'izin',
+                $alphaAttendee->id => 'alpha',
+            ],
+        ])->assertRedirect(route('musyawaroh.show', $musyawaroh));
+
+        $this->assertDatabaseHas('musyawaroh_attendees', ['id' => $izinAttendee->id, 'status' => 'izin']);
+        $this->assertDatabaseHas('musyawaroh_attendees', ['id' => $alphaAttendee->id, 'status' => 'alpha']);
     }
 
-    public function test_an_attendee_outside_the_creators_reach_is_silently_ignored(): void
+    public function test_an_invitee_outside_the_creators_reach_is_silently_ignored(): void
     {
         $villageA = $this->makeVillage('Desa A');
         $villageB = $this->makeVillage('Desa B');
@@ -215,7 +227,7 @@ class MusyawarohTest extends TestCase
 
         $this->actingAs($desaAUser)->post('/musyawaroh', [
             'meeting_date' => '2026-11-10',
-            'attendance' => [$kelompokB1User->id => 'hadir'],
+            'invitees' => [$kelompokB1User->id => '1'],
         ])->assertRedirect();
 
         $this->assertDatabaseCount('musyawaroh_attendees', 0);

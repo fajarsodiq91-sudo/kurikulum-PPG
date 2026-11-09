@@ -29,28 +29,48 @@
                     'hadir' => 'bg-emerald-100 text-emerald-700',
                     'izin' => 'bg-amber-100 text-amber-700',
                     'alpha' => 'bg-rose-100 text-rose-700',
+                    'diundang' => 'bg-slate-100 text-slate-500',
                 ];
                 $hadirCount = $musyawaroh->attendees->where('status', 'hadir')->count();
             @endphp
-            <h3 class="mb-4 text-sm font-semibold text-slate-700">
+            <h3 class="mb-1 text-sm font-semibold text-slate-700">
                 Daftar Hadir ({{ $hadirCount }}/{{ $musyawaroh->attendees->count() }})
             </h3>
+            <p class="mb-4 text-xs text-slate-500">Tandai Hadir/Izin/Alpha untuk setiap peserta yang diundang.</p>
             @if ($musyawaroh->attendees->isEmpty())
-                <p class="text-sm text-slate-400">Belum ada data kehadiran.</p>
+                <p class="text-sm text-slate-400">Belum ada peserta yang diundang.</p>
             @else
-                <ul class="space-y-2">
-                    @foreach ($musyawaroh->attendees->sortBy('status') as $attendee)
-                        <li class="flex items-center justify-between gap-2 text-sm text-slate-700">
-                            <span class="min-w-0 truncate">
-                                {{ $attendee->displayName() }}
-                                @if (! $attendee->user_id)
-                                    <span class="text-xs text-slate-400">(tamu)</span>
-                                @endif
-                            </span>
-                            <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium {{ $statusBadgeClass[$attendee->status] ?? 'bg-slate-100 text-slate-600' }}">{{ $attendee->statusLabel() }}</span>
-                        </li>
-                    @endforeach
-                </ul>
+                <form method="POST" action="{{ route('musyawaroh.attendance.update', $musyawaroh) }}" class="space-y-3">
+                    @csrf
+                    @method('PATCH')
+                    <ul class="space-y-2">
+                        @foreach ($musyawaroh->attendees->sortBy(fn ($attendee) => $attendee->displayName()) as $attendee)
+                            <li class="flex flex-wrap items-center justify-between gap-2 text-sm text-slate-700">
+                                <span class="min-w-0 truncate">
+                                    {{ $attendee->displayName() }}
+                                    @if (! $attendee->user_id)
+                                        <span class="text-xs text-slate-400">(tamu)</span>
+                                    @endif
+                                </span>
+                                <div class="inline-flex shrink-0 overflow-hidden rounded-md border border-slate-300 text-[11px] font-medium">
+                                    <label class="cursor-pointer px-2 py-1 has-[:checked]:bg-emerald-100 has-[:checked]:text-emerald-700">
+                                        <input type="radio" name="status[{{ $attendee->id }}]" value="hadir" class="sr-only" @checked($attendee->status === 'hadir')>
+                                        Hadir
+                                    </label>
+                                    <label class="cursor-pointer border-l border-slate-300 px-2 py-1 has-[:checked]:bg-amber-100 has-[:checked]:text-amber-700">
+                                        <input type="radio" name="status[{{ $attendee->id }}]" value="izin" class="sr-only" @checked($attendee->status === 'izin')>
+                                        Izin
+                                    </label>
+                                    <label class="cursor-pointer border-l border-slate-300 px-2 py-1 has-[:checked]:bg-rose-100 has-[:checked]:text-rose-700">
+                                        <input type="radio" name="status[{{ $attendee->id }}]" value="alpha" class="sr-only" @checked($attendee->status === 'alpha')>
+                                        Alpha
+                                    </label>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                    <button type="submit" class="w-full rounded-lg bg-brand-600 px-3 py-2 text-xs font-semibold text-white hover:bg-brand-700">Simpan Daftar Hadir</button>
+                </form>
             @endif
         </x-card>
 
