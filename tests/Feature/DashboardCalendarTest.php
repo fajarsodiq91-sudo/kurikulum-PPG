@@ -269,7 +269,7 @@ class DashboardCalendarTest extends TestCase
             ->assertOk()->assertSee('Rapat Akbar Tahunan');
     }
 
-    public function test_a_musyawaroh_shows_on_the_calendar_and_its_date_links_straight_to_it(): void
+    public function test_a_musyawaroh_shows_on_the_calendar_and_the_days_agenda_popup_links_to_it(): void
     {
         $role = Role::create(['name' => 'PPG', 'slug' => 'ppg', 'is_active' => true]);
         $role->permissions()->attach([
@@ -288,6 +288,11 @@ class DashboardCalendarTest extends TestCase
         $response = $this->actingAs($user)->get('/dashboard');
 
         $response->assertOk()->assertSee('Musyawaroh Pengurus');
+        // The day cell itself still navigates to the dashboard's own agenda popup for that date,
+        // not straight to the musyawaroh - clicking a date must surface everything happening that
+        // day, not just jump into one item.
+        $response->assertSee('date='.now()->toDateString(), false);
+        // The agenda popup (pre-rendered for today, since no ?date was given) links on to it.
         $response->assertSee(route('musyawaroh.show', $musyawaroh), false);
     }
 

@@ -56,7 +56,7 @@
             Referensi jadwal KBM default
             @if ($canCreateOwnSessions) dan jadwal KBM Anda. @endif
         @endif
-        Klik tanggal untuk melihat detail.
+        Klik tanggal untuk melihat agenda &amp; menambah event/musyawaroh.
     </p>
 
     <div class="mt-5 grid grid-cols-7 gap-px overflow-hidden rounded-xl border border-slate-200 bg-slate-200">
@@ -125,12 +125,10 @@
             @endphp
 
             @php
-                $dayHref = $dayMusyawarohs->isNotEmpty()
-                    ? route('musyawaroh.show', $dayMusyawarohs->first())
-                    : route('dashboard', ['month' => $calendarMonth->format('Y-m'), 'date' => $day->toDateString(), 'source' => $calendarSource, 'group_id' => $calendarGroupId]);
+                $dayHref = route('dashboard', ['month' => $calendarMonth->format('Y-m'), 'date' => $day->toDateString(), 'source' => $calendarSource, 'group_id' => $calendarGroupId]);
             @endphp
             @if ($isCurrentMonth)
-                <a href="{{ $dayHref }}" class="{{ $cellClasses }} transition hover:bg-slate-50" @if ($dayMusyawarohs->isNotEmpty()) title="Buka Musyawaroh" @endif>
+                <a href="{{ $dayHref }}" class="{{ $cellClasses }} transition hover:bg-slate-50" title="Lihat agenda tanggal ini">
             @else
                 <div class="{{ $cellClasses }}">
             @endif
@@ -193,8 +191,11 @@
         </div>
     @endif
 
-    <div class="mt-6 rounded-xl border border-slate-200 p-4">
-        <h3 class="font-semibold text-slate-950">{{ $selectedDate->translatedFormat('l, d F Y') }}</h3>
+    <div id="calendar-day-modal" data-has-date="{{ request()->has('date') ? '1' : '0' }}" class="fixed inset-0 z-50 hidden items-start justify-center overflow-y-auto bg-slate-900/50 p-4 pt-10 sm:items-center" role="dialog" aria-modal="true">
+        <div class="w-full max-w-lg">
+            <x-card class="relative max-h-[85vh] overflow-y-auto">
+                <button type="button" data-close-calendar-modal class="absolute right-4 top-4 text-xl leading-none text-slate-400 hover:text-slate-700" aria-label="Tutup">&times;</button>
+                <h3 class="font-semibold text-slate-950">{{ $selectedDate->translatedFormat('l, d F Y') }}</h3>
 
         @if ($selectedMusyawarohs->isNotEmpty())
             <div class="mt-3 space-y-2">
@@ -369,5 +370,52 @@
                 @endif
             </div>
         @endif
+            </x-card>
+        </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const modal = document.getElementById('calendar-day-modal');
+
+            if (!modal) {
+                return;
+            }
+
+            function openModal() {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+
+            function closeModal() {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+
+                const url = new URL(window.location.href);
+                url.searchParams.delete('date');
+                url.hash = '';
+                window.history.replaceState({}, '', url);
+            }
+
+            if (modal.dataset.hasDate === '1') {
+                openModal();
+            }
+
+            modal.querySelectorAll('[data-close-calendar-modal]').forEach(function (button) {
+                button.addEventListener('click', closeModal);
+            });
+
+            modal.addEventListener('click', function (event) {
+                if (event.target === modal) {
+                    closeModal();
+                }
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
+                    closeModal();
+                }
+            });
+        });
+    </script>
 </x-card>
