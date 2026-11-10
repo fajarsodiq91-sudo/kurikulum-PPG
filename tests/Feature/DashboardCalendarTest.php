@@ -93,6 +93,49 @@ class DashboardCalendarTest extends TestCase
             ->assertOk()->assertSee('Kalender KBM')->assertSee('Jadwal KBM Anda')->assertSee($classGrade->name);
     }
 
+    public function test_an_own_sessions_kontrol_harian_link_follows_its_schedules_tagged_categories(): void
+    {
+        $region = Region::create(['name' => 'Daerah Test', 'code' => 'RT', 'slug' => 'daerah-test', 'is_active' => true]);
+        $village = Village::create(['region_id' => $region->id, 'name' => 'Desa Test', 'code' => 'DT', 'slug' => 'desa-test', 'is_active' => true]);
+        $group = Group::create(['village_id' => $village->id, 'name' => 'Kelompok HNH', 'code' => 'HNH', 'slug' => 'hnh', 'is_active' => true]);
+        [$level, $academicYear, $semester] = $this->createActivePeriod();
+        $classGrade = ClassGrade::create(['level_id' => $level->id, 'name' => 'Kelas KBM 3', 'code' => 'KBM3', 'sort_order' => 3, 'is_active' => true]);
+
+        GroupDefaultSchedule::create([
+            'group_id' => $group->id,
+            'level_id' => $level->id,
+            'academic_year_id' => $academicYear->id,
+            'semester_id' => $semester->id,
+            'days_of_week' => [1, 2, 3, 4, 5, 6, 7],
+            'start_date' => now()->subMonth()->toDateString(),
+            'end_date' => now()->addMonths(6)->toDateString(),
+            'categories' => ['hafalan'],
+        ]);
+
+        LearningSession::create([
+            'level' => LearningSession::LEVEL_GROUP,
+            'group_id' => $group->id,
+            'village_id' => $village->id,
+            'class_grade_id' => $classGrade->id,
+            'session_date' => now()->toDateString(),
+            'status' => 'scheduled',
+        ]);
+
+        $role = Role::create(['name' => 'Pelaksana Kelompok', 'slug' => 'pelaksana-kelompok-'.$group->id, 'is_active' => true]);
+        $role->permissions()->attach([
+            Permission::firstOrCreate(['slug' => 'manage-own-learning-sessions'], ['name' => 'x', 'module' => 'x', 'is_active' => true])->id,
+            Permission::firstOrCreate(['slug' => 'view-dashboard'], ['name' => 'x', 'module' => 'x', 'is_active' => true])->id,
+            Permission::firstOrCreate(['slug' => 'manage-ujian'], ['name' => 'x', 'module' => 'x', 'is_active' => true])->id,
+        ]);
+        $user = User::create(['name' => 'Ahmad', 'email' => 'ahmad@ppg.test', 'password' => Hash::make('password123'), 'status' => 'active']);
+        $user->assignRole($role->id, 'group', $group->id);
+
+        $this->actingAs($user)->get('/dashboard')
+            ->assertOk()
+            ->assertSee(e(route('kontrol.hafalan', ['group_id' => $group->id, 'class_grade_id' => $classGrade->id])), false)
+            ->assertDontSee(e(route('kontrol.bacaan', ['group_id' => $group->id, 'class_grade_id' => $classGrade->id])), false);
+    }
+
     public function test_a_desa_user_can_create_and_see_their_own_village_level_session_from_the_calendar(): void
     {
         $region = Region::create(['name' => 'Daerah Test', 'code' => 'RT', 'slug' => 'daerah-test', 'is_active' => true]);

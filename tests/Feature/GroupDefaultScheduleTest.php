@@ -62,6 +62,28 @@ class GroupDefaultScheduleTest extends TestCase
         $this->assertDatabaseCount('group_default_schedule_exceptions', 0);
     }
 
+    public function test_a_kelompok_executor_can_tag_a_schedule_with_material_classifications(): void
+    {
+        [$level, $group] = $this->createContext();
+        $pelaksana = $this->createPelaksanaKelompok($group);
+
+        $this->actingAs($pelaksana)
+            ->put('/group-default-schedules', [
+                'level_id' => $level->id,
+                'days_of_week' => [1, 2, 3, 4, 5],
+                'start_date' => '2026-01-05',
+                'end_date' => '2026-06-30',
+                'categories' => ['bacaan', 'hafalan'],
+            ])
+            ->assertRedirect();
+
+        $schedule = GroupDefaultSchedule::first();
+        $this->assertSame(['bacaan', 'hafalan'], $schedule->categories);
+
+        $this->actingAs($pelaksana)->get('/group-default-schedules?level_id='.$level->id)
+            ->assertOk()->assertSee('Bacaan')->assertSee('Hafalan');
+    }
+
     public function test_a_user_without_the_permission_cannot_manage_a_group_default_schedule(): void
     {
         [$level] = $this->createContext();

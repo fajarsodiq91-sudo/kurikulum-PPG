@@ -26,10 +26,12 @@ class GroupDefaultSchedule extends Model
         'end_date',
         'start_time',
         'end_time',
+        'categories',
     ];
 
     protected $casts = [
         'days_of_week' => 'array',
+        'categories' => 'array',
         'start_date' => 'date',
         'end_date' => 'date',
     ];

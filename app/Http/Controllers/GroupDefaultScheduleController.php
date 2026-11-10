@@ -57,6 +57,8 @@ class GroupDefaultScheduleController extends Controller
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
             'start_time' => ['nullable', 'date_format:H:i'],
             'end_time' => ['nullable', 'date_format:H:i'],
+            'categories' => ['nullable', 'array'],
+            'categories.*' => ['string', Rule::in(array_keys(KontrolController::CATEGORIES))],
         ]);
 
         $semester = SemesterResolver::resolveFor(Carbon::parse($validated['start_date']));
@@ -80,6 +82,7 @@ class GroupDefaultScheduleController extends Controller
                 'end_date' => $validated['end_date'],
                 'start_time' => $validated['start_time'] ?? null,
                 'end_time' => $validated['end_time'] ?? null,
+                'categories' => array_values($validated['categories'] ?? []),
             ],
         );
 

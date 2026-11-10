@@ -59,6 +59,19 @@
                     </div>
                 </div>
 
+                <div>
+                    <span class="block text-sm font-medium mb-2">Klasifikasi Materi (opsional)</span>
+                    <p class="mb-2 text-xs text-slate-500">Centang klasifikasi materi yang akan diajarkan pada jadwal ini, supaya di hari H bisa langsung terhubung ke submenu Kontrol Harian terkait.</p>
+                    <div class="flex flex-wrap gap-4">
+                        @foreach (\App\Http\Controllers\KontrolController::CATEGORIES as $code => $label)
+                            <label class="inline-flex items-center gap-2 text-sm">
+                                <input type="checkbox" name="categories[]" value="{{ $code }}" @checked(collect(old('categories'))->contains($code)) class="rounded border-slate-300">
+                                {{ $label }}
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div>
                         <label class="block text-sm font-medium mb-2" for="start_date">Berlaku Mulai</label>
@@ -93,6 +106,9 @@
                             {{ collect($schedule->days_of_week)->map(fn ($d) => $days[$d])->join(', ') }}
                             @if ($schedule->start_time) · {{ substr($schedule->start_time, 0, 5) }}–{{ substr($schedule->end_time, 0, 5) }} @endif
                             · {{ $schedule->start_date->translatedFormat('d M Y') }} s/d {{ $schedule->end_date->translatedFormat('d M Y') }}
+                            @if (! empty($schedule->categories))
+                                · {{ collect($schedule->categories)->map(fn ($c) => \App\Http\Controllers\KontrolController::CATEGORIES[$c] ?? $c)->join(', ') }}
+                            @endif
                         </span>
                     </summary>
 

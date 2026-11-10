@@ -168,8 +168,11 @@ class DashboardController extends Controller
             'calendarClassGrades' => ($myGroupIds !== [] || $myVillageIds !== []) ? ClassGrade::where('is_active', true)->orderBy('sort_order')->get() : collect(),
             'selectedDate' => $selectedDate,
             'selectedPatterns' => $defaultSchedules->filter(fn ($pattern): bool => $pattern->appliesTo($selectedDate)),
-            'selectedOwnSessions' => $this->ownSessionsQuery($myGroupIds, $myVillageIds)
+            'selectedOwnSessions' => $selectedOwnSessions = $this->ownSessionsQuery($myGroupIds, $myVillageIds)
                 ?->where('session_date', $selectedDate->toDateString())->with('classGrade')->get() ?? collect(),
+            'selectedOwnSessionCategories' => $selectedOwnSessions->mapWithKeys(fn (LearningSession $session): array => [
+                $session->id => $this->kontrolCategoriesForSession($session, $activeAcademicYear, $activeSemester),
+            ]),
             'calendarEvents' => $calendarEvents,
             'calendarMusyawarohs' => $calendarMusyawarohs,
             'selectedEvents' => $calendarEvents->get($selectedDate->toDateString(), collect()),
@@ -240,6 +243,49 @@ class DashboardController extends Controller
                 $scoped->orWhere(fn (Builder $q) => $q->where('level', LearningSession::LEVEL_VILLAGE)->whereIn('village_id', $villageIds));
             }
         });
+    }
+
+    /**
+     * The material classifications (bacaan/hafalan/dst., per KontrolController::CATEGORIES)
+     * tagged on whichever default-schedule pattern this session was generated from — the
+     * group's own pattern for its jenjang when it has one, else the Daerah-wide pattern —
+     * so the calendar can link straight into the matching Kontrol Harian submenu(s). Falls
+     * back to 'bacaan' when the session's class has no resolvable jenjang or no pattern
+     * tags any classification, keeping the link that existed before this feature.
+     *
+     * @return list<string>
+     */
+    private function kontrolCategoriesForSession(LearningSession $session, ?AcademicYear $academicYear, ?Semester $semester): array
+    {
+        $levelId = $session->classGrade?->level_id;
+
+        if ($levelId === null || $academicYear === null || $semester === null) {
+            return ['bacaan'];
+        }
+
+        $sessionDate = Carbon::parse($session->session_date);
+        $pattern = null;
+
+        if ($session->level === LearningSession::LEVEL_GROUP && $session->group_id) {
+            $pattern = GroupDefaultSchedule::where('group_id', $session->group_id)
+                ->where('level_id', $levelId)
+                ->where('academic_year_id', $academicYear->id)
+                ->where('semester_id', $semester->id)
+                ->get()
+                ->first(fn (GroupDefaultSchedule $candidate): bool => $candidate->appliesTo($sessionDate));
+        }
+
+        if ($pattern === null) {
+            $pattern = DefaultSchedule::where('level_id', $levelId)
+                ->where('academic_year_id', $academicYear->id)
+                ->where('semester_id', $semester->id)
+                ->get()
+                ->first(fn (DefaultSchedule $candidate): bool => $candidate->appliesTo($sessionDate));
+        }
+
+        $categories = $pattern?->categories ?? [];
+
+        return $categories === [] ? ['bacaan'] : $categories;
     }
 
     /**

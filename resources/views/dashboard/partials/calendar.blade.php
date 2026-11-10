@@ -290,7 +290,9 @@
                             <div class="mt-2 flex flex-wrap gap-2">
                                 <a href="{{ route('learning-sessions.attendance.edit', $session) }}" class="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50">Isi Daftar Hadir &amp; Jurnal</a>
                                 @if ($canFillKontrolHarian && $session->group_id)
-                                    <a href="{{ route('kontrol.bacaan', ['group_id' => $session->group_id, 'class_grade_id' => $session->class_grade_id]) }}" class="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50">Kontrol Harian</a>
+                                    @foreach ($selectedOwnSessionCategories[$session->id] ?? ['bacaan'] as $category)
+                                        <a href="{{ route('kontrol.'.$category, ['group_id' => $session->group_id, 'class_grade_id' => $session->class_grade_id]) }}" class="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50">Kontrol {{ \App\Http\Controllers\KontrolController::CATEGORIES[$category] ?? $category }}</a>
+                                    @endforeach
                                 @endif
                             </div>
                         </div>
