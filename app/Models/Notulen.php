@@ -104,11 +104,16 @@ class Notulen extends Model
     }
 
     /**
-     * Checking a notulen item off is open to anyone who could see the musyawaroh it
-     * belongs to, not just its creator.
+     * Checking a notulen item off is open to anyone who could see it - for a musyawaroh
+     * notulen, that's anyone who could see the musyawaroh it belongs to; for a freeform
+     * note, the same vertical reach as {@see self::visibleTo()}. Not just its creator.
      */
     public function isCheckableBy(User $user): bool
     {
-        return $this->musyawaroh !== null && $this->musyawaroh->isVisibleTo($user);
+        if ($this->musyawaroh !== null) {
+            return $this->musyawaroh->isVisibleTo($user);
+        }
+
+        return static::query()->visibleTo($user)->whereKey($this->id)->exists();
     }
 }

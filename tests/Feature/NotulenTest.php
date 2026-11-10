@@ -166,4 +166,57 @@ class NotulenTest extends TestCase
 
         $this->assertEquals(2, Notulen::where('musyawaroh_id', $musyawaroh->id)->count());
     }
+
+    public function test_a_freeform_notulen_can_be_checked_off_by_anyone_within_the_creators_vertical_hierarchy(): void
+    {
+        $village = $this->makeVillage('Desa A');
+        $villageB = $this->makeVillage('Desa B');
+        $groupB1 = $this->makeGroup($villageB, 'Kelompok B1');
+        $desaUser = $this->makeUser('Desa A', $this->desaRole, 'village', $village->id);
+        $group = $this->makeGroup($village, 'Kelompok A1');
+        $kelompokUser = $this->makeUser('Kelompok A1', $this->kelompokRole, 'group', $group->id);
+        $outsiderUser = $this->makeUser('Kelompok B1', $this->kelompokRole, 'group', $groupB1->id);
+
+        $notulen = Notulen::create([
+            'title' => 'Catatan umum',
+            'content' => 'Catatan umum',
+            'created_by_id' => $desaUser->id,
+        ]);
+
+        $this->actingAs($outsiderUser)->patch("/notulen/{$notulen->id}/toggle")->assertForbidden();
+
+        $this->actingAs($kelompokUser)->patch("/notulen/{$notulen->id}/toggle")->assertRedirect();
+        $this->assertTrue($notulen->refresh()->is_done);
+    }
+
+    public function test_tasks_page_shows_notulen_progress_and_lets_filtering_by_status_and_category(): void
+    {
+        $village = $this->makeVillage('Desa A');
+        $desaUser = $this->makeUser('Desa A', $this->desaRole, 'village', $village->id);
+
+        Notulen::create([
+            'title' => 'Sudah selesai',
+            'content' => 'Sudah selesai',
+            'bucket' => 'Rapat A',
+            'created_by_id' => $desaUser->id,
+            'is_done' => true,
+        ]);
+        Notulen::create([
+            'title' => 'Belum selesai',
+            'content' => 'Belum selesai',
+            'bucket' => 'Rapat B',
+            'created_by_id' => $desaUser->id,
+        ]);
+
+        $response = $this->actingAs($desaUser)->get('/tasks');
+
+        $response->assertOk()
+            ->assertSee('Sudah Dikerjakan')
+            ->assertSee('Belum Dikerjakan')
+            ->assertSee('Rapat A')
+            ->assertSee('Rapat B')
+            ->assertSee('notulen-filter-search', false)
+            ->assertSee('notulen-filter-status', false)
+            ->assertSee('notulen-filter-bucket', false);
+    }
 }

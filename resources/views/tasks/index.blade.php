@@ -23,6 +23,10 @@
         $preselectedAssigneeId = request('assign_to');
         $notulenFormShouldOpen = $errors->has('content') || $errors->has('musyawaroh_id');
         $formShouldOpen = ($errors->any() && ! $notulenFormShouldOpen) || $preselectedAssigneeId !== null;
+        $notulenDoneCount = $notulens->where('is_done', true)->count();
+        $notulenTotal = $notulens->count();
+        $notulenProgressPercent = $notulenTotal > 0 ? (int) round($notulenDoneCount / $notulenTotal * 100) : 0;
+        $notulenBuckets = $notulens->map(fn ($notulen) => $notulen->bucket ?: 'Tanpa Kategori')->unique()->sort()->values();
     @endphp
 
     <div class="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
@@ -157,51 +161,118 @@
     @endif
 
     <div id="musyawaroh-view-notulen" class="{{ $notulenFormShouldOpen ? '' : 'hidden' }}">
+        <div class="mb-6 grid gap-4 sm:grid-cols-2">
+            <x-card class="p-4">
+                <p class="text-xs font-medium text-slate-500">Belum Dikerjakan</p>
+                <p class="mt-1 text-2xl font-bold text-slate-950">{{ $notulenTotal - $notulenDoneCount }}</p>
+            </x-card>
+            <x-card class="p-4">
+                <p class="text-xs font-medium text-slate-500">Sudah Dikerjakan</p>
+                <p class="mt-1 text-2xl font-bold text-slate-950">{{ $notulenDoneCount }}</p>
+            </x-card>
+        </div>
+
+        <x-card class="mb-6 p-4">
+            <div class="flex items-center justify-between text-xs font-medium text-slate-500">
+                <span>Progres Keseluruhan</span>
+                <span>{{ $notulenDoneCount }} / {{ $notulenTotal }} selesai ({{ $notulenProgressPercent }}%)</span>
+            </div>
+            <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                <div class="h-full rounded-full bg-emerald-500" style="width: {{ $notulenProgressPercent }}%"></div>
+            </div>
+        </x-card>
+
+        @if ($notulenTotal > 0)
+            <x-card class="mb-6 flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+                <input type="text" id="notulen-filter-search" placeholder="Cari judul atau isi notulen..." class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm sm:w-56">
+                <label class="flex items-center gap-2 text-sm text-slate-600">
+                    Status
+                    <select id="notulen-filter-status" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm">
+                        <option value="">Semua</option>
+                        <option value="done">Sudah Dikerjakan</option>
+                        <option value="todo">Belum Dikerjakan</option>
+                    </select>
+                </label>
+                <label class="flex items-center gap-2 text-sm text-slate-600">
+                    Kategori
+                    <select id="notulen-filter-bucket" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm">
+                        <option value="">Semua</option>
+                        @foreach ($notulenBuckets as $bucketOption)
+                            <option value="{{ $bucketOption }}">{{ $bucketOption }}</option>
+                        @endforeach
+                    </select>
+                </label>
+                <button type="button" id="notulen-filter-reset" class="text-sm font-medium text-slate-500 hover:text-slate-800 sm:ml-auto">Hapus Filter</button>
+            </x-card>
+        @endif
+
         @if ($notulens->isEmpty())
             <x-empty-state title="Belum ada notulen." class="mb-6 border-none bg-transparent" />
         @else
-            <x-card class="mb-6">
-                <h3 class="mb-4 text-sm font-semibold text-slate-700">Notulen Musyawaroh</h3>
-                <div class="space-y-4">
-                    @foreach ($notulens as $notulen)
-                        <div class="rounded-lg border border-slate-200 p-4">
-                            <div class="flex flex-wrap items-start justify-between gap-2">
-                                <div>
-                                    <div class="flex flex-wrap items-center gap-2">
-                                        <p class="font-medium text-slate-900">{{ $notulen->title }}</p>
-                                        @if ($notulen->status === \App\Models\Notulen::STATUS_FINAL)
-                                            <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700">Terkirim</span>
-                                        @else
-                                            <span class="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700">Draft</span>
-                                        @endif
-                                    </div>
-                                    <p class="mt-0.5 text-xs text-slate-500">
-                                        {{ $notulen->bucket ?: 'Tanpa Kategori' }}
-                                        @if ($notulen->meeting_date)
-                                            &middot; {{ $notulen->meeting_date->translatedFormat('d M Y') }}
-                                        @endif
-                                        &middot; oleh {{ $notulen->createdBy?->name ?? '-' }}
-                                    </p>
-                                    @if ($notulen->musyawaroh)
-                                        <a href="{{ route('musyawaroh.show', $notulen->musyawaroh) }}" class="mt-1 inline-block text-xs font-medium text-brand-600 hover:underline">
-                                            Bagian dari musyawaroh: {{ $notulen->musyawaroh->title ?: 'Musyawaroh' }} &rarr;
-                                        </a>
-                                    @endif
-                                </div>
-                                @if ($notulen->isEditableBy($user))
-                                    <form method="POST" action="{{ route('notulen.destroy', $notulen) }}" onsubmit="return confirm('Hapus notulen ini?')">
+            <x-card class="overflow-x-auto p-0">
+                <table class="min-w-full text-left text-sm">
+                    <thead class="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-400">
+                        <tr>
+                            <th class="w-10 px-4 py-3"><span class="sr-only">Selesai</span></th>
+                            <th class="px-4 py-3 font-semibold">Judul</th>
+                            <th class="px-4 py-3 font-semibold">Kategori</th>
+                            <th class="px-4 py-3 font-semibold">Musyawaroh</th>
+                            <th class="px-4 py-3 font-semibold">Status</th>
+                            <th class="px-4 py-3 font-semibold">Oleh</th>
+                            <th class="px-4 py-3"><span class="sr-only">Aksi</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($notulens as $notulen)
+                            @php $bucketLabel = $notulen->bucket ?: 'Tanpa Kategori'; @endphp
+                            <tr
+                                class="notulen-row border-b border-slate-100 last:border-0"
+                                data-done="{{ $notulen->is_done ? '1' : '0' }}"
+                                data-bucket="{{ $bucketLabel }}"
+                                data-search="{{ \Illuminate\Support\Str::lower($notulen->title.' '.$notulen->content) }}"
+                            >
+                                <td class="px-4 py-3">
+                                    <form method="POST" action="{{ route('notulen.toggle', $notulen) }}">
                                         @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-xs font-medium text-rose-600 hover:underline">Hapus</button>
+                                        @method('PATCH')
+                                        <input type="checkbox" onchange="this.form.requestSubmit()" @checked($notulen->is_done) class="h-4 w-4 rounded border-slate-300" aria-label="Tandai sudah dikerjakan">
                                     </form>
-                                @endif
-                            </div>
-                            @if ($notulen->content && $notulen->content !== $notulen->title)
-                                <p class="mt-2 whitespace-pre-line text-sm text-slate-600">{{ $notulen->content }}</p>
-                            @endif
-                        </div>
-                    @endforeach
-                </div>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <p class="font-medium {{ $notulen->is_done ? 'text-slate-400 line-through' : 'text-slate-900' }}">{{ $notulen->title }}</p>
+                                    @if ($notulen->content && $notulen->content !== $notulen->title)
+                                        <p class="mt-0.5 max-w-xs truncate text-xs text-slate-500">{{ $notulen->content }}</p>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3 text-slate-600">{{ $bucketLabel }}</td>
+                                <td class="px-4 py-3">
+                                    @if ($notulen->musyawaroh)
+                                        <a href="{{ route('musyawaroh.show', $notulen->musyawaroh) }}" class="text-xs font-medium text-brand-600 hover:underline">{{ $notulen->musyawaroh->title ?: 'Musyawaroh' }}</a>
+                                    @else
+                                        <span class="text-xs text-slate-400">-</span>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3">
+                                    @if ($notulen->status === \App\Models\Notulen::STATUS_FINAL)
+                                        <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700">Terkirim</span>
+                                    @else
+                                        <span class="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700">Draft</span>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3 text-slate-600">{{ $notulen->createdBy?->name ?? '-' }}</td>
+                                <td class="px-4 py-3 text-right">
+                                    @if ($notulen->isEditableBy($user))
+                                        <form method="POST" action="{{ route('notulen.destroy', $notulen) }}" onsubmit="return confirm('Hapus notulen ini?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="rounded-lg px-2 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50">Hapus</button>
+                                        </form>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </x-card>
         @endif
     </div>
@@ -576,6 +647,42 @@
             resetButton?.addEventListener('click', function () {
                 priorityFilter.value = '';
                 assigneeFilter.value = '';
+                applyFilters();
+            });
+        })();
+
+        (function () {
+            const searchInput = document.getElementById('notulen-filter-search');
+            const statusFilter = document.getElementById('notulen-filter-status');
+            const bucketFilter = document.getElementById('notulen-filter-bucket');
+            const resetButton = document.getElementById('notulen-filter-reset');
+
+            if (!searchInput || !statusFilter || !bucketFilter) {
+                return;
+            }
+
+            const rows = Array.from(document.querySelectorAll('.notulen-row'));
+
+            function applyFilters() {
+                const query = searchInput.value.trim().toLowerCase();
+                const status = statusFilter.value;
+                const bucket = bucketFilter.value;
+
+                rows.forEach(function (row) {
+                    const matchesSearch = query === '' || row.dataset.search.includes(query);
+                    const matchesStatus = status === '' || (status === 'done' ? row.dataset.done === '1' : row.dataset.done === '0');
+                    const matchesBucket = bucket === '' || row.dataset.bucket === bucket;
+                    row.hidden = !(matchesSearch && matchesStatus && matchesBucket);
+                });
+            }
+
+            searchInput.addEventListener('input', applyFilters);
+            statusFilter.addEventListener('change', applyFilters);
+            bucketFilter.addEventListener('change', applyFilters);
+            resetButton?.addEventListener('click', function () {
+                searchInput.value = '';
+                statusFilter.value = '';
+                bucketFilter.value = '';
                 applyFilters();
             });
         })();
