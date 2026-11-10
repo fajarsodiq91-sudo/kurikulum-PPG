@@ -23,13 +23,17 @@ class AdditionalRoleDecided extends Notification
         if ($this->approved) {
             return (new MailMessage)
                 ->subject('Pengajuan Peran Tambahan Disetujui')
-                ->greeting('Halo '.$notifiable->name.',')
-                ->line('Pengajuan peran tambahan Anda sebagai "'.$this->role->name.'" telah disetujui.');
+                ->greeting('Assalamu\'alaikum, '.$notifiable->name.'.')
+                ->line('Pengajuan peran tambahan Anda sebagai "'.$this->role->name.'" telah disetujui.')
+                ->line('Alhamdulillahi jaza kumullahu khoiro.')
+                ->salutation('Wassalamu\'alaikum warahmatullahi wabarakatuh.');
         }
 
         return (new MailMessage)
             ->subject('Pengajuan Peran Tambahan Ditolak')
-            ->greeting('Halo '.$notifiable->name.',')
-            ->line('Mohon maaf, pengajuan peran tambahan Anda sebagai "'.$this->role->name.'" tidak dapat disetujui. Silakan hubungi admin untuk informasi lebih lanjut.');
+            ->greeting('Assalamu\'alaikum, '.$notifiable->name.'.')
+            ->line('Mohon maaf, pengajuan peran tambahan Anda sebagai "'.$this->role->name.'" tidak dapat disetujui. Silakan hubungi admin untuk informasi lebih lanjut.')
+            ->line('Alhamdulillahi jaza kumullahu khoiro.')
+            ->salutation('Wassalamu\'alaikum warahmatullahi wabarakatuh.');
     }
 }

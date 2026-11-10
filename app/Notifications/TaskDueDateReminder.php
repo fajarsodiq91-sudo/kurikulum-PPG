@@ -23,19 +23,23 @@ class TaskDueDateReminder extends Notification
         $dueDate = $this->task->due_date->translatedFormat('d F Y');
 
         $mail = (new MailMessage)
-            ->greeting('Halo '.$notifiable->name.',')
+            ->greeting('Assalamu\'alaikum, '.$notifiable->name.'.')
             ->when($this->task->description !== null, fn (MailMessage $mail) => $mail->line($this->task->description))
             ->line('Tenggat: '.$dueDate)
             ->action('Lihat Tugas', route('tasks.index'));
 
         if ($this->daysRemaining > 0) {
             return $mail->subject('Pengingat Tenggat Tugas: '.$this->task->title)
-                ->line('Tugas "'.$this->task->title.'" akan berakhir dalam '.$this->daysRemaining.' hari lagi.');
+                ->line('Tugas "'.$this->task->title.'" akan berakhir dalam '.$this->daysRemaining.' hari lagi.')
+                ->line('Alhamdulillahi jaza kumullahu khoiro.')
+                ->salutation('Wassalamu\'alaikum warahmatullahi wabarakatuh.');
         }
 
         $daysOverdue = abs($this->daysRemaining);
 
         return $mail->subject('Tugas Terlambat: '.$this->task->title)
-            ->line('Tugas "'.$this->task->title.'" sudah melewati tenggat sejak '.$daysOverdue.' hari yang lalu dan belum diselesaikan.');
+            ->line('Tugas "'.$this->task->title.'" sudah melewati tenggat sejak '.$daysOverdue.' hari yang lalu dan belum diselesaikan.')
+            ->line('Alhamdulillahi jaza kumullahu khoiro.')
+            ->salutation('Wassalamu\'alaikum warahmatullahi wabarakatuh.');
     }
 }

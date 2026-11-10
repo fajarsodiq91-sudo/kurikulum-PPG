@@ -22,7 +22,7 @@ class MusyawarohInvited extends Notification
     {
         $message = (new MailMessage)
             ->subject('Undangan Musyawaroh'.($this->musyawaroh->title ? ': '.$this->musyawaroh->title : ''))
-            ->greeting('Halo '.$notifiable->name.',')
+            ->greeting('Assalamu\'alaikum, '.$notifiable->name.'.')
             ->line('Anda diundang untuk menghadiri musyawaroh'.($this->musyawaroh->title ? ' "'.$this->musyawaroh->title.'"' : '').'.')
             ->line('Hari & Tanggal: '.$this->musyawaroh->meeting_date->translatedFormat('l, d F Y'));
 
@@ -34,6 +34,8 @@ class MusyawarohInvited extends Notification
             $message->line('Lokasi: '.$this->musyawaroh->location);
         }
 
-        return $message->action('Lihat Detail Musyawaroh', route('musyawaroh.show', $this->musyawaroh));
+        return $message->action('Lihat Detail Musyawaroh', route('musyawaroh.show', $this->musyawaroh))
+            ->line('Alhamdulillahi jaza kumullahu khoiro.')
+            ->salutation('Wassalamu\'alaikum warahmatullahi wabarakatuh.');
     }
 }

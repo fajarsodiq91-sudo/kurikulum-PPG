@@ -22,8 +22,10 @@ class RegistrationSubmitted extends Notification
     {
         return (new MailMessage)
             ->subject('Pendaftaran Baru Menunggu Persetujuan')
-            ->greeting('Halo '.$notifiable->name.',')
+            ->greeting('Assalamu\'alaikum, '.$notifiable->name.'.')
             ->line($this->pending->name.' ('.$this->pending->email.') baru saja mendaftar dan menunggu persetujuan Anda.')
-            ->action('Tinjau Pendaftaran', route('registrations.pending'));
+            ->action('Tinjau Pendaftaran', route('registrations.pending'))
+            ->line('Alhamdulillahi jaza kumullahu khoiro.')
+            ->salutation('Wassalamu\'alaikum warahmatullahi wabarakatuh.');
     }
 }

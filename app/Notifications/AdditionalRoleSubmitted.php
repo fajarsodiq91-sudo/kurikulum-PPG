@@ -23,8 +23,10 @@ class AdditionalRoleSubmitted extends Notification
     {
         return (new MailMessage)
             ->subject('Pengajuan Peran Tambahan Menunggu Persetujuan')
-            ->greeting('Halo '.$notifiable->name.',')
+            ->greeting('Assalamu\'alaikum, '.$notifiable->name.'.')
             ->line($this->member->name.' ('.$this->member->email.') mengajukan peran tambahan "'.$this->role->name.'" dan menunggu persetujuan Anda.')
-            ->action('Tinjau Pengajuan', route('registrations.pending'));
+            ->action('Tinjau Pengajuan', route('registrations.pending'))
+            ->line('Alhamdulillahi jaza kumullahu khoiro.')
+            ->salutation('Wassalamu\'alaikum warahmatullahi wabarakatuh.');
     }
 }

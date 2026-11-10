@@ -29,8 +29,10 @@ class TaskStatusChanged extends Notification
 
         return (new MailMessage)
             ->subject('Status Tugas Diperbarui: '.$this->task->title)
-            ->greeting('Halo '.$notifiable->name.',')
+            ->greeting('Assalamu\'alaikum, '.$notifiable->name.'.')
             ->line($this->changedBy->name.' mengubah status tugas "'.$this->task->title.'" menjadi "'.($statusLabels[$this->task->status] ?? $this->task->status).'".')
-            ->action('Lihat Tugas', route('tasks.index'));
+            ->action('Lihat Tugas', route('tasks.index'))
+            ->line('Alhamdulillahi jaza kumullahu khoiro.')
+            ->salutation('Wassalamu\'alaikum warahmatullahi wabarakatuh.');
     }
 }

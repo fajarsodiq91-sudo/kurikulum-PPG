@@ -28,7 +28,7 @@ class MusyawarohNotulenSent extends Notification
     {
         $mail = (new MailMessage)
             ->subject('Resume Notulen Musyawaroh: '.($this->musyawaroh->title ?: 'Musyawaroh'))
-            ->greeting('Halo '.$notifiable->name.',')
+            ->greeting('Assalamu\'alaikum, '.$notifiable->name.'.')
             ->line($this->sentBy->name.' telah mengirimkan resume notulen musyawaroh'.($this->musyawaroh->title ? ' "'.$this->musyawaroh->title.'"' : '').' tanggal '.$this->musyawaroh->meeting_date->translatedFormat('d F Y').'.');
 
         foreach ($this->notulens as $index => $notulen) {
@@ -39,6 +39,8 @@ class MusyawarohNotulenSent extends Notification
             }
         }
 
-        return $mail->action('Lihat Musyawaroh', route('musyawaroh.show', $this->musyawaroh));
+        return $mail->action('Lihat Musyawaroh', route('musyawaroh.show', $this->musyawaroh))
+            ->line('Alhamdulillahi jaza kumullahu khoiro.')
+            ->salutation('Wassalamu\'alaikum warahmatullahi wabarakatuh.');
     }
 }

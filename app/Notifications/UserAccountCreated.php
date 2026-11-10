@@ -21,12 +21,14 @@ class UserAccountCreated extends Notification
     {
         return (new MailMessage)
             ->subject('Akun Anda Telah Dibuat')
-            ->greeting('Halo '.$notifiable->name.',')
+            ->greeting('Assalamu\'alaikum, '.$notifiable->name.'.')
             ->line('Admin telah membuatkan akun untuk Anda di aplikasi PPG Bidang Pendidikan Karawang Timur.')
             ->line('Berikut detail akun Anda:')
             ->line('Email: '.$notifiable->email)
             ->line('Kata Sandi: '.$this->plainPassword)
             ->action('Masuk ke Aplikasi', route('login'))
-            ->line('Demi keamanan, segera ganti kata sandi Anda setelah masuk.');
+            ->line('Demi keamanan, segera ganti kata sandi Anda setelah masuk.')
+            ->line('Alhamdulillahi jaza kumullahu khoiro.')
+            ->salutation('Wassalamu\'alaikum warahmatullahi wabarakatuh.');
     }
 }

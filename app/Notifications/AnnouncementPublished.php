@@ -22,13 +22,15 @@ class AnnouncementPublished extends Notification
     {
         $message = (new MailMessage)
             ->subject('Berita Baru: '.$this->announcement->title)
-            ->greeting('Halo '.$notifiable->name.',')
+            ->greeting('Assalamu\'alaikum, '.$notifiable->name.'.')
             ->line('Ada berita baru yang baru saja dipublikasikan: "'.$this->announcement->title.'".');
 
         if ($this->announcement->event_date) {
             $message->line('Tanggal acara: '.$this->announcement->event_date->translatedFormat('l, d F Y').'.');
         }
 
-        return $message->action('Lihat Berita', route('announcements.index'));
+        return $message->action('Lihat Berita', route('announcements.index'))
+            ->line('Alhamdulillahi jaza kumullahu khoiro.')
+            ->salutation('Wassalamu\'alaikum warahmatullahi wabarakatuh.');
     }
 }
