@@ -86,15 +86,19 @@
                 <p class="mb-2 text-xs text-slate-400">Pengurus lain yang hadir walau tidak diundang, atau orang di luar sistem - keduanya langsung tercatat Hadir.</p>
 
                 @if ($availableMembers->isNotEmpty())
-                    <form method="POST" action="{{ route('musyawaroh.attendees.store', $musyawaroh) }}" class="mb-2 flex gap-2">
+                    @php
+                        $availableMemberOptions = $availableMembers->map(fn ($member) => [
+                            'id' => $member->user_id,
+                            'name' => $member->user_name.($member->jabatan ? ' ('.$member->jabatan.')' : ''),
+                        ])->values();
+                    @endphp
+                    <form method="POST" action="{{ route('musyawaroh.attendees.store', $musyawaroh) }}" class="mb-2" data-member-search-form data-members="{{ $availableMemberOptions->toJson() }}">
                         @csrf
-                        <select name="user_id" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs">
-                            <option value="">Pilih pengurus...</option>
-                            @foreach ($availableMembers as $member)
-                                <option value="{{ $member->user_id }}">{{ $member->user_name }}@if ($member->jabatan) ({{ $member->jabatan }})@endif</option>
-                            @endforeach
-                        </select>
-                        <button type="submit" class="shrink-0 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-700">+ Hadir</button>
+                        <input type="hidden" name="user_id" data-member-search-value>
+                        <div class="relative">
+                            <input type="text" data-member-search-input autocomplete="off" placeholder="Ketik nama pengurus..." class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs">
+                            <div data-member-search-suggestions class="absolute z-10 mt-1 hidden max-h-56 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 text-xs shadow-lg"></div>
+                        </div>
                     </form>
                 @endif
 
@@ -276,6 +280,61 @@
                     const modal = button.closest('[role="dialog"]');
                     modal?.classList.add('hidden');
                     modal?.classList.remove('flex');
+                });
+            });
+
+            document.querySelectorAll('[data-member-search-form]').forEach(function (form) {
+                const members = JSON.parse(form.dataset.members || '[]');
+                const input = form.querySelector('[data-member-search-input]');
+                const suggestions = form.querySelector('[data-member-search-suggestions]');
+                const valueInput = form.querySelector('[data-member-search-value]');
+
+                function renderSuggestions() {
+                    const query = input.value.trim().toLowerCase();
+
+                    if (query === '') {
+                        suggestions.classList.add('hidden');
+                        suggestions.replaceChildren();
+
+                        return;
+                    }
+
+                    const matches = members.filter((member) => member.name.toLowerCase().includes(query)).slice(0, 8);
+
+                    suggestions.replaceChildren();
+
+                    if (matches.length === 0) {
+                        suggestions.classList.add('hidden');
+
+                        return;
+                    }
+
+                    matches.forEach(function (member) {
+                        const option = document.createElement('button');
+                        option.type = 'button';
+                        option.className = 'block w-full px-3 py-2 text-left hover:bg-slate-50';
+                        option.textContent = member.name;
+                        option.addEventListener('click', function () {
+                            valueInput.value = member.id;
+                            suggestions.classList.add('hidden');
+                            form.requestSubmit();
+                        });
+                        suggestions.appendChild(option);
+                    });
+
+                    suggestions.classList.remove('hidden');
+                }
+
+                input.addEventListener('input', function () {
+                    valueInput.value = '';
+                    renderSuggestions();
+                });
+                input.addEventListener('focus', renderSuggestions);
+
+                document.addEventListener('click', function (event) {
+                    if (!form.contains(event.target)) {
+                        suggestions.classList.add('hidden');
+                    }
                 });
             });
         });
