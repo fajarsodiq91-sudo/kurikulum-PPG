@@ -154,19 +154,56 @@ class DashboardCalendarTest extends TestCase
             ->assertSessionHasErrors('village_id');
     }
 
-    public function test_a_global_viewer_can_switch_to_the_kelompok_source_and_see_any_groups_own_schedule(): void
+    public function test_a_global_viewer_can_pick_a_group_and_see_its_own_schedule_override_the_daerah_one(): void
     {
         [$group, $level] = $this->createGroupWithOwnSchedule();
         $user = $this->createUserWithGlobalPermission('view-learning-sessions');
 
-        $this->actingAs($user)->get('/dashboard?source=kelompok&group_id='.$group->id)
+        $this->actingAs($user)->get('/dashboard?group_id='.$group->id)
             ->assertOk()
             ->assertSee('Kelompok')
             ->assertSee($group->name)
             ->assertSee($level->name);
     }
 
-    public function test_a_village_scoped_viewer_only_sees_their_own_villages_groups_for_the_kelompok_source(): void
+    public function test_a_groups_own_schedule_overrides_the_daerah_schedule_for_the_same_level_but_not_others(): void
+    {
+        [$group, $level, $village] = $this->createGroupWithOwnSchedule();
+        $academicYear = AcademicYear::first();
+        $semester = Semester::first();
+        $otherLevel = Level::create(['name' => 'Pra Remaja', 'code' => 'PR', 'sort_order' => 2, 'is_active' => true]);
+
+        DefaultSchedule::create([
+            'level_id' => $level->id,
+            'academic_year_id' => $academicYear->id,
+            'semester_id' => $semester->id,
+            'days_of_week' => [1, 2, 3, 4, 5],
+            'start_date' => now()->subMonth()->toDateString(),
+            'end_date' => now()->addMonths(6)->toDateString(),
+            'start_time' => '15:00',
+            'end_time' => '16:00',
+        ]);
+        DefaultSchedule::create([
+            'level_id' => $otherLevel->id,
+            'academic_year_id' => $academicYear->id,
+            'semester_id' => $semester->id,
+            'days_of_week' => [1, 2, 3, 4, 5],
+            'start_date' => now()->subMonth()->toDateString(),
+            'end_date' => now()->addMonths(6)->toDateString(),
+            'start_time' => '09:00',
+            'end_time' => '10:00',
+        ]);
+
+        $user = $this->createUserWithGlobalPermission('view-learning-sessions');
+
+        $response = $this->actingAs($user)->get('/dashboard?group_id='.$group->id);
+
+        // The group's own pattern for $level (09:00-...no time set) wins over the Daerah one (15:00-16:00),
+        // while the Daerah pattern for $otherLevel (09:00-10:00, no group override) still shows.
+        $response->assertOk()->assertDontSee('15:00–16:00')->assertSee('09:00–10:00')->assertSee($otherLevel->name);
+    }
+
+    public function test_a_village_scoped_viewer_only_sees_their_own_villages_groups_to_pick_from(): void
     {
         [$group, $level, $village] = $this->createGroupWithOwnSchedule();
 
@@ -198,12 +235,12 @@ class DashboardCalendarTest extends TestCase
         $user = User::create(['name' => 'Perwakilan Desa', 'email' => 'desa@ppg.test', 'password' => Hash::make('password123'), 'status' => 'active']);
         $user->assignRole($role->id, 'village', $village->id);
 
-        $response = $this->actingAs($user)->get('/dashboard?source=kelompok');
+        $response = $this->actingAs($user)->get('/dashboard');
 
         $response->assertOk()->assertSee($group->name)->assertDontSee($otherGroup->name);
     }
 
-    public function test_a_group_scoped_viewer_only_sees_their_own_group_for_the_kelompok_source(): void
+    public function test_a_group_scoped_viewer_only_sees_their_own_group_to_pick_from(): void
     {
         [$group, $level] = $this->createGroupWithOwnSchedule();
 
@@ -234,12 +271,12 @@ class DashboardCalendarTest extends TestCase
         $user = User::create(['name' => 'Pelaksana', 'email' => 'pelaksana@ppg.test', 'password' => Hash::make('password123'), 'status' => 'active']);
         $user->assignRole($role->id, 'group', $group->id);
 
-        $response = $this->actingAs($user)->get('/dashboard?source=kelompok');
+        $response = $this->actingAs($user)->get('/dashboard');
 
         $response->assertOk()->assertSee($group->name)->assertDontSee($otherGroup->name);
     }
 
-    public function test_a_guest_does_not_see_the_kelompok_toggle(): void
+    public function test_a_guest_does_not_see_any_kelompok_schedule(): void
     {
         [$group] = $this->createGroupWithOwnSchedule();
 
@@ -249,8 +286,8 @@ class DashboardCalendarTest extends TestCase
             ['name' => 'View Dashboard', 'module' => 'dashboard', 'is_active' => true],
         )->id);
 
-        // Even requesting it directly falls back to the Daerah source, since no groups are in scope.
-        $this->get('/dashboard?source=kelompok')->assertOk()->assertDontSee($group->name);
+        // No groups are in scope, so nothing to pick from and no group override applies.
+        $this->get('/dashboard')->assertOk()->assertDontSee($group->name);
     }
 
     public function test_a_published_event_shows_on_the_calendar_on_its_event_date(): void

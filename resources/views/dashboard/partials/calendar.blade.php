@@ -11,42 +11,36 @@
     <div class="mt-1 flex flex-wrap items-center gap-3">
         <a href="{{ route('dashboard') }}" class="rounded-full border border-slate-300 px-4 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Hari Ini</a>
         <div class="flex items-center">
-            <a href="{{ route('dashboard', ['month' => $calendarMonth->copy()->subMonth()->format('Y-m'), 'source' => $calendarSource, 'group_id' => $calendarGroupId]) }}" class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100" aria-label="Bulan sebelumnya">
+            <a href="{{ route('dashboard', ['month' => $calendarMonth->copy()->subMonth()->format('Y-m'), 'group_id' => $calendarGroupId]) }}" class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100" aria-label="Bulan sebelumnya">
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
             </a>
-            <a href="{{ route('dashboard', ['month' => $calendarMonth->copy()->addMonth()->format('Y-m'), 'source' => $calendarSource, 'group_id' => $calendarGroupId]) }}" class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100" aria-label="Bulan berikutnya">
+            <a href="{{ route('dashboard', ['month' => $calendarMonth->copy()->addMonth()->format('Y-m'), 'group_id' => $calendarGroupId]) }}" class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100" aria-label="Bulan berikutnya">
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
             </a>
         </div>
         <h2 class="text-xl font-semibold text-slate-950">{{ $calendarMonth->translatedFormat('F Y') }}</h2>
     </div>
 
-    @if ($calendarGroups->isNotEmpty())
+    @if ($calendarGroups->count() > 1)
         <div class="mt-3 flex flex-wrap items-center gap-3">
-            <div class="inline-flex rounded-full border border-slate-300 p-0.5 text-sm font-medium">
-                <a href="{{ route('dashboard', ['month' => $calendarMonth->format('Y-m'), 'date' => $selectedDate->toDateString(), 'source' => 'daerah']) }}" class="rounded-full px-3 py-1 {{ $calendarSource === 'daerah' ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-50' }}">Daerah</a>
-                <a href="{{ route('dashboard', ['month' => $calendarMonth->format('Y-m'), 'date' => $selectedDate->toDateString(), 'source' => 'kelompok']) }}" class="rounded-full px-3 py-1 {{ $calendarSource === 'kelompok' ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-50' }}">Kelompok</a>
-            </div>
-
-            @if ($calendarSource === 'kelompok')
-                <form method="GET" action="{{ route('dashboard') }}" class="flex items-center gap-2">
-                    <input type="hidden" name="month" value="{{ $calendarMonth->format('Y-m') }}">
-                    <input type="hidden" name="date" value="{{ $selectedDate->toDateString() }}">
-                    <input type="hidden" name="source" value="kelompok">
-                    <select name="group_id" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm">
-                        @foreach ($calendarGroups as $group)
-                            <option value="{{ $group->id }}" @selected($calendarGroupId === $group->id)>{{ $group->name }}</option>
-                        @endforeach
-                    </select>
-                    <button type="submit" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Tampilkan</button>
-                </form>
-            @endif
+            <form method="GET" action="{{ route('dashboard') }}" class="flex items-center gap-2">
+                <input type="hidden" name="month" value="{{ $calendarMonth->format('Y-m') }}">
+                <input type="hidden" name="date" value="{{ $selectedDate->toDateString() }}">
+                <label class="text-sm font-medium text-slate-600" for="calendar-group-select">Kelompok</label>
+                <select id="calendar-group-select" name="group_id" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm">
+                    <option value="">-- Umum (Daerah) --</option>
+                    @foreach ($calendarGroups as $group)
+                        <option value="{{ $group->id }}" @selected($calendarGroupId === $group->id)>{{ $group->name }}</option>
+                    @endforeach
+                </select>
+                <button type="submit" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Tampilkan</button>
+            </form>
         </div>
     @endif
 
     <p class="mt-2 text-sm text-slate-500">
-        @if ($calendarSource === 'kelompok')
-            Jadwal KBM default kelompok {{ $calendarGroups->firstWhere('id', $calendarGroupId)?->name }}.
+        @if ($calendarGroupId)
+            Jadwal KBM {{ $calendarGroups->firstWhere('id', $calendarGroupId)?->name }}: jenjang yang sudah punya jadwal kelompok menggantikan jadwal Daerah, jenjang lainnya tetap memakai jadwal Daerah.
             @if ($canManageOwnDefaultSchedule)
                 <a href="{{ route('group-default-schedules.index') }}" class="font-semibold text-brand-700 hover:text-brand-900">Atur jadwal KBM default kelompok Anda</a>.
             @endif
@@ -125,7 +119,7 @@
             @endphp
 
             @php
-                $dayHref = route('dashboard', ['month' => $calendarMonth->format('Y-m'), 'date' => $day->toDateString(), 'source' => $calendarSource, 'group_id' => $calendarGroupId]);
+                $dayHref = route('dashboard', ['month' => $calendarMonth->format('Y-m'), 'date' => $day->toDateString(), 'group_id' => $calendarGroupId]);
             @endphp
             @if ($isCurrentMonth)
                 <a href="{{ $dayHref }}" class="{{ $cellClasses }} transition hover:bg-slate-50" title="Lihat agenda tanggal ini">
@@ -240,56 +234,44 @@
             </div>
         @endif
 
-        @if ($calendarSource === 'daerah' && $canManageDefault)
-            <div class="mt-3 space-y-2">
-                @forelse ($selectedPatterns as $pattern)
-                    @php($exception = $pattern->exceptionOn($selectedDate))
-                    <div class="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm">
-                        <span class="flex items-center gap-2">
-                            <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full {{ $levelDotFor($pattern->level_id) }}">
-                                <x-level-icon :code="$pattern->level->code" class="h-4 w-4 text-white" />
-                            </span>
-                            {{ $pattern->level->name }}
-                            @if ($pattern->start_time) <span class="text-slate-500">· {{ substr($pattern->start_time, 0, 5) }}–{{ substr($pattern->end_time, 0, 5) }}</span> @endif
-                            @if ($exception) <span class="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-600">Libur</span> @endif
+        <div class="mt-3 space-y-2">
+            <h4 class="text-sm font-semibold text-slate-700">Jadwal KBM Default</h4>
+            @forelse ($selectedPatterns as $pattern)
+                @php
+                    $exception = $pattern->exceptionOn($selectedDate);
+                    $isGroupPattern = $pattern instanceof \App\Models\GroupDefaultSchedule;
+                    $canManageThisPattern = $isGroupPattern ? $canManageOwnDefaultSchedule : $canManageDefault;
+                @endphp
+                <div class="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                    <span class="flex items-center gap-2">
+                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full {{ $levelDotFor($pattern->level_id) }}">
+                            <x-level-icon :code="$pattern->level->code" class="h-4 w-4 text-white" />
                         </span>
+                        {{ $pattern->level->name }}
+                        @if ($isGroupPattern) <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">Kelompok</span> @endif
+                        @if ($pattern->start_time) <span class="text-slate-500">· {{ substr($pattern->start_time, 0, 5) }}–{{ substr($pattern->end_time, 0, 5) }}</span> @endif
+                        @if ($exception) <span class="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-600">Libur</span> @endif
+                    </span>
+                    @if ($canManageThisPattern)
                         @if ($exception)
-                            <form method="POST" action="{{ route('default-schedules.exceptions.destroy', $exception) }}">
+                            <form method="POST" action="{{ route($isGroupPattern ? 'group-default-schedules.exceptions.destroy' : 'default-schedules.exceptions.destroy', $exception) }}">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="text-xs font-semibold text-brand-700 hover:text-brand-900">Batalkan libur</button>
                             </form>
                         @else
-                            <form method="POST" action="{{ route('default-schedules.exceptions.store', $pattern) }}">
+                            <form method="POST" action="{{ route($isGroupPattern ? 'group-default-schedules.exceptions.store' : 'default-schedules.exceptions.store', $pattern) }}">
                                 @csrf
                                 <input type="hidden" name="exception_date" value="{{ $selectedDate->toDateString() }}">
                                 <button type="submit" class="text-xs font-semibold text-rose-600 hover:text-rose-700">Liburkan tanggal ini</button>
                             </form>
                         @endif
-                    </div>
-                @empty
-                    <p class="text-sm text-slate-500">Tidak ada jadwal KBM default pada tanggal ini.</p>
-                @endforelse
-            </div>
-        @endif
-
-        @if (! ($calendarSource === 'daerah' && $canManageDefault))
-            <div class="mt-3 space-y-2">
-                <h4 class="text-sm font-semibold text-slate-700">{{ $calendarSource === 'kelompok' ? 'Jadwal KBM Default Kelompok' : 'Jadwal KBM Default' }}</h4>
-                @forelse ($selectedPatterns as $pattern)
-                    <div class="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm">
-                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full {{ $levelDotFor($pattern->level_id) }}">
-                            <x-level-icon :code="$pattern->level->code" class="h-4 w-4 text-white" />
-                        </span>
-                        {{ $pattern->level->name }}
-                        @if ($pattern->start_time) <span class="text-slate-500">· {{ substr($pattern->start_time, 0, 5) }}–{{ substr($pattern->end_time, 0, 5) }}</span> @endif
-                        @if ($pattern->exceptionOn($selectedDate)) <span class="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-600">Libur</span> @endif
-                    </div>
-                @empty
-                    <p class="text-sm text-slate-500">Tidak ada jadwal KBM default pada tanggal ini.</p>
-                @endforelse
-            </div>
-        @endif
+                    @endif
+                </div>
+            @empty
+                <p class="text-sm text-slate-500">Tidak ada jadwal KBM default pada tanggal ini.</p>
+            @endforelse
+        </div>
 
         @if ($canCreateOwnSessions)
             <div class="mt-4 border-t border-slate-100 pt-4">

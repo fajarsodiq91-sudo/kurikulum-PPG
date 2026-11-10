@@ -12,18 +12,23 @@
     </div>
 
     <section class="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <form method="GET" action="{{ route('group-default-schedules.index') }}" class="flex flex-wrap items-end gap-4">
-            <div>
-                <label class="block text-sm font-medium mb-2" for="level_id">Jenjang</label>
-                <select id="level_id" name="level_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                    <option value="">-- Pilih --</option>
-                    @foreach ($levels as $level)
-                        <option value="{{ $level->id }}" @selected($levelId == $level->id)>{{ $level->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <button type="submit" class="rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-800">Tampilkan</button>
-        </form>
+        @if ($levels->count() === 1)
+            <p class="text-sm text-slate-600">Jenjang kelas Anda: <span class="font-semibold text-slate-950">{{ $levels->first()->name }}</span></p>
+            <a href="{{ route('group-default-schedules.index', ['level_id' => $levels->first()->id]) }}" class="mt-2 inline-block rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-800">Tampilkan</a>
+        @else
+            <form method="GET" action="{{ route('group-default-schedules.index') }}" class="flex flex-wrap items-end gap-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2" for="level_id">Jenjang</label>
+                    <select id="level_id" name="level_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                        <option value="">-- Pilih --</option>
+                        @foreach ($levels as $level)
+                            <option value="{{ $level->id }}" @selected($levelId == $level->id)>{{ $level->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <button type="submit" class="rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-800">Tampilkan</button>
+            </form>
+        @endif
     </section>
 
     @if ($levelId)

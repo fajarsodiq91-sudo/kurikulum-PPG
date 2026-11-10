@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\AcademicYear;
+use App\Models\ClassGrade;
 use App\Models\Group;
 use App\Models\GroupDefaultSchedule;
 use App\Models\GroupDefaultScheduleException;
@@ -11,6 +12,7 @@ use App\Models\Permission;
 use App\Models\Region;
 use App\Models\Role;
 use App\Models\Semester;
+use App\Models\Teacher;
 use App\Models\User;
 use App\Models\Village;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -95,6 +97,46 @@ class GroupDefaultScheduleTest extends TestCase
         $this->actingAs($pelaksana)
             ->post("/group-default-schedules/{$otherSchedule->id}/exceptions", ['exception_date' => '2026-01-05'])
             ->assertForbidden();
+    }
+
+    public function test_a_teacher_can_set_the_default_schedule_for_their_own_group_restricted_to_their_classs_level(): void
+    {
+        [$level, $group] = $this->createContext();
+        $otherLevel = Level::create(['name' => 'Pra Remaja', 'code' => 'PR', 'sort_order' => 2, 'is_active' => true]);
+        $classGrade = ClassGrade::create(['level_id' => $level->id, 'name' => 'Kelas KBM 1', 'code' => 'KBM1', 'sort_order' => 1, 'is_active' => true]);
+
+        $teacher = Teacher::create([
+            'registration_number' => 'GR-001',
+            'name' => 'Pak Guru',
+            'gender' => 'male',
+            'group_id' => $group->id,
+            'status' => 'active',
+        ]);
+        $teacher->classGrades()->attach($classGrade->id);
+        $guru = User::where('username', 'GR-001')->first();
+
+        $this->actingAs($guru)->get('/group-default-schedules')
+            ->assertOk()->assertSee($level->name)->assertDontSee($otherLevel->name);
+
+        $this->actingAs($guru)
+            ->put('/group-default-schedules', [
+                'level_id' => $level->id,
+                'days_of_week' => [1, 2, 3],
+                'start_date' => '2026-01-05',
+                'end_date' => '2026-06-30',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('group_default_schedules', ['group_id' => $group->id, 'level_id' => $level->id]);
+
+        $this->actingAs($guru)
+            ->put('/group-default-schedules', [
+                'level_id' => $otherLevel->id,
+                'days_of_week' => [1],
+                'start_date' => '2026-01-05',
+                'end_date' => '2026-06-30',
+            ])
+            ->assertSessionHasErrors('level_id');
     }
 
     /**

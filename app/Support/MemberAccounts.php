@@ -32,6 +32,7 @@ class MemberAccounts
         'manage-munaqosah',
         'manage-ujian',
         'manage-parent-communications',
+        'manage-own-default-schedule',
     ];
 
     public static function forGenerus(Generus $generus): void

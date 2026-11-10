@@ -75,10 +75,11 @@ class DashboardController extends Controller
     }
 
     /**
-     * Month-grid data for the dashboard calendar: either the Daerah-wide default-schedule
-     * patterns, or one kelompok's own default-schedule patterns (toggled via ?source=), which
-     * of the viewer's own group's ad-hoc sessions (Kelompok) land on each day, and the detail
-     * panel for whichever single date is selected (defaults to today).
+     * Month-grid data for the dashboard calendar: the Daerah-wide default-schedule patterns,
+     * automatically overridden per jenjang by the viewed kelompok's own default-schedule
+     * patterns wherever it has set one, which of the viewer's own group's ad-hoc sessions
+     * (Kelompok) land on each day, and the detail panel for whichever single date is selected
+     * (defaults to today).
      *
      * @return array{calendarMonth: Carbon, calendarDays: list<Carbon>, defaultSchedules: Collection, canManageDefault: bool, canCreateOwnSessions: bool, ownSessions: Collection}
      */
@@ -91,26 +92,37 @@ class DashboardController extends Controller
         $myGroupIds = $ownPlacements['group_id'] ?? [];
         $myVillageIds = $ownPlacements['village_id'] ?? [];
         $ownGroupIdsForSchedule = $user?->scopedPlacementIds(GroupDefaultScheduleController::PERMISSION)['group_id'] ?? [];
+        $teacherGroupId = $user?->teacher?->group_id;
 
-        $calendarGroups = $this->groupsWithOwnSchedule($user, $ownGroupIdsForSchedule);
-        $calendarSource = $request->string('source')->value() === 'kelompok' && $calendarGroups->isNotEmpty() ? 'kelompok' : 'daerah';
-        $calendarGroupId = $calendarSource === 'kelompok'
-            ? ($calendarGroups->firstWhere('id', $request->integer('group_id'))?->id ?? $calendarGroups->first()->id)
-            : null;
+        if ($teacherGroupId !== null) {
+            $ownGroupIdsForSchedule = array_values(array_unique([...$ownGroupIdsForSchedule, $teacherGroupId]));
+        }
 
-        $defaultSchedules = $calendarSource === 'kelompok'
+        $calendarGroups = $this->visibleGroups($user, $ownGroupIdsForSchedule);
+        $calendarGroupId = $calendarGroups->firstWhere('id', $request->integer('group_id'))?->id
+            ?? $calendarGroups->firstWhere('id', $ownGroupIdsForSchedule[0] ?? null)?->id
+            ?? ($calendarGroups->count() === 1 ? $calendarGroups->first()->id : null);
+
+        $daerahSchedules = ($activeAcademicYear && $activeSemester)
+            ? DefaultSchedule::with(['level', 'exceptions'])
+                ->where('academic_year_id', $activeAcademicYear->id)
+                ->where('semester_id', $activeSemester->id)
+                ->get()
+            : collect();
+
+        $groupSchedules = ($calendarGroupId && $activeAcademicYear && $activeSemester)
             ? GroupDefaultSchedule::with(['level', 'exceptions'])
                 ->where('group_id', $calendarGroupId)
-                ->when($activeAcademicYear && $activeSemester, fn ($query) => $query
-                    ->where('academic_year_id', $activeAcademicYear->id)
-                    ->where('semester_id', $activeSemester->id))
+                ->where('academic_year_id', $activeAcademicYear->id)
+                ->where('semester_id', $activeSemester->id)
                 ->get()
-            : (($activeAcademicYear && $activeSemester)
-                ? DefaultSchedule::with(['level', 'exceptions'])
-                    ->where('academic_year_id', $activeAcademicYear->id)
-                    ->where('semester_id', $activeSemester->id)
-                    ->get()
-                : collect());
+            : collect();
+
+        $overriddenLevelIds = $groupSchedules->pluck('level_id')->all();
+        $defaultSchedules = $daerahSchedules
+            ->reject(fn ($pattern) => in_array($pattern->level_id, $overriddenLevelIds, true))
+            ->concat($groupSchedules)
+            ->values();
 
         $ownSessionsQuery = $this->ownSessionsQuery($myGroupIds, $myVillageIds);
 
@@ -144,7 +156,6 @@ class DashboardController extends Controller
             'calendarMonth' => $calendarMonth,
             'calendarDays' => $this->buildCalendarDays($calendarMonth),
             'defaultSchedules' => $defaultSchedules,
-            'calendarSource' => $calendarSource,
             'calendarGroups' => $calendarGroups,
             'calendarGroupId' => $calendarGroupId,
             'canManageOwnDefaultSchedule' => in_array($calendarGroupId, $ownGroupIdsForSchedule, true),
@@ -232,20 +243,20 @@ class DashboardController extends Controller
     }
 
     /**
-     * Groups whose own default schedule the viewer may look at on the calendar: every group
-     * with a pattern for a Daerah-wide (global) viewer, the groups in a desa-scoped viewer's
-     * own village, and a kelompok-scoped viewer's own group.
+     * Groups the viewer may pick on the calendar to see whether that kelompok overrides the
+     * Daerah-wide schedule: every active group for a Daerah-wide (global) viewer, the groups
+     * in a desa-scoped viewer's own village, and a kelompok-scoped/teacher viewer's own group.
      *
      * @param  list<int>  $ownGroupIds
      * @return Collection<int, Group>
      */
-    private function groupsWithOwnSchedule(?User $user, array $ownGroupIds): Collection
+    private function visibleGroups(?User $user, array $ownGroupIds): Collection
     {
         if ($user === null) {
             return collect();
         }
 
-        $query = Group::query()->whereHas('defaultSchedules')->orderBy('name');
+        $query = Group::query()->where('is_active', true)->orderBy('name');
         $activeScopes = $user->activeScopes();
 
         if ($activeScopes->contains('type', 'global')) {

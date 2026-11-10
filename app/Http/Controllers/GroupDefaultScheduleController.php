@@ -9,6 +9,8 @@ use App\Support\SemesterResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class GroupDefaultScheduleController extends Controller
@@ -18,7 +20,12 @@ class GroupDefaultScheduleController extends Controller
     public function index(Request $request): View
     {
         $groupId = $this->ownGroupId($request);
+        $allowedLevels = $this->allowedLevels($request);
         $levelId = $request->integer('level_id') ?: null;
+
+        if ($levelId !== null && ! $allowedLevels->contains('id', $levelId)) {
+            $levelId = null;
+        }
 
         $schedules = ($groupId && $levelId)
             ? GroupDefaultSchedule::with(['exceptions', 'academicYear', 'semester'])
@@ -30,7 +37,7 @@ class GroupDefaultScheduleController extends Controller
             : collect();
 
         return view('group-default-schedules.index', [
-            'levels' => Level::where('is_active', true)->orderBy('sort_order')->get(),
+            'levels' => $allowedLevels,
             'days' => DefaultScheduleController::DAYS,
             'levelId' => $levelId,
             'schedules' => $schedules,
@@ -40,9 +47,10 @@ class GroupDefaultScheduleController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $groupId = $this->ownGroupIdOrAbort($request);
+        $allowedLevelIds = $this->allowedLevels($request)->pluck('id')->all();
 
         $validated = $request->validate([
-            'level_id' => ['required', 'exists:levels,id'],
+            'level_id' => ['required', 'exists:levels,id', Rule::in($allowedLevelIds)],
             'days_of_week' => ['required', 'array', 'min:1'],
             'days_of_week.*' => ['integer', 'min:1', 'max:7'],
             'start_date' => ['required', 'date'],
@@ -110,9 +118,32 @@ class GroupDefaultScheduleController extends Controller
 
     private function ownGroupId(Request $request): ?int
     {
-        $groupIds = $request->user()?->scopedPlacementIds(self::PERMISSION)['group_id'] ?? [];
+        $user = $request->user();
+        $groupIds = $user?->scopedPlacementIds(self::PERMISSION)['group_id'] ?? [];
 
-        return $groupIds[0] ?? null;
+        return $groupIds[0] ?? $user?->teacher?->group_id ?? null;
+    }
+
+    /**
+     * Levels this user may set a group default schedule for: every active level for a
+     * non-teacher (Kelompok executor), or only the levels of the classes a teacher is
+     * assigned to (every active level when the teacher has no specific class assignment).
+     *
+     * @return Collection<int, Level>
+     */
+    private function allowedLevels(Request $request): Collection
+    {
+        $levels = Level::where('is_active', true)->orderBy('sort_order')->get();
+
+        $teacher = $request->user()?->teacher;
+
+        if ($teacher === null) {
+            return $levels;
+        }
+
+        $levelIds = $teacher->classGrades->pluck('level_id')->filter()->unique();
+
+        return $levelIds->isEmpty() ? $levels : $levels->whereIn('id', $levelIds);
     }
 
     private function ownGroupIdOrAbort(Request $request): int
