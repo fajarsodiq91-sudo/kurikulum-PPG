@@ -117,7 +117,7 @@
                 <x-card class="relative">
                     <button type="button" class="absolute right-4 top-4 text-xl leading-none text-slate-400 hover:text-slate-700" aria-label="Tutup" data-create-notulen-close>&times;</button>
                     <h2 id="create-notulen-title" class="mb-4 text-xl font-semibold">Tambah Notulen</h2>
-                    <p class="mb-4 text-sm text-slate-500">Pilih musyawaroh agar notulen ini jadi bagian ceklis notulen musyawaroh tersebut (satu musyawaroh bisa punya banyak ceklis). Kosongkan jika ini catatan umum yang tidak terkait musyawaroh.</p>
+                    <p class="mb-4 text-sm text-slate-500">Pilih musyawaroh agar notulen ini jadi bagian ceklis notulen musyawaroh tersebut (satu musyawaroh bisa punya banyak ceklis - kirim semuanya sekaligus nanti dari halaman musyawarohnya). Kosongkan jika ini catatan umum yang tidak terkait musyawaroh.</p>
                     <form method="POST" action="{{ route('notulen.store') }}" class="grid gap-4 md:grid-cols-2">
                         @csrf
                         <div class="md:col-span-2">
@@ -147,9 +147,8 @@
                             <label class="block text-sm font-medium mb-2" for="notulen-content">Catatan (opsional)</label>
                             <textarea id="notulen-content" name="content" rows="4" class="w-full rounded-lg border border-slate-300 px-3 py-2">{{ old('content') }}</textarea>
                         </div>
-                        <div class="md:col-span-2 flex gap-2">
-                            <button type="submit" name="action" value="draft" class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Simpan Draft</button>
-                            <button type="submit" name="action" value="final" onclick="return confirm('Kirim notulen ini? Setelah dikirim, notulen tidak bisa diubah lagi.')" class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Kirim</button>
+                        <div class="md:col-span-2">
+                            <button type="submit" class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Simpan</button>
                         </div>
                     </form>
                 </x-card>

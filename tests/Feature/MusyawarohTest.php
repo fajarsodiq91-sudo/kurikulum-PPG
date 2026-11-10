@@ -14,7 +14,7 @@ use App\Models\Task;
 use App\Models\User;
 use App\Models\Village;
 use App\Notifications\MusyawarohInvited;
-use App\Notifications\NotulenFinalized;
+use App\Notifications\MusyawarohNotulenSent;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
@@ -387,7 +387,7 @@ class MusyawarohTest extends TestCase
         $this->assertEquals('in_progress', $task->refresh()->status);
     }
 
-    public function test_a_notulen_can_be_saved_as_a_draft_and_stays_editable(): void
+    public function test_a_notulen_is_saved_as_a_draft_and_stays_editable_until_sent(): void
     {
         $village = $this->makeVillage('Desa A');
         $desaUser = $this->makeUser('Desa A', $this->desaRole, 'village', $village->id);
@@ -397,7 +397,6 @@ class MusyawarohTest extends TestCase
         $this->actingAs($desaUser)->post('/notulen', [
             'title' => 'Draf poin rapat',
             'musyawaroh_id' => $musyawaroh->id,
-            'action' => 'draft',
         ])->assertRedirect(route('musyawaroh.show', $musyawaroh));
 
         $notulen = Notulen::first();
@@ -411,7 +410,7 @@ class MusyawarohTest extends TestCase
         $this->assertEquals('Draf poin rapat (revisi)', $notulen->refresh()->title);
     }
 
-    public function test_sending_a_notulen_locks_it_and_notifies_the_whole_attendance_reach_including_absentees(): void
+    public function test_sending_notulen_locks_every_draft_and_notifies_the_whole_attendance_reach_as_one_resume(): void
     {
         Notification::fake();
 
@@ -422,38 +421,93 @@ class MusyawarohTest extends TestCase
         $absentUser = $this->makeUser('Kelompok A1 Lain', $this->kelompokRole, 'group', $group->id);
 
         $musyawaroh = Musyawaroh::create(['meeting_date' => now()->toDateString(), 'created_by_id' => $desaUser->id]);
-        MusyawarohAttendee::create(['musyawaroh_id' => $musyawaroh->id, 'user_id' => $presentUser->id]);
+        MusyawarohAttendee::create(['musyawaroh_id' => $musyawaroh->id, 'user_id' => $presentUser->id, 'status' => 'hadir']);
 
-        $notulen = Notulen::create([
-            'title' => 'Draf poin rapat',
-            'content' => 'Draf poin rapat',
+        $firstNotulen = Notulen::create([
+            'title' => 'Poin pertama',
+            'content' => 'Poin pertama',
+            'musyawaroh_id' => $musyawaroh->id,
+            'created_by_id' => $desaUser->id,
+        ]);
+        $secondNotulen = Notulen::create([
+            'title' => 'Poin kedua',
+            'content' => 'Poin kedua',
             'musyawaroh_id' => $musyawaroh->id,
             'created_by_id' => $desaUser->id,
         ]);
 
-        $this->actingAs($desaUser)->patch("/notulen/{$notulen->id}/send")->assertRedirect();
+        // Only the musyawaroh's organiser may trigger the batch send.
+        $this->actingAs($presentUser)->patch("/musyawaroh/{$musyawaroh->id}/notulen/send")->assertForbidden();
 
-        $notulen->refresh();
-        $this->assertEquals(Notulen::STATUS_FINAL, $notulen->status);
-        $this->assertNotNull($notulen->sent_at);
-        $this->assertFalse($notulen->isContentEditableBy($desaUser));
+        $this->actingAs($desaUser)->patch("/musyawaroh/{$musyawaroh->id}/notulen/send")->assertRedirect();
 
-        // Notified both the present attendee and the absent pengurus within reach.
-        Notification::assertSentTo($presentUser, NotulenFinalized::class);
-        Notification::assertSentTo($absentUser, NotulenFinalized::class);
-        // The sender themselves is not notified.
-        Notification::assertNotSentTo($desaUser, NotulenFinalized::class);
+        $firstNotulen->refresh();
+        $secondNotulen->refresh();
+        $this->assertEquals(Notulen::STATUS_FINAL, $firstNotulen->status);
+        $this->assertEquals(Notulen::STATUS_FINAL, $secondNotulen->status);
+        $this->assertNotNull($firstNotulen->sent_at);
+        $this->assertFalse($firstNotulen->isContentEditableBy($desaUser));
 
-        // Locked: content can no longer be edited, nor sent again.
-        $this->actingAs($desaUser)->put("/notulen/{$notulen->id}", ['title' => 'Coba ubah'])->assertForbidden();
-        $this->actingAs($desaUser)->patch("/notulen/{$notulen->id}/send")->assertForbidden();
+        // One combined notification per recipient, not one per notulen item - and it reaches
+        // both the present attendee and the absent pengurus within reach, but not the sender.
+        Notification::assertSentTimes(MusyawarohNotulenSent::class, 2);
+        Notification::assertSentTo($presentUser, MusyawarohNotulenSent::class);
+        Notification::assertSentTo($absentUser, MusyawarohNotulenSent::class);
+        Notification::assertNotSentTo($desaUser, MusyawarohNotulenSent::class);
+
+        // Locked: content can no longer be edited.
+        $this->actingAs($desaUser)->put("/notulen/{$firstNotulen->id}", ['title' => 'Coba ubah'])->assertForbidden();
+
+        // Nothing left to send.
+        $this->actingAs($desaUser)->patch("/musyawaroh/{$musyawaroh->id}/notulen/send")
+            ->assertRedirect()
+            ->assertSessionHas('error');
 
         // "Jadikan Tugas" must still work on a finalised notulen.
         $this->actingAs($desaUser)->post('/tasks', [
-            'title' => $notulen->title,
+            'title' => $firstNotulen->title,
             'priority' => 'medium',
-            'notulen_id' => $notulen->id,
+            'notulen_id' => $firstNotulen->id,
             'assignees' => [$presentUser->id],
         ])->assertRedirect(route('musyawaroh.show', $musyawaroh));
+    }
+
+    public function test_sending_notulen_again_only_touches_items_still_in_draft(): void
+    {
+        Notification::fake();
+
+        $village = $this->makeVillage('Desa A');
+        $group = $this->makeGroup($village, 'Kelompok A1');
+        $desaUser = $this->makeUser('Desa A', $this->desaRole, 'village', $village->id);
+        $kelompokUser = $this->makeUser('Kelompok A1', $this->kelompokRole, 'group', $group->id);
+
+        $musyawaroh = Musyawaroh::create(['meeting_date' => now()->toDateString(), 'created_by_id' => $desaUser->id]);
+
+        $alreadySent = Notulen::create([
+            'title' => 'Sudah dikirim sebelumnya',
+            'content' => 'Sudah dikirim sebelumnya',
+            'musyawaroh_id' => $musyawaroh->id,
+            'created_by_id' => $desaUser->id,
+            'status' => Notulen::STATUS_FINAL,
+            'sent_at' => now()->subDay(),
+        ]);
+
+        Notulen::create([
+            'title' => 'Poin baru',
+            'content' => 'Poin baru',
+            'musyawaroh_id' => $musyawaroh->id,
+            'created_by_id' => $desaUser->id,
+        ]);
+
+        $this->actingAs($desaUser)->patch("/musyawaroh/{$musyawaroh->id}/notulen/send")
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        // The item sent in an earlier round keeps its original sent_at, untouched by this round.
+        $this->assertTrue($alreadySent->sent_at->equalTo($alreadySent->refresh()->sent_at));
+
+        // Still just one resume email per recipient for this round's single new draft.
+        Notification::assertSentTimes(MusyawarohNotulenSent::class, 1);
+        Notification::assertSentTo($kelompokUser, MusyawarohNotulenSent::class);
     }
 }

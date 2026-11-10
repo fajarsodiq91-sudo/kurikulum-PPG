@@ -4,15 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Models\Musyawaroh;
 use App\Models\MusyawarohAttendee;
+use App\Models\Notulen;
 use App\Models\User;
 use App\Notifications\MusyawarohInvited;
+use App\Notifications\MusyawarohNotulenSent;
 use App\Support\MusyawarohHierarchy;
 use App\Support\TaskHierarchy;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Throwable;
 
 class MusyawarohController extends Controller
 {
@@ -128,6 +132,46 @@ class MusyawarohController extends Controller
             ->each(fn (MusyawarohAttendee $attendee) => $attendee->update(['status' => $validated['status'][$attendee->id]]));
 
         return redirect()->route('musyawaroh.show', $musyawaroh)->with('success', 'Daftar hadir berhasil diperbarui.');
+    }
+
+    /**
+     * Sends every still-draft notulen of this musyawaroh out together as a single resume
+     * email, instead of one email per item - and locks them all as final in one go. Items
+     * already sent in an earlier round are left untouched, so this can be clicked again
+     * later once more drafts have piled up.
+     */
+    public function sendNotulen(Request $request, Musyawaroh $musyawaroh): RedirectResponse
+    {
+        abort_unless($musyawaroh->isEditableBy($request->user()), 403);
+
+        $drafts = $musyawaroh->notulens()->where('status', Notulen::STATUS_DRAFT)->get();
+
+        if ($drafts->isEmpty()) {
+            return back()->with('error', 'Tidak ada notulen draft untuk dikirim.');
+        }
+
+        $drafts->each(fn (Notulen $notulen) => $notulen->update(['status' => Notulen::STATUS_FINAL, 'sent_at' => now()]));
+
+        $actor = $request->user();
+        $recipientIds = collect(MusyawarohHierarchy::allowedUserIds($musyawaroh->createdBy))
+            ->merge($musyawaroh->attendees->pluck('user_id')->filter())
+            ->unique()
+            ->reject(fn (int $id): bool => $id === $actor->id)
+            ->values()
+            ->all();
+
+        $recipients = User::whereIn('id', $recipientIds)->where('status', 'active')->get();
+
+        try {
+            Notification::send($recipients, new MusyawarohNotulenSent($musyawaroh, $drafts, $actor));
+        } catch (Throwable $e) {
+            Log::error('Gagal mengirim resume notulen musyawaroh.', [
+                'musyawaroh_id' => $musyawaroh->id,
+                'exception' => $e,
+            ]);
+        }
+
+        return back()->with('success', $drafts->count().' notulen berhasil dikirim sebagai 1 resume.');
     }
 
     /**

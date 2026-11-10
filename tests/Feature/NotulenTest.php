@@ -150,7 +150,6 @@ class NotulenTest extends TestCase
         $this->actingAs($desaUser)->post('/notulen', [
             'title' => 'Poin kedua rapat',
             'musyawaroh_id' => $musyawaroh->id,
-            'action' => 'draft',
         ])->assertRedirect(route('musyawaroh.show', $musyawaroh));
 
         $this->assertDatabaseHas('notulens', [
@@ -163,7 +162,6 @@ class NotulenTest extends TestCase
         $this->actingAs($desaUser)->post('/notulen', [
             'title' => 'Poin ketiga rapat',
             'musyawaroh_id' => $musyawaroh->id,
-            'action' => 'draft',
         ])->assertRedirect(route('musyawaroh.show', $musyawaroh));
 
         $this->assertEquals(2, Notulen::where('musyawaroh_id', $musyawaroh->id)->count());

@@ -848,8 +848,6 @@ Route::middleware(['auth', 'permission:manage-tasks'])->group(function () {
         ->name('notulen.store');
     Route::put('/notulen/{notulen}', [NotulenController::class, 'update'])
         ->name('notulen.update');
-    Route::patch('/notulen/{notulen}/send', [NotulenController::class, 'send'])
-        ->name('notulen.send');
     Route::patch('/notulen/{notulen}/toggle', [NotulenController::class, 'toggle'])
         ->name('notulen.toggle');
     Route::delete('/notulen/{notulen}', [NotulenController::class, 'destroy'])
@@ -864,6 +862,8 @@ Route::middleware(['auth', 'permission:manage-tasks'])->group(function () {
         ->name('musyawaroh.show');
     Route::patch('/musyawaroh/{musyawaroh}/attendance', [MusyawarohController::class, 'updateAttendance'])
         ->name('musyawaroh.attendance.update');
+    Route::patch('/musyawaroh/{musyawaroh}/notulen/send', [MusyawarohController::class, 'sendNotulen'])
+        ->name('musyawaroh.notulen.send');
 });
 
 Route::middleware(['auth', 'permission:manage-users,approve-registrations'])->group(function () {

@@ -77,20 +77,29 @@
         <div class="space-y-4 lg:col-span-2">
             <x-card>
                 <h3 class="mb-1 text-sm font-semibold text-slate-700">Tambah Notulen</h3>
-                <p class="mb-4 text-xs text-slate-500">Simpan sebagai draft untuk melanjutkan nanti, atau kirim langsung jika sudah final. Notulen yang dikirim tidak bisa diubah lagi dan otomatis diberitahukan ke seluruh daftar hadir musyawaroh ini (termasuk yang tidak hadir).</p>
-                <form method="POST" action="{{ route('notulen.store') }}" class="grid gap-3 sm:grid-cols-[1fr_auto_auto]">
+                <p class="mb-4 text-xs text-slate-500">Tambahkan poin notulen satu per satu. Setelah terkumpul beberapa dan siap, kirim semuanya sekaligus sebagai 1 resume lewat tombol "Kirim Notulen" di bawah.</p>
+                <form method="POST" action="{{ route('notulen.store') }}" class="grid gap-3 sm:grid-cols-[1fr_auto]">
                     @csrf
                     <input type="hidden" name="musyawaroh_id" value="{{ $musyawaroh->id }}">
                     <input type="hidden" name="meeting_date" value="{{ $musyawaroh->meeting_date->format('Y-m-d') }}">
                     <input type="hidden" name="bucket" value="{{ $musyawaroh->title }}">
                     <input type="text" name="title" required placeholder="Poin notulen, misal: Persiapan KBM semester baru" class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                    <button type="submit" name="action" value="draft" class="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Simpan Draft</button>
-                    <button type="submit" name="action" value="final" onclick="return confirm('Kirim notulen ini? Setelah dikirim, notulen tidak bisa diubah lagi dan akan diberitahukan ke seluruh daftar hadir musyawaroh.')" class="rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Kirim</button>
+                    <button type="submit" class="rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Simpan</button>
                 </form>
             </x-card>
 
             <x-card>
-                <h3 class="mb-4 text-sm font-semibold text-slate-700">Notulen</h3>
+                @php $draftCount = $musyawaroh->notulens->where('status', \App\Models\Notulen::STATUS_DRAFT)->count(); @endphp
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+                    <h3 class="text-sm font-semibold text-slate-700">Notulen</h3>
+                    @if ($musyawaroh->isEditableBy($user) && $draftCount > 0)
+                        <form method="POST" action="{{ route('musyawaroh.notulen.send', $musyawaroh) }}" onsubmit="return confirm('Kirim {{ $draftCount }} notulen draft sebagai 1 resume ke seluruh daftar hadir musyawaroh (termasuk yang tidak hadir)? Setelah dikirim, notulen tersebut tidak bisa diubah lagi.')">
+                            @csrf
+                            @method('PATCH')
+                            <button type="submit" class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">Kirim Notulen ({{ $draftCount }} draft)</button>
+                        </form>
+                    @endif
+                </div>
                 @if ($musyawaroh->notulens->isEmpty())
                     <x-empty-state title="Belum ada notulen." class="border-none bg-transparent" />
                 @else
@@ -140,11 +149,6 @@
                                                 <button type="button" data-open-task-modal="edit-modal-{{ $notulen->id }}" class="text-xs font-semibold text-slate-500 hover:text-slate-800">
                                                     Edit
                                                 </button>
-                                                <form method="POST" action="{{ route('notulen.send', $notulen) }}" onsubmit="return confirm('Kirim notulen ini? Setelah dikirim, notulen tidak bisa diubah lagi dan akan diberitahukan ke seluruh daftar hadir musyawaroh.')">
-                                                    @csrf
-                                                    @method('PATCH')
-                                                    <button type="submit" class="text-xs font-semibold text-emerald-600 hover:text-emerald-800">Kirim</button>
-                                                </form>
                                             @endif
                                         </div>
                                     </div>

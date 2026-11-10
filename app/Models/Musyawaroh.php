@@ -71,4 +71,13 @@ class Musyawaroh extends Model
     {
         return static::query()->visibleTo($user)->whereKey($this->id)->exists();
     }
+
+    /**
+     * Only the musyawaroh's organiser (or Super Admin) may send its collected draft notulen
+     * out as one resume.
+     */
+    public function isEditableBy(User $user): bool
+    {
+        return $user->isSuperAdmin() || $this->created_by_id === $user->id;
+    }
 }
