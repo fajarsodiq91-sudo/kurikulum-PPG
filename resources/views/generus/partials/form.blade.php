@@ -117,12 +117,17 @@
 
             <div>
                 <label class="mb-2 block text-sm font-medium text-slate-700" for="learning_class_id">Kelas KBM</label>
-                <select id="learning_class_id" name="learning_class_id" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
-                    <option value="">-- Pilih --</option>
-                    @foreach($classGrades as $classGrade)
-                        <option value="{{ $classGrade->id }}" @selected(old('learning_class_id', $generus?->learning_class_id) == $classGrade->id)>{{ $classGrade->name }}</option>
-                    @endforeach
-                </select>
+                @if ($generus && $generus->learning_class_id !== null && ! auth()->user()->isSuperAdmin())
+                    <input type="text" readonly value="{{ $generus->learningClass?->name }}" class="w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2.5 text-sm text-slate-600">
+                    <p class="mt-1 text-xs text-slate-500">Kenaikan/tinggal kelas KBM hanya bisa lewat hasil munaqosah, bukan diedit langsung di sini.</p>
+                @else
+                    <select id="learning_class_id" name="learning_class_id" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100">
+                        <option value="">-- Pilih --</option>
+                        @foreach($classGrades as $classGrade)
+                            <option value="{{ $classGrade->id }}" @selected(old('learning_class_id', $generus?->learning_class_id) == $classGrade->id)>{{ $classGrade->name }}</option>
+                        @endforeach
+                    </select>
+                @endif
             </div>
 
             <div>

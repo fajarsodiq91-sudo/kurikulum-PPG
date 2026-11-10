@@ -308,9 +308,15 @@ class GenerusController extends Controller
         $oldPhotoPath = $generus->photo;
         $newPhotoPath = $this->storePhoto($validated['photo'] ?? null);
 
-        DB::transaction(function () use ($generus, $validated, $newPhotoPath): void {
+        // Kelas KBM only changes through a munaqosah decision (see GradePromotionService) once
+        // a generus already has one; a super admin may still correct a data-entry mistake.
+        $editableFields = ($generus->learning_class_id !== null && ! $user->isSuperAdmin())
+            ? collect(self::EDITABLE_FIELDS)->reject(fn (string $field): bool => $field === 'learning_class_id')
+            : collect(self::EDITABLE_FIELDS);
+
+        DB::transaction(function () use ($generus, $validated, $newPhotoPath, $editableFields): void {
             $generus->update([
-                ...collect(self::EDITABLE_FIELDS)->mapWithKeys(fn (string $field): array => [$field => $validated[$field] ?? null])->all(),
+                ...$editableFields->mapWithKeys(fn (string $field): array => [$field => $validated[$field] ?? null])->all(),
                 'transfer_destination' => $validated['transfer_destination'] ?? null,
                 'rfid_uid' => $validated['rfid_uid'] ?? null,
                 ...($newPhotoPath !== null ? ['photo' => $newPhotoPath, 'face_descriptor' => FaceDescriptors::parse($validated['face_descriptor'] ?? null)] : []),

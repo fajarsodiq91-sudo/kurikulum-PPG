@@ -8,12 +8,14 @@ use App\Models\Generus;
 use App\Models\GradeScale;
 use App\Models\Group;
 use App\Models\Munaqosah;
+use App\Models\MunaqosahSchedule;
 use App\Models\Semester;
 use App\Support\Sheets\MunaqosahSheet;
 use App\Support\StudentScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -31,7 +33,12 @@ class MunaqosahController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        Munaqosah::create($this->applyGradeScale($this->validateMunaqosah($request)));
+        $validated = $this->validateMunaqosah($request);
+        $generus = Generus::findOrFail($validated['generus_id']);
+
+        $this->ensureScheduleIsOpen($validated['type'], $generus->learning_class_id, $validated['academic_year_id'], $validated['semester_id']);
+
+        Munaqosah::create($this->applyGradeScale(['class_grade_id' => $generus->learning_class_id, ...$validated]));
 
         return redirect()->route('munaqosahs.index')->with('success', 'Munaqosah berhasil ditambahkan.');
     }
@@ -50,7 +57,14 @@ class MunaqosahController extends Controller
     {
         $this->authorizeRecord($munaqosah);
 
-        $munaqosah->update($this->applyGradeScale($this->validateMunaqosah($request, $munaqosah)));
+        $validated = $this->validateMunaqosah($request, $munaqosah);
+        $generus = Generus::findOrFail($validated['generus_id']);
+
+        if ($munaqosah->munaqosah_acceleration_request_id === null) {
+            $this->ensureScheduleIsOpen($validated['type'], $generus->learning_class_id, $validated['academic_year_id'], $validated['semester_id']);
+        }
+
+        $munaqosah->update($this->applyGradeScale(['class_grade_id' => $generus->learning_class_id, ...$validated]));
 
         return redirect()->route('munaqosahs.index')->with('success', 'Munaqosah berhasil diperbarui.');
     }
@@ -93,6 +107,15 @@ class MunaqosahController extends Controller
                 ->keyBy('generus_id')
             : collect();
 
+        $openClassGradeIds = ($academicYearId && $semesterId)
+            ? MunaqosahSchedule::where('academic_year_id', $academicYearId)
+                ->where('semester_id', $semesterId)
+                ->where('type', $type)
+                ->where('is_open', true)
+                ->pluck('class_grade_id')
+                ->all()
+            : [];
+
         return view('munaqosahs.batch', [
             'groups' => $groups,
             'group' => $group,
@@ -101,6 +124,7 @@ class MunaqosahController extends Controller
             'academicYearId' => $academicYearId,
             'semesterId' => $semesterId,
             'type' => $type,
+            'openClassGradeIds' => $openClassGradeIds,
             'academicYears' => AcademicYear::where('is_active', true)->get(),
             'semesters' => Semester::where('is_active', true)->get(),
         ]);
@@ -121,25 +145,32 @@ class MunaqosahController extends Controller
             'scores' => ['nullable', 'array'],
             'scores.*.score' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'scores.*.result' => ['nullable', 'string', 'max:50'],
+            'scores.*.decision' => ['nullable', Rule::in([Munaqosah::DECISION_NAIK, Munaqosah::DECISION_TINGGAL])],
             'scores.*.status' => ['required', 'string', 'max:50'],
             'scores.*.notes' => ['nullable', 'string'],
         ]);
 
         $group = Group::findOrFail($validated['group_id']);
-        $rosterIds = $group->rosterFor($user, Munaqosah::MANAGE_PERMISSION)->pluck('id')->map(fn (mixed $id): int => (int) $id)->all();
+        $roster = $group->rosterFor($user, Munaqosah::MANAGE_PERMISSION)->get()->keyBy('id');
 
         foreach ($validated['scores'] ?? [] as $generusId => $entry) {
-            abort_unless(in_array((int) $generusId, $rosterIds, true), 422, 'Generus tidak termasuk dalam kelompok yang dipilih.');
+            $generus = $roster->get((int) $generusId);
 
-            if (blank($entry['score'] ?? null) && blank($entry['result'] ?? null)) {
+            abort_if($generus === null, 422, 'Generus tidak termasuk dalam kelompok yang dipilih.');
+
+            if (blank($entry['score'] ?? null) && blank($entry['result'] ?? null) && blank($entry['decision'] ?? null)) {
                 continue;
             }
+
+            $this->ensureScheduleIsOpen($validated['type'], $generus->learning_class_id, $validated['academic_year_id'], $validated['semester_id']);
 
             $data = $this->applyGradeScale([
                 'title' => $validated['title'],
                 'type' => $validated['type'],
+                'class_grade_id' => $generus->learning_class_id,
                 'score' => $entry['score'] ?? null,
                 'result' => $entry['result'] ?? null,
+                'decision' => $entry['decision'] ?? null,
                 'status' => $entry['status'],
                 'notes' => $entry['notes'] ?? null,
             ]);
@@ -192,11 +223,40 @@ class MunaqosahController extends Controller
             'type' => ['required', 'string', 'max:50'],
             'score' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'result' => ['nullable', 'string', 'max:50'],
+            'decision' => ['nullable', Rule::in([Munaqosah::DECISION_NAIK, Munaqosah::DECISION_TINGGAL])],
             'status' => ['required', 'string', 'max:50'],
             'notes' => ['nullable', 'string'],
         ], [
             'generus_id.unique' => 'Generus ini sudah memiliki munaqosah untuk tahun ajaran, semester, dan tipe tersebut.',
         ]);
+    }
+
+    /**
+     * Gates munaqosah type=semester-final: a Pelaksana Kelompok may only record one once PPG
+     * Daerah has opened that kelas KBM's munaqosah schedule for this semester. Other types
+     * (remedial, etc.) aren't gated; akselerasi is handled separately via an approved request,
+     * never through this check.
+     */
+    private function ensureScheduleIsOpen(string $type, ?int $classGradeId, int $academicYearId, int $semesterId): void
+    {
+        if ($type !== Munaqosah::TYPE_SEMESTER_FINAL) {
+            return;
+        }
+
+        if ($classGradeId === null) {
+            throw ValidationException::withMessages(['type' => 'Generus ini belum memiliki kelas KBM, sehingga tidak bisa dinilai munaqosah semester.']);
+        }
+
+        $isOpen = MunaqosahSchedule::where('class_grade_id', $classGradeId)
+            ->where('academic_year_id', $academicYearId)
+            ->where('semester_id', $semesterId)
+            ->where('type', Munaqosah::TYPE_SEMESTER_FINAL)
+            ->where('is_open', true)
+            ->exists();
+
+        if (! $isOpen) {
+            throw ValidationException::withMessages(['type' => 'Munaqosah semester untuk kelas KBM generus ini belum dibuka oleh PPG Daerah.']);
+        }
     }
 
     /**

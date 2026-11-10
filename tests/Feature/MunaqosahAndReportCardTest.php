@@ -3,11 +3,13 @@
 namespace Tests\Feature;
 
 use App\Models\AcademicYear;
+use App\Models\ClassGrade;
 use App\Models\Generus;
 use App\Models\GenerusAssignment;
 use App\Models\GradeScale;
 use App\Models\Group;
 use App\Models\Munaqosah;
+use App\Models\MunaqosahSchedule;
 use App\Models\Permission;
 use App\Models\Region;
 use App\Models\ReportCard;
@@ -78,6 +80,7 @@ class MunaqosahAndReportCardTest extends TestCase
             'gender' => 'Laki-laki',
             'status' => 'active',
         ]);
+        $this->openSemesterFinalScheduleFor($generus, $academicYear, $semester);
 
         $this->actingAs($user)
             ->post('/munaqosahs', [
@@ -156,6 +159,7 @@ class MunaqosahAndReportCardTest extends TestCase
             'is_active' => true,
         ]);
         $generus = $this->createGenerus();
+        $this->openSemesterFinalScheduleFor($generus, $academicYear, $semester);
 
         $this->actingAs($user)
             ->post('/munaqosahs', [
@@ -237,6 +241,7 @@ class MunaqosahAndReportCardTest extends TestCase
             'is_active' => true,
         ]);
         $generus = $this->createGenerus();
+        $this->openSemesterFinalScheduleFor($generus, $academicYear, $semester);
         $munaqosah = Munaqosah::create([
             'generus_id' => $generus->id,
             'academic_year_id' => $academicYear->id,
@@ -314,6 +319,7 @@ class MunaqosahAndReportCardTest extends TestCase
 
         $ownGenerus = Generus::create(['registration_number' => 'PPG-OWN-001', 'full_name' => 'Generus Kelompok Sendiri', 'status' => 'active']);
         GenerusAssignment::create(['generus_id' => $ownGenerus->id, 'region_id' => $region->id, 'village_id' => $village->id, 'group_id' => $ownGroup->id]);
+        $this->openSemesterFinalScheduleFor($ownGenerus, $academicYear, $semester);
 
         $otherGenerus = Generus::create(['registration_number' => 'PPG-OTHER-001', 'full_name' => 'Generus Kelompok Lain', 'status' => 'active']);
         GenerusAssignment::create(['generus_id' => $otherGenerus->id, 'region_id' => $region->id, 'village_id' => $village->id, 'group_id' => $otherGroup->id]);
@@ -429,6 +435,25 @@ class MunaqosahAndReportCardTest extends TestCase
             'registration_number' => 'PPG-DUP-001',
             'full_name' => 'Rina Maulida',
             'status' => 'active',
+        ]);
+    }
+
+    /**
+     * A munaqosah type=semester-final may only be recorded once PPG Daerah opened its kelas
+     * KBM's schedule for the given academic year/semester; this gives $generus a kelas KBM
+     * and opens that schedule so ordinary CRUD tests aren't about the gate itself.
+     */
+    private function openSemesterFinalScheduleFor(Generus $generus, AcademicYear $academicYear, Semester $semester): void
+    {
+        $classGrade = ClassGrade::create(['name' => 'Kelas 1', 'code' => 'K1', 'is_active' => true]);
+        $generus->update(['learning_class_id' => $classGrade->id]);
+
+        MunaqosahSchedule::create([
+            'class_grade_id' => $classGrade->id,
+            'academic_year_id' => $academicYear->id,
+            'semester_id' => $semester->id,
+            'type' => 'semester-final',
+            'is_open' => true,
         ]);
     }
 

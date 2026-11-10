@@ -70,6 +70,12 @@
                     <input id="title" name="title" type="text" required value="{{ old('title', 'Munaqosah '.($semesters->firstWhere('id', $semesterId)?->name ?? '')) }}" class="w-full max-w-md rounded-lg border border-slate-300 px-3 py-2">
                 </div>
 
+                @if ($type === 'semester-final')
+                    <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                        Nilai munaqosah semester hanya bisa disimpan untuk generus yang kelas KBM-nya sudah dibuka jadwal munaqosahnya oleh PPG Daerah. Generus yang kelasnya belum dibuka ditandai di bawah dan tidak akan tersimpan meski diisi.
+                    </div>
+                @endif
+
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-left text-sm">
                         <thead>
@@ -77,6 +83,7 @@
                                 <th class="py-3 pr-4">Generus</th>
                                 <th class="py-3 pr-4">Nilai</th>
                                 <th class="py-3 pr-4">Hasil</th>
+                                <th class="py-3 pr-4">Keputusan</th>
                                 <th class="py-3 pr-4">Status</th>
                                 <th class="py-3">Catatan</th>
                             </tr>
@@ -84,16 +91,30 @@
                         <tbody>
                             @forelse ($roster as $item)
                                 @php($recorded = $existing[$item->id] ?? null)
+                                @php($isOpen = $type !== 'semester-final' || in_array($item->learning_class_id, $openClassGradeIds, true))
                                 <tr class="border-b border-slate-100">
-                                    <td class="py-3 pr-4 font-medium text-slate-900">{{ $item->full_name }}</td>
-                                    <td class="py-3 pr-4">
-                                        <input type="number" step="0.01" min="0" max="100" name="scores[{{ $item->id }}][score]" value="{{ old("scores.{$item->id}.score", $recorded?->score) }}" class="w-24 rounded-lg border border-slate-300 px-2 py-1.5">
+                                    <td class="py-3 pr-4 font-medium text-slate-900">
+                                        {{ $item->full_name }}
+                                        @unless ($isOpen)
+                                            <span class="ml-1 rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-600">Belum dibuka</span>
+                                        @endunless
                                     </td>
                                     <td class="py-3 pr-4">
-                                        <input type="text" name="scores[{{ $item->id }}][result]" value="{{ old("scores.{$item->id}.result", $recorded?->result) }}" placeholder="Otomatis" class="w-20 rounded-lg border border-slate-300 px-2 py-1.5">
+                                        <input type="number" step="0.01" min="0" max="100" name="scores[{{ $item->id }}][score]" value="{{ old("scores.{$item->id}.score", $recorded?->score) }}" @disabled(! $isOpen) class="w-24 rounded-lg border border-slate-300 px-2 py-1.5 disabled:bg-slate-100">
                                     </td>
                                     <td class="py-3 pr-4">
-                                        <select name="scores[{{ $item->id }}][status]" class="rounded-lg border border-slate-300 px-2 py-1.5">
+                                        <input type="text" name="scores[{{ $item->id }}][result]" value="{{ old("scores.{$item->id}.result", $recorded?->result) }}" placeholder="Otomatis" @disabled(! $isOpen) class="w-20 rounded-lg border border-slate-300 px-2 py-1.5 disabled:bg-slate-100">
+                                    </td>
+                                    <td class="py-3 pr-4">
+                                        <select name="scores[{{ $item->id }}][decision]" @disabled(! $isOpen) class="rounded-lg border border-slate-300 px-2 py-1.5 disabled:bg-slate-100">
+                                            @php($currentDecision = old("scores.{$item->id}.decision", $recorded?->decision))
+                                            <option value="">-- Belum --</option>
+                                            <option value="naik" @selected($currentDecision === 'naik')>Naik Kelas</option>
+                                            <option value="tinggal" @selected($currentDecision === 'tinggal')>Tinggal Kelas</option>
+                                        </select>
+                                    </td>
+                                    <td class="py-3 pr-4">
+                                        <select name="scores[{{ $item->id }}][status]" @disabled(! $isOpen) class="rounded-lg border border-slate-300 px-2 py-1.5 disabled:bg-slate-100">
                                             @php($currentStatus = old("scores.{$item->id}.status", $recorded?->status ?? 'completed'))
                                             <option value="scheduled" @selected($currentStatus === 'scheduled')>Terjadwal</option>
                                             <option value="completed" @selected($currentStatus === 'completed')>Selesai</option>
@@ -101,19 +122,19 @@
                                         </select>
                                     </td>
                                     <td class="py-3">
-                                        <input type="text" name="scores[{{ $item->id }}][notes]" value="{{ old("scores.{$item->id}.notes", $recorded?->notes) }}" class="w-full min-w-40 rounded-lg border border-slate-300 px-2 py-1.5">
+                                        <input type="text" name="scores[{{ $item->id }}][notes]" value="{{ old("scores.{$item->id}.notes", $recorded?->notes) }}" @disabled(! $isOpen) class="w-full min-w-40 rounded-lg border border-slate-300 px-2 py-1.5 disabled:bg-slate-100">
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="py-6 text-center text-slate-500">Tidak ada generus aktif di kelompok ini.</td>
+                                    <td colspan="6" class="py-6 text-center text-slate-500">Tidak ada generus aktif di kelompok ini.</td>
                                 </tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
                 @if ($roster->isNotEmpty())
-                    <p class="mt-4 text-xs text-slate-500">Baris tanpa nilai dan tanpa hasil tidak disimpan. Kosongkan kolom hasil agar huruf dan keterangan terisi otomatis dari master data Konversi Nilai.</p>
+                    <p class="mt-4 text-xs text-slate-500">Baris tanpa nilai, hasil, dan keputusan tidak disimpan. Kosongkan kolom hasil agar huruf dan keterangan terisi otomatis dari master data Konversi Nilai. Keputusan "Naik Kelas" pada munaqosah semester (semester 2) otomatis menaikkan kelas KBM generus.</p>
                     <button type="submit" class="mt-4 w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 sm:w-auto">Simpan Nilai Kelompok</button>
                 @endif
             </form>

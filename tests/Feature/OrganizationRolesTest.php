@@ -96,7 +96,7 @@ class OrganizationRolesTest extends TestCase
         $this->assertFalse($ppg->contains('manage-generus'));
         $this->assertFalse($ppg->contains('manage-users'));
         $this->assertFalse($village->contains('view-master-data'));
-        $this->assertSame(['approve-registrations', 'manage-announcements', 'manage-learning-attendance', 'manage-own-learning-sessions', 'manage-tasks', 'manage-ujian'], $village->reject(fn (string $slug): bool => str_starts_with($slug, 'view-'))->sort()->values()->all());
+        $this->assertSame(['approve-munaqosah-acceleration', 'approve-registrations', 'manage-announcements', 'manage-learning-attendance', 'manage-own-learning-sessions', 'manage-tasks', 'manage-ujian'], $village->reject(fn (string $slug): bool => str_starts_with($slug, 'view-'))->sort()->values()->all());
         $this->assertTrue($group->contains('manage-generus'));
         $this->assertFalse($group->contains('manage-master-data'));
     }

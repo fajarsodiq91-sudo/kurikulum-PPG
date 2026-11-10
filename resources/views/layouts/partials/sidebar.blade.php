@@ -83,6 +83,8 @@
                     ['label' => 'Evaluasi', 'route' => 'evaluations.index', 'permission' => ['view-evaluations', 'manage-evaluations']],
                     ['label' => 'Nilai Evaluasi', 'route' => 'evaluation-scores.index', 'permission' => ['view-evaluations', 'manage-evaluations']],
                     ['label' => 'Daftar Munaqosah', 'route' => 'munaqosahs.index', 'permission' => ['view-munaqosah', 'manage-munaqosah']],
+                    ['label' => 'Jadwal Munaqosah Semester', 'route' => 'munaqosah-schedules.index', 'permission' => ['manage-munaqosah-schedule']],
+                    ['label' => 'Akselerasi Munaqosah', 'route' => 'munaqosah-acceleration-requests.index', 'permission' => ['propose-munaqosah-acceleration', 'approve-munaqosah-acceleration']],
                     ['label' => 'Daftar Ujian', 'route' => 'ujians.index', 'permission' => ['view-ujian', 'manage-ujian']],
                     ['label' => 'Rapor Generus', 'route' => 'report-cards.index', 'permission' => ['view-report-cards', 'manage-report-cards']],
                 ]],

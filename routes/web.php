@@ -30,7 +30,9 @@ use App\Http\Controllers\MaterialCategoryController;
 use App\Http\Controllers\MaterialChapterController;
 use App\Http\Controllers\MaterialClassificationController;
 use App\Http\Controllers\MilestoneController;
+use App\Http\Controllers\MunaqosahAccelerationRequestController;
 use App\Http\Controllers\MunaqosahController;
+use App\Http\Controllers\MunaqosahScheduleController;
 use App\Http\Controllers\MusyawarohController;
 use App\Http\Controllers\NotulenController;
 use App\Http\Controllers\OrganizationUnitController;
@@ -640,6 +642,34 @@ Route::middleware(['auth', 'permission:manage-munaqosah'])->group(function () {
         ->name('munaqosahs.update');
     Route::delete('/munaqosahs/{munaqosah}', [MunaqosahController::class, 'destroy'])
         ->name('munaqosahs.destroy');
+});
+
+Route::middleware(['auth', 'permission:manage-munaqosah-schedule'])->group(function () {
+    Route::get('/munaqosah-schedules', [MunaqosahScheduleController::class, 'index'])
+        ->name('munaqosah-schedules.index');
+    Route::post('/munaqosah-schedules', [MunaqosahScheduleController::class, 'store'])
+        ->name('munaqosah-schedules.store');
+    Route::delete('/munaqosah-schedules/{munaqosahSchedule}', [MunaqosahScheduleController::class, 'destroy'])
+        ->name('munaqosah-schedules.destroy');
+});
+
+Route::middleware(['auth', 'permission:propose-munaqosah-acceleration,approve-munaqosah-acceleration'])->group(function () {
+    Route::get('/munaqosah-acceleration-requests', [MunaqosahAccelerationRequestController::class, 'index'])
+        ->name('munaqosah-acceleration-requests.index');
+    Route::post('/munaqosah-acceleration-requests/{munaqosahAccelerationRequest}/result', [MunaqosahAccelerationRequestController::class, 'recordResult'])
+        ->name('munaqosah-acceleration-requests.result');
+});
+
+Route::middleware(['auth', 'permission:propose-munaqosah-acceleration'])->group(function () {
+    Route::post('/munaqosah-acceleration-requests', [MunaqosahAccelerationRequestController::class, 'store'])
+        ->name('munaqosah-acceleration-requests.store');
+});
+
+Route::middleware(['auth', 'permission:approve-munaqosah-acceleration'])->group(function () {
+    Route::post('/munaqosah-acceleration-requests/{munaqosahAccelerationRequest}/approve', [MunaqosahAccelerationRequestController::class, 'approve'])
+        ->name('munaqosah-acceleration-requests.approve');
+    Route::post('/munaqosah-acceleration-requests/{munaqosahAccelerationRequest}/reject', [MunaqosahAccelerationRequestController::class, 'reject'])
+        ->name('munaqosah-acceleration-requests.reject');
 });
 
 Route::middleware(['auth', 'permission:view-ujian,manage-ujian'])->group(function () {
