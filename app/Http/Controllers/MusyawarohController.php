@@ -112,7 +112,7 @@ class MusyawarohController extends Controller
         $musyawaroh->load(['createdBy', 'attendees.user', 'notulens.createdBy', 'notulens.checkedBy', 'notulens.task.assignees']);
 
         $existingAttendeeIds = $musyawaroh->attendees->pluck('user_id')->filter()->all();
-        $availableMembers = MusyawarohHierarchy::flatMembersFor($musyawaroh->createdBy)
+        $availableMembers = MusyawarohHierarchy::allActiveMembers()
             ->reject(fn (object $member): bool => in_array($member->user_id, $existingAttendeeIds, true))
             ->values();
 
@@ -133,10 +133,8 @@ class MusyawarohController extends Controller
     {
         abort_unless($musyawaroh->isVisibleTo($request->user()), 403);
 
-        $allowedUserIds = MusyawarohHierarchy::allowedUserIds($musyawaroh->createdBy);
-
         $validated = $request->validate([
-            'user_id' => ['nullable', 'integer', Rule::in($allowedUserIds)],
+            'user_id' => ['nullable', 'integer', Rule::in(MusyawarohHierarchy::allActiveUserIds())],
             'manual_name' => ['nullable', 'string', 'max:255'],
         ]);
 

@@ -557,7 +557,7 @@ class MusyawarohTest extends TestCase
         ]);
     }
 
-    public function test_a_pengurus_outside_the_musyawarohs_reach_cannot_be_added_as_an_attendee(): void
+    public function test_a_pengurus_from_a_sibling_branch_can_also_be_added_as_an_attendee(): void
     {
         $villageA = $this->makeVillage('Desa A');
         $villageB = $this->makeVillage('Desa B');
@@ -568,8 +568,30 @@ class MusyawarohTest extends TestCase
 
         $musyawaroh = Musyawaroh::create(['meeting_date' => now()->toDateString(), 'created_by_id' => $desaAUser->id]);
 
+        // Attendance isn't limited to the organiser's own branch the way inviting is - anyone
+        // registered in the system who actually showed up can be recorded.
+        $this->actingAs($desaAUser)->get("/musyawaroh/{$musyawaroh->id}")->assertSee($kelompokB1User->name);
+
         $this->actingAs($desaAUser)->post("/musyawaroh/{$musyawaroh->id}/attendees", [
             'user_id' => $kelompokB1User->id,
+        ])->assertRedirect(route('musyawaroh.show', $musyawaroh));
+
+        $this->assertDatabaseHas('musyawaroh_attendees', [
+            'musyawaroh_id' => $musyawaroh->id,
+            'user_id' => $kelompokB1User->id,
+            'status' => MusyawarohAttendee::STATUS_HADIR,
+        ]);
+    }
+
+    public function test_a_random_integer_that_is_not_an_active_pengurus_cannot_be_added_as_an_attendee(): void
+    {
+        $village = $this->makeVillage('Desa A');
+        $desaUser = $this->makeUser('Desa A', $this->desaRole, 'village', $village->id);
+
+        $musyawaroh = Musyawaroh::create(['meeting_date' => now()->toDateString(), 'created_by_id' => $desaUser->id]);
+
+        $this->actingAs($desaUser)->post("/musyawaroh/{$musyawaroh->id}/attendees", [
+            'user_id' => 999999,
         ])->assertSessionHasErrors('user_id');
 
         $this->assertDatabaseCount('musyawaroh_attendees', 0);
