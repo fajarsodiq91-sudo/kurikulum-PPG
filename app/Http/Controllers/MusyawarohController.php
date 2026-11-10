@@ -109,10 +109,56 @@ class MusyawarohController extends Controller
     {
         abort_unless($musyawaroh->isVisibleTo($request->user()), 403);
 
+        $musyawaroh->load(['createdBy', 'attendees.user', 'notulens.createdBy', 'notulens.checkedBy', 'notulens.task.assignees']);
+
+        $existingAttendeeIds = $musyawaroh->attendees->pluck('user_id')->filter()->all();
+        $availableMembers = MusyawarohHierarchy::flatMembersFor($musyawaroh->createdBy)
+            ->reject(fn (object $member): bool => in_array($member->user_id, $existingAttendeeIds, true))
+            ->values();
+
         return view('musyawaroh.show', [
-            'musyawaroh' => $musyawaroh->load(['createdBy', 'attendees.user', 'notulens.createdBy', 'notulens.checkedBy', 'notulens.task.assignees']),
+            'musyawaroh' => $musyawaroh,
             'recipients' => TaskHierarchy::assignableRecipients($request->user()),
+            'availableMembers' => $availableMembers,
         ]);
+    }
+
+    /**
+     * Records someone who shows up without having been invited - another pengurus within
+     * the musyawaroh's reach who wasn't on the original invite list, or someone entirely
+     * outside the system (added by name only). Either way they're recorded straight as
+     * hadir, since the whole point is that they turned up.
+     */
+    public function addAttendee(Request $request, Musyawaroh $musyawaroh): RedirectResponse
+    {
+        abort_unless($musyawaroh->isVisibleTo($request->user()), 403);
+
+        $allowedUserIds = MusyawarohHierarchy::allowedUserIds($musyawaroh->createdBy);
+
+        $validated = $request->validate([
+            'user_id' => ['nullable', 'integer', Rule::in($allowedUserIds)],
+            'manual_name' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $userId = $validated['user_id'] ?? null;
+        $manualName = $validated['manual_name'] ?? null;
+
+        abort_if($userId === null && blank($manualName), 422, 'Pilih nama pengurus atau isi nama manual.');
+
+        if ($userId !== null) {
+            $alreadyAttending = $musyawaroh->attendees()->where('user_id', $userId)->exists();
+
+            abort_if($alreadyAttending, 422, 'Orang ini sudah ada di daftar hadir.');
+        }
+
+        MusyawarohAttendee::create([
+            'musyawaroh_id' => $musyawaroh->id,
+            'user_id' => $userId,
+            'manual_name' => $userId === null ? $manualName : null,
+            'status' => MusyawarohAttendee::STATUS_HADIR,
+        ]);
+
+        return redirect()->route('musyawaroh.show', $musyawaroh)->with('success', 'Peserta berhasil ditambahkan ke daftar hadir.');
     }
 
     public function updateAttendance(Request $request, Musyawaroh $musyawaroh): RedirectResponse

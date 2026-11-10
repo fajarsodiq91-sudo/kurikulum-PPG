@@ -862,6 +862,8 @@ Route::middleware(['auth', 'permission:manage-tasks'])->group(function () {
         ->name('musyawaroh.show');
     Route::patch('/musyawaroh/{musyawaroh}/attendance', [MusyawarohController::class, 'updateAttendance'])
         ->name('musyawaroh.attendance.update');
+    Route::post('/musyawaroh/{musyawaroh}/attendees', [MusyawarohController::class, 'addAttendee'])
+        ->name('musyawaroh.attendees.store');
     Route::patch('/musyawaroh/{musyawaroh}/notulen/send', [MusyawarohController::class, 'sendNotulen'])
         ->name('musyawaroh.notulen.send');
 });

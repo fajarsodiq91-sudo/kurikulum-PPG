@@ -60,7 +60,26 @@ class MusyawarohHierarchy
      */
     public static function allowedUserIds(User $user): array
     {
-        return self::flatten(self::treeFor($user))->pluck('user_id')->unique()->map(fn ($id): int => (int) $id)->values()->all();
+        return self::flatMembersFor($user)->pluck('user_id')->all();
+    }
+
+    /**
+     * Every pengurus selectable somewhere in $user's tree, flattened and de-duplicated by
+     * user id - used to offer "add someone who wasn't invited but showed up anyway" pickers.
+     *
+     * @return Collection<int, object>
+     */
+    public static function flatMembersFor(User $user): Collection
+    {
+        return self::flatten(self::treeFor($user))
+            ->unique('user_id')
+            ->map(function (object $row): object {
+                $row->user_id = (int) $row->user_id;
+
+                return $row;
+            })
+            ->sortBy('user_name')
+            ->values();
     }
 
     /**

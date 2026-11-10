@@ -72,6 +72,30 @@
                     <button type="submit" class="w-full rounded-lg bg-brand-600 px-3 py-2 text-xs font-semibold text-white hover:bg-brand-700">Simpan Daftar Hadir</button>
                 </form>
             @endif
+
+            <div class="mt-4 border-t border-slate-200 pt-4">
+                <p class="mb-1 text-xs font-semibold text-slate-600">Tambah Peserta Lain</p>
+                <p class="mb-2 text-xs text-slate-400">Pengurus lain yang hadir walau tidak diundang, atau orang di luar sistem - keduanya langsung tercatat Hadir.</p>
+
+                @if ($availableMembers->isNotEmpty())
+                    <form method="POST" action="{{ route('musyawaroh.attendees.store', $musyawaroh) }}" class="mb-2 flex gap-2">
+                        @csrf
+                        <select name="user_id" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs">
+                            <option value="">Pilih pengurus...</option>
+                            @foreach ($availableMembers as $member)
+                                <option value="{{ $member->user_id }}">{{ $member->user_name }}@if ($member->jabatan) ({{ $member->jabatan }})@endif</option>
+                            @endforeach
+                        </select>
+                        <button type="submit" class="shrink-0 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-700">+ Hadir</button>
+                    </form>
+                @endif
+
+                <form method="POST" action="{{ route('musyawaroh.attendees.store', $musyawaroh) }}" class="flex gap-2">
+                    @csrf
+                    <input type="text" name="manual_name" placeholder="Nama tamu / belum terdaftar" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs">
+                    <button type="submit" class="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">+ Tambah</button>
+                </form>
+            </div>
         </x-card>
 
         <div class="space-y-4 lg:col-span-2">

@@ -510,4 +510,68 @@ class MusyawarohTest extends TestCase
         Notification::assertSentTimes(MusyawarohNotulenSent::class, 1);
         Notification::assertSentTo($kelompokUser, MusyawarohNotulenSent::class);
     }
+
+    public function test_a_pengurus_who_was_not_invited_can_still_be_added_as_present(): void
+    {
+        $village = $this->makeVillage('Desa A');
+        $group = $this->makeGroup($village, 'Kelompok A1');
+        $desaUser = $this->makeUser('Desa A', $this->desaRole, 'village', $village->id);
+        $uninvitedUser = $this->makeUser('Kelompok A1', $this->kelompokRole, 'group', $group->id);
+
+        $musyawaroh = Musyawaroh::create(['meeting_date' => now()->toDateString(), 'created_by_id' => $desaUser->id]);
+
+        // Not in the invite list, but shows up anyway.
+        $this->actingAs($desaUser)->get("/musyawaroh/{$musyawaroh->id}")->assertSee($uninvitedUser->name);
+
+        $this->actingAs($desaUser)->post("/musyawaroh/{$musyawaroh->id}/attendees", [
+            'user_id' => $uninvitedUser->id,
+        ])->assertRedirect(route('musyawaroh.show', $musyawaroh));
+
+        $this->assertDatabaseHas('musyawaroh_attendees', [
+            'musyawaroh_id' => $musyawaroh->id,
+            'user_id' => $uninvitedUser->id,
+            'status' => MusyawarohAttendee::STATUS_HADIR,
+        ]);
+
+        // Already attending now - can't be added a second time.
+        $this->actingAs($desaUser)->post("/musyawaroh/{$musyawaroh->id}/attendees", [
+            'user_id' => $uninvitedUser->id,
+        ])->assertStatus(422);
+    }
+
+    public function test_someone_outside_the_system_can_be_added_as_a_manual_attendee(): void
+    {
+        $village = $this->makeVillage('Desa A');
+        $desaUser = $this->makeUser('Desa A', $this->desaRole, 'village', $village->id);
+
+        $musyawaroh = Musyawaroh::create(['meeting_date' => now()->toDateString(), 'created_by_id' => $desaUser->id]);
+
+        $this->actingAs($desaUser)->post("/musyawaroh/{$musyawaroh->id}/attendees", [
+            'manual_name' => 'Tamu Dadakan',
+        ])->assertRedirect(route('musyawaroh.show', $musyawaroh));
+
+        $this->assertDatabaseHas('musyawaroh_attendees', [
+            'musyawaroh_id' => $musyawaroh->id,
+            'manual_name' => 'Tamu Dadakan',
+            'status' => MusyawarohAttendee::STATUS_HADIR,
+        ]);
+    }
+
+    public function test_a_pengurus_outside_the_musyawarohs_reach_cannot_be_added_as_an_attendee(): void
+    {
+        $villageA = $this->makeVillage('Desa A');
+        $villageB = $this->makeVillage('Desa B');
+        $groupB1 = $this->makeGroup($villageB, 'Kelompok B1');
+
+        $desaAUser = $this->makeUser('Desa A', $this->desaRole, 'village', $villageA->id);
+        $kelompokB1User = $this->makeUser('Kelompok B1', $this->kelompokRole, 'group', $groupB1->id);
+
+        $musyawaroh = Musyawaroh::create(['meeting_date' => now()->toDateString(), 'created_by_id' => $desaAUser->id]);
+
+        $this->actingAs($desaAUser)->post("/musyawaroh/{$musyawaroh->id}/attendees", [
+            'user_id' => $kelompokB1User->id,
+        ])->assertSessionHasErrors('user_id');
+
+        $this->assertDatabaseCount('musyawaroh_attendees', 0);
+    }
 }
