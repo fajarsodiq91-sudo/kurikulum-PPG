@@ -66,11 +66,19 @@
                                         Alpha
                                     </label>
                                 </div>
+                                <button type="button" onclick="if (confirm('Hapus {{ addslashes($attendee->displayName()) }} dari daftar hadir?')) { document.getElementById('delete-attendee-{{ $attendee->id }}').submit(); }" class="shrink-0 text-slate-300 hover:text-rose-600" aria-label="Hapus dari daftar hadir">&times;</button>
                             </li>
                         @endforeach
                     </ul>
                     <button type="submit" class="w-full rounded-lg bg-brand-600 px-3 py-2 text-xs font-semibold text-white hover:bg-brand-700">Simpan Daftar Hadir</button>
                 </form>
+
+                @foreach ($musyawaroh->attendees as $attendee)
+                    <form id="delete-attendee-{{ $attendee->id }}" method="POST" action="{{ route('musyawaroh.attendees.destroy', [$musyawaroh, $attendee]) }}" class="hidden">
+                        @csrf
+                        @method('DELETE')
+                    </form>
+                @endforeach
             @endif
 
             <div class="mt-4 border-t border-slate-200 pt-4">

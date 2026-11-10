@@ -159,6 +159,16 @@ class MusyawarohController extends Controller
         return redirect()->route('musyawaroh.show', $musyawaroh)->with('success', 'Peserta berhasil ditambahkan ke daftar hadir.');
     }
 
+    public function removeAttendee(Request $request, Musyawaroh $musyawaroh, MusyawarohAttendee $attendee): RedirectResponse
+    {
+        abort_unless($musyawaroh->isVisibleTo($request->user()), 403);
+        abort_unless($attendee->musyawaroh_id === $musyawaroh->id, 404);
+
+        $attendee->delete();
+
+        return redirect()->route('musyawaroh.show', $musyawaroh)->with('success', 'Peserta berhasil dihapus dari daftar hadir.');
+    }
+
     public function updateAttendance(Request $request, Musyawaroh $musyawaroh): RedirectResponse
     {
         abort_unless($musyawaroh->isVisibleTo($request->user()), 403);

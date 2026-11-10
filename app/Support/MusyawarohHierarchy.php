@@ -83,35 +83,24 @@ class MusyawarohHierarchy
     }
 
     /**
-     * Every active pengurus in the system (daerah, desa, and kelompok alike), regardless of
-     * branch. Attendance isn't limited to the organiser's own vertical reach the way inviting
-     * and task-assigning are - a musyawaroh can be, and often is, attended by pengurus from
-     * other branches who simply weren't on the invite list.
+     * Every active user in the system, regardless of which role or team they hold (ppg/desa/
+     * kelompok pengurus, or any other team such as Tim Tendik/Tim Kurikulum). Attendance isn't
+     * limited to a fixed set of organisational roles or to the organiser's own vertical reach
+     * the way inviting and task-assigning are - a musyawaroh can be, and often is, attended by
+     * anyone registered who simply wasn't on the invite list.
      *
      * @return Collection<int, object>
      */
     public static function allActiveMembers(): Collection
     {
-        return DB::table('user_roles')
-            ->join('users', 'users.id', '=', 'user_roles.user_id')
-            ->join('roles', 'roles.id', '=', 'user_roles.role_id')
-            ->leftJoin('dapukans', 'dapukans.id', '=', 'user_roles.dapukan_id')
-            ->where('users.status', 'active')
-            ->where('roles.is_active', true)
-            ->where('user_roles.is_active', true)
-            ->whereIn('roles.slug', ['ppg', 'perwakilan-ppg-desa', 'pelaksana-ppg-kelompok'])
-            ->orderBy('users.name')
-            ->get([
-                'users.id as user_id',
-                'users.name as user_name',
-                'dapukans.name as jabatan',
+        return User::where('status', 'active')
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn (User $user): object => (object) [
+                'user_id' => $user->id,
+                'user_name' => $user->name,
+                'jabatan' => null,
             ])
-            ->unique('user_id')
-            ->map(function (object $row): object {
-                $row->user_id = (int) $row->user_id;
-
-                return $row;
-            })
             ->values();
     }
 

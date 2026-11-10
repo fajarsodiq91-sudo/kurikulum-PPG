@@ -596,4 +596,66 @@ class MusyawarohTest extends TestCase
 
         $this->assertDatabaseCount('musyawaroh_attendees', 0);
     }
+
+    public function test_a_registered_user_without_any_ppg_desa_or_kelompok_role_can_still_be_added_as_an_attendee(): void
+    {
+        $village = $this->makeVillage('Desa A');
+        $desaUser = $this->makeUser('Desa A', $this->desaRole, 'village', $village->id);
+
+        // A user belonging to some other team (e.g. Tim Tendik) with no organisational role at all.
+        $otherTeamUser = User::create([
+            'name' => 'Tim Tendik Member',
+            'email' => 'tim-tendik@ppg.test',
+            'password' => Hash::make('password123'),
+            'status' => 'active',
+        ]);
+
+        $musyawaroh = Musyawaroh::create(['meeting_date' => now()->toDateString(), 'created_by_id' => $desaUser->id]);
+
+        $this->actingAs($desaUser)->get("/musyawaroh/{$musyawaroh->id}")->assertSee($otherTeamUser->name);
+
+        $this->actingAs($desaUser)->post("/musyawaroh/{$musyawaroh->id}/attendees", [
+            'user_id' => $otherTeamUser->id,
+        ])->assertRedirect(route('musyawaroh.show', $musyawaroh));
+
+        $this->assertDatabaseHas('musyawaroh_attendees', [
+            'musyawaroh_id' => $musyawaroh->id,
+            'user_id' => $otherTeamUser->id,
+            'status' => MusyawarohAttendee::STATUS_HADIR,
+        ]);
+    }
+
+    public function test_an_attendee_can_be_removed_entirely_from_the_daftar_hadir(): void
+    {
+        $village = $this->makeVillage('Desa A');
+        $group = $this->makeGroup($village, 'Kelompok A1');
+        $desaUser = $this->makeUser('Desa A', $this->desaRole, 'village', $village->id);
+        $kelompokUser = $this->makeUser('Kelompok A1', $this->kelompokRole, 'group', $group->id);
+        $outsiderUser = $this->makeUser('Outsider', $this->kelompokRole, 'group', $group->id);
+
+        $musyawaroh = Musyawaroh::create(['meeting_date' => now()->toDateString(), 'created_by_id' => $desaUser->id]);
+        $attendee = MusyawarohAttendee::create(['musyawaroh_id' => $musyawaroh->id, 'user_id' => $kelompokUser->id, 'status' => 'hadir']);
+
+        $this->actingAs($desaUser)->delete("/musyawaroh/{$musyawaroh->id}/attendees/{$attendee->id}")
+            ->assertRedirect(route('musyawaroh.show', $musyawaroh));
+
+        $this->assertDatabaseMissing('musyawaroh_attendees', ['id' => $attendee->id]);
+    }
+
+    public function test_an_attendee_cannot_be_removed_by_someone_outside_the_musyawarohs_reach(): void
+    {
+        $villageA = $this->makeVillage('Desa A');
+        $villageB = $this->makeVillage('Desa B');
+        $groupB1 = $this->makeGroup($villageB, 'Kelompok B1');
+
+        $desaAUser = $this->makeUser('Desa A', $this->desaRole, 'village', $villageA->id);
+        $kelompokB1User = $this->makeUser('Kelompok B1', $this->kelompokRole, 'group', $groupB1->id);
+
+        $musyawaroh = Musyawaroh::create(['meeting_date' => now()->toDateString(), 'created_by_id' => $desaAUser->id]);
+        $attendee = MusyawarohAttendee::create(['musyawaroh_id' => $musyawaroh->id, 'manual_name' => 'Tamu', 'status' => 'hadir']);
+
+        $this->actingAs($kelompokB1User)->delete("/musyawaroh/{$musyawaroh->id}/attendees/{$attendee->id}")->assertForbidden();
+
+        $this->assertDatabaseHas('musyawaroh_attendees', ['id' => $attendee->id]);
+    }
 }
