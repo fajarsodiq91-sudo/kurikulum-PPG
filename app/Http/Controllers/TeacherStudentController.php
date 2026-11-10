@@ -48,10 +48,13 @@ class TeacherStudentController extends Controller
 
     private function form(Teacher $teacher, string $action): View
     {
+        $candidates = $this->candidates($teacher);
+
         return view('teachers.students', [
             'teacher' => $teacher->load('group.village'),
             'action' => $action,
-            'candidates' => $this->candidates($teacher),
+            'candidates' => $candidates,
+            'candidatesByClass' => $candidates->groupBy(fn (Generus $student): int => $student->learning_class_id ?? 0),
             'selectedIds' => $teacher->students()->pluck('generus.id')->all(),
         ]);
     }
@@ -96,6 +99,7 @@ class TeacherStudentController extends Controller
                     });
                 }
             })
+            ->with('learningClass')
             ->orderBy('full_name')
             ->get();
     }

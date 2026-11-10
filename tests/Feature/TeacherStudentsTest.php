@@ -113,6 +113,37 @@ class TeacherStudentsTest extends TestCase
             ->assertDontSee('Murid Kelas 4');
     }
 
+    public function test_the_students_page_groups_candidates_by_their_kelas_kbm(): void
+    {
+        $kelas2 = ClassGrade::create(['name' => 'Kelas 2', 'code' => 'K2', 'sort_order' => 2, 'is_active' => true]);
+        $kelas3 = ClassGrade::create(['name' => 'Kelas 3', 'code' => 'K3', 'sort_order' => 3, 'is_active' => true]);
+
+        $inClass2 = $this->placedGenerus('Murid Kelas 2', $this->group);
+        $inClass2->update(['learning_class_id' => $kelas2->id]);
+        $inClass3a = $this->placedGenerus('Murid Kelas 3 A', $this->group);
+        $inClass3a->update(['learning_class_id' => $kelas3->id]);
+        $inClass3b = $this->placedGenerus('Murid Kelas 3 B', $this->group);
+        $inClass3b->update(['learning_class_id' => $kelas3->id]);
+
+        $response = $this->actingAs($this->teacherUser())->get('/my-students');
+
+        $response->assertOk()
+            ->assertSeeInOrder(['Kelas 2', 'Kelas 3'])
+            ->assertSee('data-class-group="'.$kelas2->id.'"', false)
+            ->assertSee('data-class-group="'.$kelas3->id.'"', false);
+
+        // Ticking every student of Kelas 3 (as the "select whole class" checkbox would do
+        // client-side) assigns both of its generus, leaving Kelas 2's student untouched.
+        $this->actingAs($this->teacherUser())
+            ->put('/my-students', ['student_ids' => [$inClass3a->id, $inClass3b->id]])
+            ->assertRedirect('/my-students');
+
+        $this->assertEqualsCanonicalizing(
+            [$inClass3a->id, $inClass3b->id],
+            $this->teacher->students()->pluck('generus.id')->all(),
+        );
+    }
+
     public function test_admin_can_manage_a_teachers_students(): void
     {
         $student = $this->placedGenerus('Murid Admin', $this->group);
