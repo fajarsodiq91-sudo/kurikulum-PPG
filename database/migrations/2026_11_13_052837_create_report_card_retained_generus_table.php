@@ -15,7 +15,7 @@ return new class extends Migration
         // kelas" — absence here means "naik" (the default) once the confirmation is saved.
         Schema::create('report_card_retained_generus', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('report_card_group_confirmation_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
+            $table->foreignId('report_card_group_confirmation_id')->constrained(indexName: 'rcrg_confirmation_id_foreign')->cascadeOnUpdate()->cascadeOnDelete();
             $table->foreignId('generus_id')->constrained('generus')->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();
 
