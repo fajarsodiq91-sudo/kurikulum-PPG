@@ -87,6 +87,8 @@
                     ['label' => 'Akselerasi Munaqosah', 'route' => 'munaqosah-acceleration-requests.index', 'permission' => ['propose-munaqosah-acceleration', 'approve-munaqosah-acceleration']],
                     ['label' => 'Daftar Ujian', 'route' => 'ujians.index', 'permission' => ['view-ujian', 'manage-ujian']],
                     ['label' => 'Rapor Generus', 'route' => 'report-cards.index', 'permission' => ['view-report-cards', 'manage-report-cards']],
+                    ['label' => 'Penerbitan Rapor', 'route' => 'report-card-publications.index', 'permission' => ['manage-report-card-publishing']],
+                    ['label' => 'Konfirmasi Kenaikan Kelas', 'route' => 'report-card-group-confirmations.index', 'permission' => ['confirm-report-card-publishing']],
                 ]],
                 ['label' => 'Kontrol Harian', 'icon' => 'clipboard-check', 'items' => [
                     ['label' => 'Kontrol Bacaan', 'route' => 'kontrol.bacaan', 'permission' => ['view-ujian', 'manage-ujian']],

@@ -8,10 +8,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * A recorded munaqosah result. type=semester-final records from the semester-2 cycle, and
- * type=akselerasi records tied to an approved MunaqosahAccelerationRequest, can carry a
- * decision ('naik'/'tinggal'); saving one with decision=naik promotes the generus to the
- * next kelas KBM exactly once (see promoteIfEligible()).
+ * A recorded munaqosah result. type=semester-final records from the semester-2 cycle feed
+ * the rapor-publishing confirmation (App\Models\ReportCardGroupConfirmation) as a hint of
+ * who the kelompok already flagged "tinggal" — kenaikan kelas for that cycle only actually
+ * happens once PPG Daerah's rapor publication is confirmed (App\Support\GradePromotionService
+ * is called from there, not from here). type=akselerasi records tied to an approved
+ * MunaqosahAccelerationRequest are the exception: saving one with decision=naik promotes the
+ * generus immediately (see promoteIfEligible()), since akselerasi happens outside the
+ * semester cycle and has no publication gate to wait for.
  */
 class Munaqosah extends Model
 {
@@ -94,20 +98,14 @@ class Munaqosah extends Model
     }
 
     /**
-     * Whether this record is the kind of munaqosah that may promote a generus: the regular
-     * semester-final at semester 2, or an akselerasi tied to an approved request.
+     * Whether saving this record may promote a generus immediately: only an akselerasi tied
+     * to an approved request. A regular semester-final decision never promotes on its own —
+     * that only happens once the semester's rapor publication is confirmed, so a kelompok
+     * still gets one final chance to flag a "tinggal" before kenaikan kelas actually lands.
      */
     public function canDecidePromotion(): bool
     {
-        if ($this->type === self::TYPE_AKSELERASI) {
-            return $this->accelerationRequest?->isApproved() ?? false;
-        }
-
-        if ($this->type === self::TYPE_SEMESTER_FINAL) {
-            return $this->semester?->sort_order === self::PROMOTING_SEMESTER_SORT_ORDER;
-        }
-
-        return false;
+        return $this->type === self::TYPE_AKSELERASI && ($this->accelerationRequest?->isApproved() ?? false);
     }
 
     /**

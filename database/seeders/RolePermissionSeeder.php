@@ -34,7 +34,7 @@ class RolePermissionSeeder extends Seeder
         'manage-evaluations', 'manage-follow-ups', 'manage-progress-tracking', 'manage-report-cards',
         'manage-milestones', 'manage-munaqosah', 'manage-ujian', 'manage-parent-communications',
         'manage-tasks', 'manage-own-learning-sessions', 'manage-own-default-schedule',
-        'propose-munaqosah-acceleration',
+        'propose-munaqosah-acceleration', 'confirm-report-card-publishing',
     ];
 
     /**
@@ -59,6 +59,8 @@ class RolePermissionSeeder extends Seeder
         $this->ensurePermission('manage-munaqosah-schedule', 'Manage Munaqosah Schedule', 'munaqosah');
         $this->ensurePermission('propose-munaqosah-acceleration', 'Propose Munaqosah Acceleration', 'munaqosah');
         $this->ensurePermission('approve-munaqosah-acceleration', 'Approve Munaqosah Acceleration', 'munaqosah');
+        $this->ensurePermission('manage-report-card-publishing', 'Publish Report Cards', 'report-cards');
+        $this->ensurePermission('confirm-report-card-publishing', 'Confirm Report Card Publishing', 'report-cards');
 
         foreach (self::MODULES as $module) {
             $this->ensurePermission("view-{$module}", 'View '.str($module)->replace('-', ' ')->title(), $module);
@@ -69,7 +71,7 @@ class RolePermissionSeeder extends Seeder
         $viewPermissions = Permission::where('slug', 'like', 'view-%')->pluck('slug');
         $forVillage = $viewPermissions->reject(fn (string $slug): bool => $slug === 'view-master-data')->values();
 
-        $this->syncRole('ppg', 'Pengurus PPG Daerah', 'Melihat semua data (baca-saja), serta menyusun jadwal KBM default', [...$viewPermissions->all(), 'manage-announcements', 'manage-tasks', 'approve-registrations', 'manage-learning-sessions', 'manage-munaqosah-schedule', 'approve-munaqosah-acceleration']);
+        $this->syncRole('ppg', 'Pengurus PPG Daerah', 'Melihat semua data (baca-saja), serta menyusun jadwal KBM default', [...$viewPermissions->all(), 'manage-announcements', 'manage-tasks', 'approve-registrations', 'manage-learning-sessions', 'manage-munaqosah-schedule', 'approve-munaqosah-acceleration', 'manage-report-card-publishing']);
         $this->syncRole('perwakilan-ppg-desa', 'Perwakilan PPG Desa', 'Melihat data di desanya dan mengisi daftar hadir KBM tingkat desa', [...$forVillage->all(), ...self::VILLAGE_MANAGE, 'approve-registrations']);
         $this->syncRole('pelaksana-ppg-kelompok', 'Pelaksana PPG Kelompok', 'Mengelola seluruh data di tingkat kelompok', [...$forVillage->all(), ...self::GROUP_MANAGE, 'approve-registrations']);
 

@@ -140,11 +140,11 @@ class MunaqosahPromotionTest extends TestCase
         $this->assertDatabaseHas('munaqosahs', ['generus_id' => $generus->id, 'decision' => 'naik']);
     }
 
-    public function test_naik_decision_at_semester_two_promotes_the_generus_to_the_next_class_grade(): void
+    public function test_semester_final_naik_decision_does_not_promote_immediately_on_save(): void
     {
         $level = Level::create(['name' => 'Caberawit', 'code' => 'CB', 'sort_order' => 1, 'is_active' => true]);
         $classOne = ClassGrade::create(['level_id' => $level->id, 'name' => '1', 'code' => 'K1', 'sort_order' => 0, 'is_active' => true]);
-        $classTwo = ClassGrade::create(['level_id' => $level->id, 'name' => '2', 'code' => 'K2', 'sort_order' => 1, 'is_active' => true]);
+        ClassGrade::create(['level_id' => $level->id, 'name' => '2', 'code' => 'K2', 'sort_order' => 1, 'is_active' => true]);
         $generus = $this->placedGenerus('Generus Naik', $classOne);
 
         MunaqosahSchedule::create([
@@ -157,6 +157,9 @@ class MunaqosahPromotionTest extends TestCase
 
         $user = $this->kelompokUser();
 
+        // A semester-final decision of "naik" is recorded, but kenaikan kelas itself now
+        // waits for the rapor-publishing confirmation (ReportCardGroupConfirmationTest),
+        // giving the kelompok one last chance to flag a straggler as "tinggal".
         $this->actingAs($user)->post('/munaqosahs/batch', [
             'group_id' => $this->group->id,
             'academic_year_id' => $this->academicYear->id,
@@ -164,35 +167,6 @@ class MunaqosahPromotionTest extends TestCase
             'type' => 'semester-final',
             'title' => 'Munaqosah Semester Genap',
             'scores' => [$generus->id => ['score' => 90, 'decision' => 'naik', 'status' => 'completed']],
-        ])->assertRedirect();
-
-        $this->assertSame($classTwo->id, $generus->fresh()->learning_class_id);
-    }
-
-    public function test_tinggal_decision_does_not_change_the_class_grade(): void
-    {
-        $level = Level::create(['name' => 'Caberawit', 'code' => 'CB', 'sort_order' => 1, 'is_active' => true]);
-        $classOne = ClassGrade::create(['level_id' => $level->id, 'name' => '1', 'code' => 'K1', 'sort_order' => 0, 'is_active' => true]);
-        ClassGrade::create(['level_id' => $level->id, 'name' => '2', 'code' => 'K2', 'sort_order' => 1, 'is_active' => true]);
-        $generus = $this->placedGenerus('Generus Tinggal', $classOne);
-
-        MunaqosahSchedule::create([
-            'class_grade_id' => $classOne->id,
-            'academic_year_id' => $this->academicYear->id,
-            'semester_id' => $this->semesterTwo->id,
-            'type' => 'semester-final',
-            'is_open' => true,
-        ]);
-
-        $user = $this->kelompokUser();
-
-        $this->actingAs($user)->post('/munaqosahs/batch', [
-            'group_id' => $this->group->id,
-            'academic_year_id' => $this->academicYear->id,
-            'semester_id' => $this->semesterTwo->id,
-            'type' => 'semester-final',
-            'title' => 'Munaqosah Semester Genap',
-            'scores' => [$generus->id => ['score' => 40, 'decision' => 'tinggal', 'status' => 'completed']],
         ])->assertRedirect();
 
         $this->assertSame($classOne->id, $generus->fresh()->learning_class_id);

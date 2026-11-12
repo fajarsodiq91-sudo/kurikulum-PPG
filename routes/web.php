@@ -42,6 +42,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProgressTrackController;
 use App\Http\Controllers\RegistrationApprovalController;
 use App\Http\Controllers\ReportCardController;
+use App\Http\Controllers\ReportCardGroupConfirmationController;
+use App\Http\Controllers\ReportCardPublicationController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SessionAttendanceController;
@@ -715,6 +717,24 @@ Route::middleware(['auth', 'permission:manage-report-cards'])->group(function ()
     Route::delete('/report-cards/{reportCard}', [ReportCardController::class, 'destroy'])
         ->whereNumber('reportCard')
         ->name('report-cards.destroy');
+});
+
+Route::middleware(['auth', 'permission:manage-report-card-publishing'])->group(function () {
+    Route::get('/report-card-publications', [ReportCardPublicationController::class, 'index'])
+        ->name('report-card-publications.index');
+    Route::post('/report-card-publications', [ReportCardPublicationController::class, 'store'])
+        ->name('report-card-publications.store');
+});
+
+Route::middleware(['auth', 'permission:confirm-report-card-publishing'])->group(function () {
+    Route::get('/report-card-group-confirmations', [ReportCardGroupConfirmationController::class, 'index'])
+        ->name('report-card-group-confirmations.index');
+    Route::get('/report-card-group-confirmations/{reportCardGroupConfirmation}/edit', [ReportCardGroupConfirmationController::class, 'edit'])
+        ->whereNumber('reportCardGroupConfirmation')
+        ->name('report-card-group-confirmations.edit');
+    Route::put('/report-card-group-confirmations/{reportCardGroupConfirmation}', [ReportCardGroupConfirmationController::class, 'update'])
+        ->whereNumber('reportCardGroupConfirmation')
+        ->name('report-card-group-confirmations.update');
 });
 
 Route::middleware(['auth', 'permission:view-follow-ups,manage-follow-ups'])->group(function () {
