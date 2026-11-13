@@ -12,6 +12,7 @@ use App\Models\MaterialCategory;
 use App\Models\Semester;
 use App\Models\Ujian;
 use App\Models\User;
+use App\Support\SemesterResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -47,18 +48,29 @@ class KontrolController extends Controller
 
         $groups = Group::where('is_active', true)->manageableBy($user, Ujian::MANAGE_PERMISSION)->with('village')->orderBy('name')->get();
         $classGrades = ClassGrade::where('is_active', true)->orderBy('sort_order')->get();
+        $teacher = $user?->teacher;
+
+        $defaultGroup = ($teacher?->group_id !== null ? $groups->firstWhere('id', $teacher->group_id) : null)
+            ?? ($groups->count() === 1 ? $groups->first() : null);
 
         $group = $request->filled('group_id')
             ? $groups->firstWhere('id', $request->integer('group_id'))
-            : null;
+            : $defaultGroup;
+
+        $taughtClassGradeIds = $teacher ? $teacher->classGrades()->pluck('class_grades.id') : collect();
+        $classGradeOptions = $taughtClassGradeIds->isNotEmpty()
+            ? $classGrades->whereIn('id', $taughtClassGradeIds)->values()
+            : $classGrades;
 
         $classGrade = $request->filled('class_grade_id')
             ? $classGrades->firstWhere('id', $request->integer('class_grade_id'))
-            : null;
+            : ($classGradeOptions->count() === 1 ? $classGradeOptions->first() : null);
 
-        $academicYearId = $request->integer('academic_year_id') ?: null;
-        $semesterId = $request->integer('semester_id') ?: null;
-        $type = $request->string('type')->value() ?: 'harian';
+        $currentSemester = SemesterResolver::resolveFor(now());
+
+        $academicYearId = $request->integer('academic_year_id') ?: $currentSemester?->academic_year_id;
+        $semesterId = $request->integer('semester_id') ?: $currentSemester?->id;
+        $type = 'harian';
         $materialId = $request->integer('material_id') ?: null;
 
         $roster = $this->rosterFor($user, $group, $classGrade);
@@ -91,7 +103,7 @@ class KontrolController extends Controller
             'category' => $category,
             'label' => $label,
             'groups' => $groups,
-            'classGrades' => $classGrades,
+            'classGrades' => $classGradeOptions,
             'group' => $group,
             'classGrade' => $classGrade,
             'roster' => $roster,

@@ -14,6 +14,7 @@ use App\Models\Permission;
 use App\Models\Region;
 use App\Models\Role;
 use App\Models\Semester;
+use App\Models\Teacher;
 use App\Models\User;
 use App\Models\Village;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -59,6 +60,27 @@ class KontrolBacaanTest extends TestCase
             'semester_id' => $context['semester']->id,
             'final_score' => 88,
         ]);
+    }
+
+    public function test_the_only_manageable_group_and_taught_class_grade_are_preselected(): void
+    {
+        $context = $this->makeContext();
+
+        $teacher = Teacher::create([
+            'registration_number' => '260199001',
+            'name' => 'Guru Kontrol',
+            'gender' => 'male',
+            'status' => 'active',
+            'group_id' => $context['group']->id,
+        ]);
+        $teacher->classGrades()->attach($context['classGrade']->id);
+        $context['user']->forceFill(['teacher_id' => $teacher->id])->save();
+
+        $response = $this->actingAs($context['user'])->get('/kontrol/bacaan');
+
+        $response->assertOk();
+        $this->assertSame($context['group']->id, $response->viewData('group')?->id);
+        $this->assertSame($context['classGrade']->id, $response->viewData('classGrade')?->id);
     }
 
     public function test_generus_from_a_different_class_grade_cannot_be_scored(): void

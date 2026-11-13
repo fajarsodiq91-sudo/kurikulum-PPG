@@ -15,7 +15,7 @@
     </div>
 
     <section class="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <form method="GET" action="{{ route('kontrol.'.$category) }}" class="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <form method="GET" action="{{ route('kontrol.'.$category) }}" class="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
             <div>
                 <label class="mb-2 block text-sm font-medium text-slate-700" for="group_id">Kelompok</label>
                 <select id="group_id" name="group_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2">
@@ -52,14 +52,7 @@
                     @endforeach
                 </select>
             </div>
-            <div>
-                <label class="mb-2 block text-sm font-medium text-slate-700" for="type">Periode</label>
-                <select id="type" name="type" class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                    <option value="harian" @selected($type === 'harian')>Harian</option>
-                    <option value="mingguan" @selected($type === 'mingguan')>Mingguan</option>
-                    <option value="bulanan" @selected($type === 'bulanan')>Bulanan</option>
-                </select>
-            </div>
+            <input type="hidden" name="type" value="{{ $type }}">
             <div>
                 <label class="mb-2 block text-sm font-medium text-slate-700" for="material_id">Materi</label>
                 <select id="material_id" name="material_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2" @disabled($materials->isEmpty())>
@@ -69,7 +62,7 @@
                     @endforeach
                 </select>
             </div>
-            <div class="sm:col-span-3 lg:col-span-6">
+            <div class="sm:col-span-3 lg:col-span-5">
                 <button type="submit" class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Tampilkan</button>
             </div>
         </form>
