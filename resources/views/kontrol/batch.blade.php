@@ -27,7 +27,7 @@
             </div>
             <div>
                 <label class="mb-2 block text-sm font-medium text-slate-700" for="group_id">Kelompok</label>
-                <select id="group_id" name="group_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                <select id="group_id" name="group_id" class="w-full rounded-lg border border-slate-300 px-3 py-2">
                     <option value="">-- Semua Kelompok --</option>
                     @foreach($groups as $item)
                         <option value="{{ $item->id }}" data-village-id="{{ $item->village_id }}" @selected($group?->id === $item->id)>{{ $item->name }}</option>
