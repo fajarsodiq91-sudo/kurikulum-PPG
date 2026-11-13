@@ -61,6 +61,8 @@ class KontrolController extends Controller
             ? $groups->firstWhere('id', $request->integer('group_id'))
             : $defaultGroup;
 
+        $groupIds = $this->resolveGroupIds($groups, $group, $villageId);
+
         $taughtClassGradeIds = $teacher ? $teacher->classGrades()->pluck('class_grades.id') : collect();
         $classGradeOptions = $taughtClassGradeIds->isNotEmpty()
             ? $classGrades->whereIn('id', $taughtClassGradeIds)->values()
@@ -77,7 +79,7 @@ class KontrolController extends Controller
         $type = 'harian';
         $materialId = $request->integer('material_id') ?: null;
 
-        $roster = $this->rosterFor($user, $group, $classGrade);
+        $roster = $this->rosterFor($user, $groupIds, $classGrade);
 
         $materialCategory = ($classGrade && $semesterId)
             ? MaterialCategory::where('class_grade_id', $classGrade->id)
@@ -111,6 +113,7 @@ class KontrolController extends Controller
             'groups' => $groups,
             'classGrades' => $classGradeOptions,
             'group' => $group,
+            'groupIds' => $groupIds,
             'classGrade' => $classGrade,
             'roster' => $roster,
             'materialCategory' => $materialCategory,
@@ -130,10 +133,12 @@ class KontrolController extends Controller
         $this->label($category);
         $user = $request->user();
 
-        $manageableGroupIds = Group::where('is_active', true)->manageableBy($user, Ujian::MANAGE_PERMISSION)->pluck('id')->all();
+        $groups = Group::where('is_active', true)->manageableBy($user, Ujian::MANAGE_PERMISSION)->get();
+        $manageableGroupIds = $groups->pluck('id')->all();
 
         $validated = $request->validate([
-            'group_id' => ['required', Rule::in($manageableGroupIds)],
+            'group_id' => ['nullable', Rule::in($manageableGroupIds)],
+            'village_id' => ['nullable', 'integer'],
             'class_grade_id' => ['required', 'exists:class_grades,id'],
             'academic_year_id' => ['required', 'exists:academic_years,id'],
             'semester_id' => ['required', 'exists:semesters,id'],
@@ -146,7 +151,8 @@ class KontrolController extends Controller
             'scores.*.notes' => ['nullable', 'string'],
         ]);
 
-        $group = Group::findOrFail($validated['group_id']);
+        $group = filled($validated['group_id'] ?? null) ? Group::findOrFail($validated['group_id']) : null;
+        $groupIds = $this->resolveGroupIds($groups, $group, $validated['village_id'] ?? null);
         $classGrade = ClassGrade::findOrFail($validated['class_grade_id']);
 
         $material = LearningMaterial::with('materialChapter.materialCategory')->findOrFail($validated['material_id']);
@@ -160,7 +166,7 @@ class KontrolController extends Controller
             'Materi tidak sesuai dengan kategori, kelas, atau semester yang dipilih.'
         );
 
-        $rosterIds = $this->rosterFor($user, $group, $classGrade)->pluck('id')->map(fn (mixed $id): int => (int) $id)->all();
+        $rosterIds = $this->rosterFor($user, $groupIds, $classGrade)->pluck('id')->map(fn (mixed $id): int => (int) $id)->all();
 
         foreach ($validated['scores'] ?? [] as $generusId => $entry) {
             abort_unless(in_array((int) $generusId, $rosterIds, true), 422, 'Generus tidak termasuk dalam kelompok/kelas KBM yang dipilih.');
@@ -191,7 +197,7 @@ class KontrolController extends Controller
             );
         }
 
-        return redirect()->route("kontrol.{$category}", $request->only(['group_id', 'class_grade_id', 'academic_year_id', 'semester_id', 'type', 'material_id']))
+        return redirect()->route("kontrol.{$category}", $request->only(['group_id', 'village_id', 'class_grade_id', 'academic_year_id', 'semester_id', 'type', 'material_id']))
             ->with('success', "Nilai kontrol {$this->label($category)} berhasil disimpan.");
     }
 
@@ -203,20 +209,40 @@ class KontrolController extends Controller
     }
 
     /**
-     * Roster kelompok, disaring ke generus yang kelas KBM-nya sama dengan kelas yang dipilih —
-     * ini yang membuat materi yang tampil otomatis mengikuti kelas KBM generus.
+     * Roster kelompok (satu atau beberapa sekaligus, saat tidak ada kelompok spesifik dipilih),
+     * disaring ke generus yang kelas KBM-nya sama dengan kelas yang dipilih — ini yang membuat
+     * materi yang tampil otomatis mengikuti kelas KBM generus.
      *
+     * @param  list<int>  $groupIds
      * @return Collection<int, Generus>
      */
-    private function rosterFor(?User $user, ?Group $group, ?ClassGrade $classGrade): Collection
+    private function rosterFor(?User $user, array $groupIds, ?ClassGrade $classGrade): Collection
     {
-        if (! $group || ! $classGrade) {
+        if ($groupIds === [] || ! $classGrade) {
             return collect();
         }
 
-        return $group->rosterFor($user, Ujian::MANAGE_PERMISSION)
+        return Group::rosterForGroups($groupIds, $user, Ujian::MANAGE_PERMISSION)
             ->where('learning_class_id', $classGrade->id)
             ->get();
+    }
+
+    /**
+     * Kelompok mana saja yang dicakup halaman ini: satu kelompok spesifik kalau dipilih,
+     * atau seluruh kelompok yang bisa dikelola user (dipersempit ke satu desa bila dipilih).
+     *
+     * @param  Collection<int, Group>  $groups
+     * @return list<int>
+     */
+    private function resolveGroupIds(Collection $groups, ?Group $group, ?int $villageId): array
+    {
+        if ($group) {
+            return [$group->id];
+        }
+
+        $scoped = $villageId ? $groups->where('village_id', $villageId) : $groups;
+
+        return $scoped->pluck('id')->map(fn (mixed $id): int => (int) $id)->values()->all();
     }
 
     /**

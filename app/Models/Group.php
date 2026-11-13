@@ -73,8 +73,20 @@ class Group extends Model
      */
     public function rosterFor(?User $user, string $permission): Builder
     {
+        return self::rosterForGroups([(int) $this->id], $user, $permission);
+    }
+
+    /**
+     * Same as rosterFor(), but spanning several groups at once — used when the caller (e.g. a
+     * desa/daerah user) hasn't narrowed the page down to a single kelompok.
+     *
+     * @param  list<int>  $groupIds
+     * @return Builder<Generus>
+     */
+    public static function rosterForGroups(array $groupIds, ?User $user, string $permission): Builder
+    {
         return StudentScope::limit(
-            Generus::where('status', 'active')->inPlacement(['group_id' => [(int) $this->id]])->orderBy('full_name'),
+            Generus::where('status', 'active')->inPlacement(['group_id' => $groupIds])->orderBy('full_name'),
             StudentScope::manageIds($user, $permission),
             'id',
         );

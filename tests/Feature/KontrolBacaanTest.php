@@ -115,6 +115,68 @@ class KontrolBacaanTest extends TestCase
         $this->assertNull($response->viewData('group'));
     }
 
+    public function test_daerah_user_can_view_and_score_roster_across_all_groups_without_picking_one(): void
+    {
+        $context = $this->makeContext();
+
+        $otherGroup = Group::create(['village_id' => $context['village']->id, 'name' => 'Kelompok Lain', 'is_active' => true]);
+
+        $otherGenerus = Generus::create([
+            'registration_number' => 'PPG-KONTROL-003',
+            'full_name' => 'Generus Kelompok Lain',
+            'status' => 'active',
+            'learning_class_id' => $context['classGrade']->id,
+        ]);
+
+        GenerusAssignment::create([
+            'generus_id' => $otherGenerus->id,
+            'group_id' => $otherGroup->id,
+            'assigned_at' => now(),
+        ]);
+
+        $daerahRole = Role::create(['name' => 'Pengurus PPG Daerah Test', 'slug' => 'ppg-daerah-test', 'is_active' => true]);
+        $manageUjian = Permission::where('slug', 'manage-ujian')->first();
+        $daerahRole->permissions()->attach($manageUjian->id);
+
+        $daerahUser = User::create([
+            'name' => 'Pengurus Daerah',
+            'email' => 'daerah-kontrol-2@ppg.test',
+            'password' => Hash::make('password123'),
+            'status' => 'active',
+        ]);
+        $daerahUser->assignRole($daerahRole->id, 'global', null);
+
+        $response = $this->actingAs($daerahUser)->get('/kontrol/bacaan?'.http_build_query([
+            'class_grade_id' => $context['classGrade']->id,
+            'academic_year_id' => $context['academicYear']->id,
+            'semester_id' => $context['semester']->id,
+            'material_id' => $context['material']->id,
+        ]));
+
+        $response->assertOk();
+        $this->assertNull($response->viewData('group'));
+        $rosterIds = $response->viewData('roster')->pluck('id');
+        $this->assertTrue($rosterIds->contains($context['generus']->id));
+        $this->assertTrue($rosterIds->contains($otherGenerus->id));
+
+        $this->actingAs($daerahUser)
+            ->post('/kontrol/bacaan', [
+                'class_grade_id' => $context['classGrade']->id,
+                'academic_year_id' => $context['academicYear']->id,
+                'semester_id' => $context['semester']->id,
+                'type' => 'harian',
+                'material_id' => $context['material']->id,
+                'scores' => [
+                    $context['generus']->id => ['score' => 80, 'status' => 'completed'],
+                    $otherGenerus->id => ['score' => 90, 'status' => 'completed'],
+                ],
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('ujians', ['generus_id' => $context['generus']->id, 'score' => 80]);
+        $this->assertDatabaseHas('ujians', ['generus_id' => $otherGenerus->id, 'score' => 90]);
+    }
+
     public function test_generus_from_a_different_class_grade_cannot_be_scored(): void
     {
         $context = $this->makeContext();

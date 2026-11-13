@@ -111,17 +111,18 @@
         })();
     </script>
 
-    @if ($group && $classGrade && $semesterId && ! $materialCategory)
+    @if (! empty($groupIds) && $classGrade && $semesterId && ! $materialCategory)
         <section class="rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800">
             RPP kategori <strong>{{ $label }}</strong> untuk kelas <strong>{{ $classGrade->name }}</strong> pada semester terpilih belum diisi.
             Tambahkan dulu lewat menu <a href="{{ route('material-categories.index') }}" class="font-semibold underline">Kurikulum &rarr; Kategori Materi</a>
             (isi kolom Kode dengan <code class="rounded bg-amber-100 px-1">{{ $category }}</code>), lalu Bab Materi dan Materi di bawahnya.
         </section>
-    @elseif ($group && $classGrade && $materialId)
+    @elseif (! empty($groupIds) && $classGrade && $materialId)
         <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
             <form method="POST" action="{{ route('kontrol.'.$category.'.save') }}">
                 @csrf
-                <input type="hidden" name="group_id" value="{{ $group->id }}">
+                <input type="hidden" name="group_id" value="{{ $group?->id }}">
+                <input type="hidden" name="village_id" value="{{ $villageId }}">
                 <input type="hidden" name="class_grade_id" value="{{ $classGrade->id }}">
                 <input type="hidden" name="academic_year_id" value="{{ $academicYearId }}">
                 <input type="hidden" name="semester_id" value="{{ $semesterId }}">
