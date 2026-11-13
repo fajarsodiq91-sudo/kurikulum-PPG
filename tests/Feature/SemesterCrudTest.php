@@ -87,6 +87,52 @@ class SemesterCrudTest extends TestCase
         $this->assertFalse((bool) $semester->refresh()->is_active);
     }
 
+    public function test_activating_a_semester_deactivates_every_other_semester(): void
+    {
+        $user = $this->createAdminWithPermission('manage-master-data');
+        $academicYear = AcademicYear::create([
+            'name' => '2025/2026',
+            'code' => '2025-2026',
+            'start_year' => 2025,
+            'end_year' => 2026,
+            'is_active' => true,
+        ]);
+        $otherAcademicYear = AcademicYear::create([
+            'name' => '2024/2025',
+            'code' => '2024-2025',
+            'start_year' => 2024,
+            'end_year' => 2025,
+            'is_active' => true,
+        ]);
+
+        $semesterOne = Semester::create([
+            'academic_year_id' => $academicYear->id,
+            'name' => 'Semester Ganjil',
+            'code' => 'S1',
+            'sort_order' => 1,
+            'is_active' => true,
+        ]);
+        $semesterTwo = Semester::create([
+            'academic_year_id' => $otherAcademicYear->id,
+            'name' => 'Semester Genap',
+            'code' => 'S2',
+            'sort_order' => 2,
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($user)->put(route('master-data.semesters.update', $semesterTwo), [
+            'academic_year_id' => $otherAcademicYear->id,
+            'name' => $semesterTwo->name,
+            'code' => $semesterTwo->code,
+            'sort_order' => $semesterTwo->sort_order,
+            'is_active' => '1',
+        ]);
+
+        $response->assertSessionDoesntHaveErrors();
+        $this->assertFalse((bool) $semesterOne->refresh()->is_active);
+        $this->assertTrue((bool) $semesterTwo->refresh()->is_active);
+    }
+
     private function createAdminWithPermission(string $permissionSlug): User
     {
         $role = Role::create([

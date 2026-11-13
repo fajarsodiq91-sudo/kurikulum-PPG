@@ -23,6 +23,15 @@ class Semester extends Model
         'end_date' => 'date',
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function (Semester $semester): void {
+            if ($semester->is_active) {
+                static::query()->whereKeyNot($semester->id)->where('is_active', true)->update(['is_active' => false]);
+            }
+        });
+    }
+
     public function academicYear(): BelongsTo
     {
         return $this->belongsTo(AcademicYear::class);
