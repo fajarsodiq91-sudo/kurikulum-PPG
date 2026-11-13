@@ -83,6 +83,38 @@ class KontrolBacaanTest extends TestCase
         $this->assertSame($context['classGrade']->id, $response->viewData('classGrade')?->id);
     }
 
+    public function test_village_dropdown_lets_a_daerah_user_narrow_the_group_options(): void
+    {
+        $context = $this->makeContext();
+
+        $otherVillage = Village::create(['region_id' => $context['region']->id, 'name' => 'Desa Lain', 'is_active' => true]);
+        $otherGroup = Group::create(['village_id' => $otherVillage->id, 'name' => 'Kelompok Lain', 'is_active' => true]);
+
+        $daerahRole = Role::create(['name' => 'Pengurus PPG Daerah Test', 'slug' => 'ppg-daerah-test', 'is_active' => true]);
+        $manageUjian = Permission::where('slug', 'manage-ujian')->first();
+        $daerahRole->permissions()->attach($manageUjian->id);
+
+        $daerahUser = User::create([
+            'name' => 'Pengurus Daerah',
+            'email' => 'daerah-kontrol@ppg.test',
+            'password' => Hash::make('password123'),
+            'status' => 'active',
+        ]);
+        $daerahUser->assignRole($daerahRole->id, 'global', null);
+
+        $response = $this->actingAs($daerahUser)->get('/kontrol/bacaan');
+
+        $response->assertOk();
+        $villages = $response->viewData('villages');
+        $groups = $response->viewData('groups');
+
+        $this->assertTrue($villages->contains('id', $context['village']->id));
+        $this->assertTrue($villages->contains('id', $otherVillage->id));
+        $this->assertTrue($groups->contains('id', $context['group']->id));
+        $this->assertTrue($groups->contains('id', $otherGroup->id));
+        $this->assertNull($response->viewData('group'));
+    }
+
     public function test_generus_from_a_different_class_grade_cannot_be_scored(): void
     {
         $context = $this->makeContext();

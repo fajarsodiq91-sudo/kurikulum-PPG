@@ -50,8 +50,12 @@ class KontrolController extends Controller
         $classGrades = ClassGrade::where('is_active', true)->orderBy('sort_order')->get();
         $teacher = $user?->teacher;
 
+        $villages = $groups->pluck('village')->filter()->unique('id')->sortBy('name')->values();
+
         $defaultGroup = ($teacher?->group_id !== null ? $groups->firstWhere('id', $teacher->group_id) : null)
             ?? ($groups->count() === 1 ? $groups->first() : null);
+
+        $villageId = $request->integer('village_id') ?: $defaultGroup?->village_id;
 
         $group = $request->filled('group_id')
             ? $groups->firstWhere('id', $request->integer('group_id'))
@@ -102,6 +106,8 @@ class KontrolController extends Controller
         return view('kontrol.batch', [
             'category' => $category,
             'label' => $label,
+            'villages' => $villages,
+            'villageId' => $villageId,
             'groups' => $groups,
             'classGrades' => $classGradeOptions,
             'group' => $group,

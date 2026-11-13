@@ -15,13 +15,22 @@
     </div>
 
     <section class="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <form method="GET" action="{{ route('kontrol.'.$category) }}" class="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <form method="GET" action="{{ route('kontrol.'.$category) }}" class="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            <div>
+                <label class="mb-2 block text-sm font-medium text-slate-700" for="village_id">Desa</label>
+                <select id="village_id" name="village_id" class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                    <option value="">-- Semua Desa --</option>
+                    @foreach($villages as $item)
+                        <option value="{{ $item->id }}" @selected($villageId === $item->id)>{{ $item->name }}</option>
+                    @endforeach
+                </select>
+            </div>
             <div>
                 <label class="mb-2 block text-sm font-medium text-slate-700" for="group_id">Kelompok</label>
                 <select id="group_id" name="group_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2">
                     <option value="">-- Pilih --</option>
                     @foreach($groups as $item)
-                        <option value="{{ $item->id }}" @selected($group?->id === $item->id)>{{ $item->village?->name ? $item->village->name.' - ' : '' }}{{ $item->name }}</option>
+                        <option value="{{ $item->id }}" data-village-id="{{ $item->village_id }}" @selected($group?->id === $item->id)>{{ $item->village?->name ? $item->village->name.' - ' : '' }}{{ $item->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -62,11 +71,45 @@
                     @endforeach
                 </select>
             </div>
-            <div class="sm:col-span-3 lg:col-span-5">
+            <div class="sm:col-span-3 lg:col-span-6">
                 <button type="submit" class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Tampilkan</button>
             </div>
         </form>
     </section>
+
+    <script>
+        (function () {
+            const villageSelect = document.getElementById('village_id');
+            const groupSelect = document.getElementById('group_id');
+            if (!villageSelect || !groupSelect) {
+                return;
+            }
+
+            const groupOptions = Array.from(groupSelect.options).filter((option) => option.value !== '');
+
+            function applyVillageFilter() {
+                const villageId = villageSelect.value;
+                const selected = groupSelect.value;
+                let selectedStillVisible = selected === '';
+
+                groupOptions.forEach((option) => {
+                    const matches = villageId === '' || option.dataset.villageId === villageId;
+                    option.hidden = !matches;
+                    option.disabled = !matches;
+                    if (matches && option.value === selected) {
+                        selectedStillVisible = true;
+                    }
+                });
+
+                if (!selectedStillVisible) {
+                    groupSelect.value = '';
+                }
+            }
+
+            villageSelect.addEventListener('change', applyVillageFilter);
+            applyVillageFilter();
+        })();
+    </script>
 
     @if ($group && $classGrade && $semesterId && ! $materialCategory)
         <section class="rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800">
