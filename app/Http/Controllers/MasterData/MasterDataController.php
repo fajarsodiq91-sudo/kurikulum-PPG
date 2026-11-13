@@ -283,7 +283,7 @@ class MasterDataController extends Controller
         $validated = $request->validate([
             'academic_year_id' => ['required', Rule::exists('academic_years', 'id')->where('is_active', true)],
             'name' => ['required', 'string', 'max:255'],
-            'code' => ['nullable', 'string', 'max:50'],
+            'code' => ['nullable', 'string', 'max:50', Rule::unique('semesters')->where('academic_year_id', $request->input('academic_year_id'))],
             'sort_order' => ['required', 'integer', 'min:0'],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
@@ -299,7 +299,7 @@ class MasterDataController extends Controller
         $validated = $request->validate([
             'academic_year_id' => ['required', Rule::exists('academic_years', 'id')->where('is_active', true)],
             'name' => ['required', 'string', 'max:255'],
-            'code' => ['nullable', 'string', 'max:50'],
+            'code' => ['nullable', 'string', 'max:50', Rule::unique('semesters')->where('academic_year_id', $request->input('academic_year_id'))->ignore($semester)],
             'sort_order' => ['required', 'integer', 'min:0'],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
