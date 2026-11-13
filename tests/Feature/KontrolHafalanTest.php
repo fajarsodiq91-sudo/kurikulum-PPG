@@ -35,11 +35,13 @@ class KontrolHafalanTest extends TestCase
                 'academic_year_id' => $context['academicYear']->id,
                 'semester_id' => $context['semester']->id,
                 'type' => 'mingguan',
-                'material_id' => $context['material']->id,
+                'material_id' => [$context['material']->id],
                 'scores' => [
-                    $context['generus']->id => [
-                        'score' => 92,
-                        'status' => 'completed',
+                    $context['material']->id => [
+                        $context['generus']->id => [
+                            'score' => 92,
+                            'status' => 'completed',
+                        ],
                     ],
                 ],
             ])
@@ -97,11 +99,13 @@ class KontrolHafalanTest extends TestCase
                 'academic_year_id' => $context['academicYear']->id,
                 'semester_id' => $context['semester']->id,
                 'type' => 'mingguan',
-                'material_id' => $bacaanMaterial->id,
+                'material_id' => [$bacaanMaterial->id],
                 'scores' => [
-                    $context['generus']->id => [
-                        'score' => 92,
-                        'status' => 'completed',
+                    $bacaanMaterial->id => [
+                        $context['generus']->id => [
+                            'score' => 92,
+                            'status' => 'completed',
+                        ],
                     ],
                 ],
             ])

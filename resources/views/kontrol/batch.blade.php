@@ -64,12 +64,12 @@
             <input type="hidden" name="type" value="{{ $type }}">
             <div>
                 <label class="mb-2 block text-sm font-medium text-slate-700" for="material_id">Materi</label>
-                <select id="material_id" name="material_id" required class="w-full rounded-lg border border-slate-300 px-3 py-2" @disabled($materials->isEmpty())>
-                    <option value="">-- Pilih --</option>
+                <select id="material_id" name="material_id[]" multiple required size="4" class="w-full rounded-lg border border-slate-300 px-3 py-2" @disabled($materials->isEmpty())>
                     @foreach($materials as $item)
-                        <option value="{{ $item->id }}" @selected($materialId === $item->id)>{{ $item->title }}</option>
+                        <option value="{{ $item->id }}" @selected(in_array($item->id, $materialIds, true))>{{ $item->title }}</option>
                     @endforeach
                 </select>
+                <p class="mt-1 text-xs text-slate-500">Tahan Ctrl/Cmd (atau Shift) untuk pilih lebih dari satu materi.</p>
             </div>
             <div class="sm:col-span-3 lg:col-span-6">
                 <button type="submit" class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Tampilkan</button>
@@ -117,7 +117,7 @@
             Tambahkan dulu lewat menu <a href="{{ route('material-categories.index') }}" class="font-semibold underline">Kurikulum &rarr; Kategori Materi</a>
             (isi kolom Kode dengan <code class="rounded bg-amber-100 px-1">{{ $category }}</code>), lalu Bab Materi dan Materi di bawahnya.
         </section>
-    @elseif (! empty($groupIds) && $classGrade && $materialId)
+    @elseif (! empty($groupIds) && $classGrade && $selectedMaterials->isNotEmpty())
         <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
             <form method="POST" action="{{ route('kontrol.'.$category.'.save') }}">
                 @csrf
@@ -127,50 +127,56 @@
                 <input type="hidden" name="academic_year_id" value="{{ $academicYearId }}">
                 <input type="hidden" name="semester_id" value="{{ $semesterId }}">
                 <input type="hidden" name="type" value="{{ $type }}">
-                <input type="hidden" name="material_id" value="{{ $materialId }}">
+                @foreach($selectedMaterials as $materialItem)
+                    <input type="hidden" name="material_id[]" value="{{ $materialItem->id }}">
+                @endforeach
 
-                <div class="overflow-x-auto">
-                    <table class="min-w-full text-left text-sm">
-                        <thead>
-                            <tr class="border-b border-slate-200">
-                                <th class="py-3 pr-4">Generus</th>
-                                <th class="py-3 pr-4">Nilai</th>
-                                <th class="py-3 pr-4">Hasil</th>
-                                <th class="py-3 pr-4">Status</th>
-                                <th class="py-3">Catatan</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse ($roster as $item)
-                                @php($recorded = $existing[$item->id] ?? null)
-                                <tr class="border-b border-slate-100">
-                                    <td class="py-3 pr-4 font-medium text-slate-900">{{ $item->full_name }}</td>
-                                    <td class="py-3 pr-4">
-                                        <input type="number" step="0.01" min="0" max="100" name="scores[{{ $item->id }}][score]" value="{{ old("scores.{$item->id}.score", $recorded?->score) }}" class="w-24 rounded-lg border border-slate-300 px-2 py-1.5">
-                                    </td>
-                                    <td class="py-3 pr-4">
-                                        <input type="text" name="scores[{{ $item->id }}][result]" value="{{ old("scores.{$item->id}.result", $recorded?->result) }}" placeholder="Otomatis" class="w-20 rounded-lg border border-slate-300 px-2 py-1.5">
-                                    </td>
-                                    <td class="py-3 pr-4">
-                                        <select name="scores[{{ $item->id }}][status]" class="rounded-lg border border-slate-300 px-2 py-1.5">
-                                            @php($currentStatus = old("scores.{$item->id}.status", $recorded?->status ?? 'completed'))
-                                            <option value="scheduled" @selected($currentStatus === 'scheduled')>Terjadwal</option>
-                                            <option value="completed" @selected($currentStatus === 'completed')>Selesai</option>
-                                            <option value="failed" @selected($currentStatus === 'failed')>Gagal</option>
-                                        </select>
-                                    </td>
-                                    <td class="py-3">
-                                        <input type="text" name="scores[{{ $item->id }}][notes]" value="{{ old("scores.{$item->id}.notes", $recorded?->notes) }}" class="w-full min-w-40 rounded-lg border border-slate-300 px-2 py-1.5">
-                                    </td>
+                @foreach($selectedMaterials as $materialItem)
+                    <h3 class="mb-3 mt-6 text-sm font-semibold text-slate-900 first:mt-0">{{ $materialItem->title }}</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-left text-sm">
+                            <thead>
+                                <tr class="border-b border-slate-200">
+                                    <th class="py-3 pr-4">Generus</th>
+                                    <th class="py-3 pr-4">Nilai</th>
+                                    <th class="py-3 pr-4">Hasil</th>
+                                    <th class="py-3 pr-4">Status</th>
+                                    <th class="py-3">Catatan</th>
                                 </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5" class="py-6 text-center text-slate-500">Tidak ada generus aktif di kelompok &amp; kelas KBM ini.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                @forelse ($roster as $item)
+                                    @php($recorded = $existing[$materialItem->id][$item->id] ?? null)
+                                    <tr class="border-b border-slate-100">
+                                        <td class="py-3 pr-4 font-medium text-slate-900">{{ $item->full_name }}</td>
+                                        <td class="py-3 pr-4">
+                                            <input type="number" step="0.01" min="0" max="100" name="scores[{{ $materialItem->id }}][{{ $item->id }}][score]" value="{{ old("scores.{$materialItem->id}.{$item->id}.score", $recorded?->score) }}" class="w-24 rounded-lg border border-slate-300 px-2 py-1.5">
+                                        </td>
+                                        <td class="py-3 pr-4">
+                                            <input type="text" name="scores[{{ $materialItem->id }}][{{ $item->id }}][result]" value="{{ old("scores.{$materialItem->id}.{$item->id}.result", $recorded?->result) }}" placeholder="Otomatis" class="w-20 rounded-lg border border-slate-300 px-2 py-1.5">
+                                        </td>
+                                        <td class="py-3 pr-4">
+                                            <select name="scores[{{ $materialItem->id }}][{{ $item->id }}][status]" class="rounded-lg border border-slate-300 px-2 py-1.5">
+                                                @php($currentStatus = old("scores.{$materialItem->id}.{$item->id}.status", $recorded?->status ?? 'completed'))
+                                                <option value="scheduled" @selected($currentStatus === 'scheduled')>Terjadwal</option>
+                                                <option value="completed" @selected($currentStatus === 'completed')>Selesai</option>
+                                                <option value="failed" @selected($currentStatus === 'failed')>Gagal</option>
+                                            </select>
+                                        </td>
+                                        <td class="py-3">
+                                            <input type="text" name="scores[{{ $materialItem->id }}][{{ $item->id }}][notes]" value="{{ old("scores.{$materialItem->id}.{$item->id}.notes", $recorded?->notes) }}" class="w-full min-w-40 rounded-lg border border-slate-300 px-2 py-1.5">
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="py-6 text-center text-slate-500">Tidak ada generus aktif di kelompok &amp; kelas KBM ini.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                @endforeach
+
                 @if ($roster->isNotEmpty())
                     <p class="mt-4 text-xs text-slate-500">Baris tanpa nilai dan tanpa hasil tidak disimpan. Kosongkan kolom hasil agar huruf dan keterangan terisi otomatis dari master data Konversi Nilai. Nilai rapor akan terhitung otomatis dari rata-rata nilai kontrol ini dengan munaqosah pada semester yang sama.</p>
                     <button type="submit" class="mt-4 w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 sm:w-auto">Simpan Nilai Kelompok</button>

@@ -35,11 +35,13 @@ class KontrolKemandirianTest extends TestCase
                 'academic_year_id' => $context['academicYear']->id,
                 'semester_id' => $context['semester']->id,
                 'type' => 'bulanan',
-                'material_id' => $context['material']->id,
+                'material_id' => [$context['material']->id],
                 'scores' => [
-                    $context['generus']->id => [
-                        'score' => 87,
-                        'status' => 'completed',
+                    $context['material']->id => [
+                        $context['generus']->id => [
+                            'score' => 87,
+                            'status' => 'completed',
+                        ],
                     ],
                 ],
             ])
@@ -92,11 +94,13 @@ class KontrolKemandirianTest extends TestCase
                 'academic_year_id' => $context['academicYear']->id,
                 'semester_id' => $context['semester']->id,
                 'type' => 'bulanan',
-                'material_id' => $context['material']->id,
+                'material_id' => [$context['material']->id],
                 'scores' => [
-                    $outsider->id => [
-                        'score' => 70,
-                        'status' => 'completed',
+                    $context['material']->id => [
+                        $outsider->id => [
+                            'score' => 70,
+                            'status' => 'completed',
+                        ],
                     ],
                 ],
             ])

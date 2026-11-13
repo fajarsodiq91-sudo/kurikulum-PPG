@@ -77,7 +77,7 @@ class KontrolController extends Controller
         $academicYearId = $request->integer('academic_year_id') ?: $currentSemester?->academic_year_id;
         $semesterId = $request->integer('semester_id') ?: $currentSemester?->id;
         $type = 'harian';
-        $materialId = $request->integer('material_id') ?: null;
+        $materialIds = $this->integerList($request->input('material_id', []));
 
         $roster = $this->rosterFor($user, $groupIds, $classGrade);
 
@@ -85,24 +85,28 @@ class KontrolController extends Controller
             ? MaterialCategory::where('class_grade_id', $classGrade->id)
                 ->where('semester_id', $semesterId)
                 ->where('code', $category)
-                ->with('materialChapters.learningMaterials')
+                ->with(['materialChapters' => fn ($query) => $query->where('is_active', true)->orderBy('sort_order')])
+                ->with(['materialChapters.learningMaterials' => fn ($query) => $query->where('is_active', true)->orderBy('sort_order')])
                 ->first()
             : null;
 
         $materials = $materialCategory
             ? $materialCategory->materialChapters
-                ->flatMap(fn ($chapter) => $chapter->learningMaterials->where('is_active', true))
+                ->flatMap(fn ($chapter) => $chapter->learningMaterials)
                 ->values()
             : collect();
 
-        $existing = ($academicYearId && $semesterId && $materialId)
+        $selectedMaterials = $materialIds !== [] ? $materials->whereIn('id', $materialIds)->values() : collect();
+
+        $existing = ($academicYearId && $semesterId && $selectedMaterials->isNotEmpty())
             ? Ujian::where('academic_year_id', $academicYearId)
                 ->where('semester_id', $semesterId)
                 ->where('type', $type)
-                ->where('material_id', $materialId)
+                ->whereIn('material_id', $selectedMaterials->pluck('id'))
                 ->whereIn('generus_id', $roster->pluck('id'))
                 ->get()
-                ->keyBy('generus_id')
+                ->groupBy('material_id')
+                ->map(fn (Collection $scores) => $scores->keyBy('generus_id'))
             : collect();
 
         return view('kontrol.batch', [
@@ -118,11 +122,12 @@ class KontrolController extends Controller
             'roster' => $roster,
             'materialCategory' => $materialCategory,
             'materials' => $materials,
+            'materialIds' => $materialIds,
+            'selectedMaterials' => $selectedMaterials,
             'existing' => $existing,
             'academicYearId' => $academicYearId,
             'semesterId' => $semesterId,
             'type' => $type,
-            'materialId' => $materialId,
             'academicYears' => AcademicYear::where('is_active', true)->get(),
             'semesters' => Semester::where('is_active', true)->get(),
         ]);
@@ -143,58 +148,62 @@ class KontrolController extends Controller
             'academic_year_id' => ['required', 'exists:academic_years,id'],
             'semester_id' => ['required', 'exists:semesters,id'],
             'type' => ['required', 'string', 'max:50'],
-            'material_id' => ['required', 'exists:learning_materials,id'],
+            'material_id' => ['required', 'array', 'min:1'],
+            'material_id.*' => ['distinct', 'exists:learning_materials,id'],
             'scores' => ['nullable', 'array'],
-            'scores.*.score' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'scores.*.result' => ['nullable', 'string', 'max:50'],
-            'scores.*.status' => ['required', 'string', 'max:50'],
-            'scores.*.notes' => ['nullable', 'string'],
+            'scores.*' => ['array'],
+            'scores.*.*.score' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'scores.*.*.result' => ['nullable', 'string', 'max:50'],
+            'scores.*.*.status' => ['required', 'string', 'max:50'],
+            'scores.*.*.notes' => ['nullable', 'string'],
         ]);
 
         $group = filled($validated['group_id'] ?? null) ? Group::findOrFail($validated['group_id']) : null;
         $groupIds = $this->resolveGroupIds($groups, $group, $validated['village_id'] ?? null);
         $classGrade = ClassGrade::findOrFail($validated['class_grade_id']);
 
-        $material = LearningMaterial::with('materialChapter.materialCategory')->findOrFail($validated['material_id']);
-        $materialCategory = $material->materialChapter->materialCategory;
-
-        abort_unless(
-            $materialCategory->class_grade_id === $classGrade->id
-                && $materialCategory->semester_id === (int) $validated['semester_id']
-                && $materialCategory->code === $category,
-            422,
-            'Materi tidak sesuai dengan kategori, kelas, atau semester yang dipilih.'
-        );
-
         $rosterIds = $this->rosterFor($user, $groupIds, $classGrade)->pluck('id')->map(fn (mixed $id): int => (int) $id)->all();
 
-        foreach ($validated['scores'] ?? [] as $generusId => $entry) {
-            abort_unless(in_array((int) $generusId, $rosterIds, true), 422, 'Generus tidak termasuk dalam kelompok/kelas KBM yang dipilih.');
+        foreach ($validated['material_id'] as $materialId) {
+            $material = LearningMaterial::with('materialChapter.materialCategory')->findOrFail($materialId);
+            $materialCategory = $material->materialChapter->materialCategory;
 
-            if (blank($entry['score'] ?? null) && blank($entry['result'] ?? null)) {
-                continue;
-            }
-
-            $data = $this->applyGradeScale([
-                'title' => $material->title,
-                'material_id' => $material->id,
-                'type' => $validated['type'],
-                'score' => $entry['score'] ?? null,
-                'result' => $entry['result'] ?? null,
-                'status' => $entry['status'],
-                'notes' => $entry['notes'] ?? null,
-            ]);
-
-            Ujian::updateOrCreate(
-                [
-                    'generus_id' => (int) $generusId,
-                    'academic_year_id' => $validated['academic_year_id'],
-                    'semester_id' => $validated['semester_id'],
-                    'type' => $validated['type'],
-                    'material_id' => $material->id,
-                ],
-                $data,
+            abort_unless(
+                $materialCategory->class_grade_id === $classGrade->id
+                    && $materialCategory->semester_id === (int) $validated['semester_id']
+                    && $materialCategory->code === $category,
+                422,
+                'Materi tidak sesuai dengan kategori, kelas, atau semester yang dipilih.'
             );
+
+            foreach ($validated['scores'][$materialId] ?? [] as $generusId => $entry) {
+                abort_unless(in_array((int) $generusId, $rosterIds, true), 422, 'Generus tidak termasuk dalam kelompok/kelas KBM yang dipilih.');
+
+                if (blank($entry['score'] ?? null) && blank($entry['result'] ?? null)) {
+                    continue;
+                }
+
+                $data = $this->applyGradeScale([
+                    'title' => $material->title,
+                    'material_id' => $material->id,
+                    'type' => $validated['type'],
+                    'score' => $entry['score'] ?? null,
+                    'result' => $entry['result'] ?? null,
+                    'status' => $entry['status'],
+                    'notes' => $entry['notes'] ?? null,
+                ]);
+
+                Ujian::updateOrCreate(
+                    [
+                        'generus_id' => (int) $generusId,
+                        'academic_year_id' => $validated['academic_year_id'],
+                        'semester_id' => $validated['semester_id'],
+                        'type' => $validated['type'],
+                        'material_id' => $material->id,
+                    ],
+                    $data,
+                );
+            }
         }
 
         return redirect()->route("kontrol.{$category}", $request->only(['group_id', 'village_id', 'class_grade_id', 'academic_year_id', 'semester_id', 'type', 'material_id']))
@@ -243,6 +252,21 @@ class KontrolController extends Controller
         $scoped = $villageId ? $groups->where('village_id', $villageId) : $groups;
 
         return $scoped->pluck('id')->map(fn (mixed $id): int => (int) $id)->values()->all();
+    }
+
+    /**
+     * Normalizes a request array of raw values (e.g. `material_id[]`) into distinct positive ints.
+     *
+     * @return list<int>
+     */
+    private function integerList(mixed $values): array
+    {
+        return collect(is_array($values) ? $values : [])
+            ->map(fn (mixed $value): int => (int) $value)
+            ->filter(fn (int $value): bool => $value > 0)
+            ->unique()
+            ->values()
+            ->all();
     }
 
     /**

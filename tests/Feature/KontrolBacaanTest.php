@@ -36,11 +36,13 @@ class KontrolBacaanTest extends TestCase
                 'academic_year_id' => $context['academicYear']->id,
                 'semester_id' => $context['semester']->id,
                 'type' => 'harian',
-                'material_id' => $context['material']->id,
+                'material_id' => [$context['material']->id],
                 'scores' => [
-                    $context['generus']->id => [
-                        'score' => 88,
-                        'status' => 'completed',
+                    $context['material']->id => [
+                        $context['generus']->id => [
+                            'score' => 88,
+                            'status' => 'completed',
+                        ],
                     ],
                 ],
             ])
@@ -165,16 +167,67 @@ class KontrolBacaanTest extends TestCase
                 'academic_year_id' => $context['academicYear']->id,
                 'semester_id' => $context['semester']->id,
                 'type' => 'harian',
-                'material_id' => $context['material']->id,
+                'material_id' => [$context['material']->id],
                 'scores' => [
-                    $context['generus']->id => ['score' => 80, 'status' => 'completed'],
-                    $otherGenerus->id => ['score' => 90, 'status' => 'completed'],
+                    $context['material']->id => [
+                        $context['generus']->id => ['score' => 80, 'status' => 'completed'],
+                        $otherGenerus->id => ['score' => 90, 'status' => 'completed'],
+                    ],
                 ],
             ])
             ->assertRedirect();
 
         $this->assertDatabaseHas('ujians', ['generus_id' => $context['generus']->id, 'score' => 80]);
         $this->assertDatabaseHas('ujians', ['generus_id' => $otherGenerus->id, 'score' => 90]);
+    }
+
+    public function test_scores_for_more_than_one_material_can_be_saved_in_one_submission(): void
+    {
+        $context = $this->makeContext();
+
+        $secondMaterial = LearningMaterial::create([
+            'material_chapter_id' => $context['materialChapter']->id,
+            'title' => 'Iqro Halaman 6-10',
+            'code' => 'iqro-1-h2',
+            'sort_order' => 2,
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($context['user'])->get('/kontrol/bacaan?'.http_build_query([
+            'group_id' => $context['group']->id,
+            'class_grade_id' => $context['classGrade']->id,
+            'academic_year_id' => $context['academicYear']->id,
+            'semester_id' => $context['semester']->id,
+            'material_id' => [$context['material']->id, $secondMaterial->id],
+        ]));
+
+        $response->assertOk();
+        $this->assertSame(
+            [$context['material']->id, $secondMaterial->id],
+            $response->viewData('selectedMaterials')->pluck('id')->all()
+        );
+
+        $this->actingAs($context['user'])
+            ->post('/kontrol/bacaan', [
+                'group_id' => $context['group']->id,
+                'class_grade_id' => $context['classGrade']->id,
+                'academic_year_id' => $context['academicYear']->id,
+                'semester_id' => $context['semester']->id,
+                'type' => 'harian',
+                'material_id' => [$context['material']->id, $secondMaterial->id],
+                'scores' => [
+                    $context['material']->id => [
+                        $context['generus']->id => ['score' => 88, 'status' => 'completed'],
+                    ],
+                    $secondMaterial->id => [
+                        $context['generus']->id => ['score' => 91, 'status' => 'completed'],
+                    ],
+                ],
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('ujians', ['generus_id' => $context['generus']->id, 'material_id' => $context['material']->id, 'score' => 88]);
+        $this->assertDatabaseHas('ujians', ['generus_id' => $context['generus']->id, 'material_id' => $secondMaterial->id, 'score' => 91]);
     }
 
     public function test_generus_from_a_different_class_grade_cannot_be_scored(): void
@@ -208,11 +261,13 @@ class KontrolBacaanTest extends TestCase
                 'academic_year_id' => $context['academicYear']->id,
                 'semester_id' => $context['semester']->id,
                 'type' => 'harian',
-                'material_id' => $context['material']->id,
+                'material_id' => [$context['material']->id],
                 'scores' => [
-                    $outsider->id => [
-                        'score' => 70,
-                        'status' => 'completed',
+                    $context['material']->id => [
+                        $outsider->id => [
+                            'score' => 70,
+                            'status' => 'completed',
+                        ],
                     ],
                 ],
             ])
