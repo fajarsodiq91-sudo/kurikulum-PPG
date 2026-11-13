@@ -42,6 +42,11 @@
                     <label class="mb-2 block text-sm font-medium" for="end_time">Jam Selesai (opsional)</label>
                     <input id="end_time" name="end_time" type="time" class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('end_time') }}">
                 </div>
+                <div class="md:col-span-2">
+                    <label class="mb-2 block text-sm font-medium" for="reminder_at">Kirim Pengingat Pada (opsional)</label>
+                    <input id="reminder_at" name="reminder_at" type="datetime-local" class="w-full rounded-lg border border-slate-300 px-3 py-2" value="{{ old('reminder_at') }}">
+                    <p class="mt-1 text-xs text-slate-400">Waktu Indonesia bagian Barat (WIB / UTC+7). Email pengingat dikirim ke peserta yang sudah terdaftar sebagai pengguna. Kosongkan jika tidak perlu pengingat.</p>
+                </div>
             </div>
         </x-card>
 

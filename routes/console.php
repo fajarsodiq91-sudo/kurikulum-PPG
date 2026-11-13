@@ -12,3 +12,4 @@ Artisan::command('inspire', function () {
 // disables proc_open/exec/shell_exec, which Schedule::command() needs to spawn a
 // subprocess. Schedule::call() runs in-process, so it works under that restriction.
 Schedule::call(fn () => Artisan::call('tasks:send-due-reminders'))->hourly();
+Schedule::call(fn () => Artisan::call('musyawaroh:send-reminders'))->everyFifteenMinutes();

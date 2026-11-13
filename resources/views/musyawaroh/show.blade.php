@@ -22,6 +22,31 @@
         </p>
     </div>
 
+    @if ($musyawaroh->isEditableBy($user))
+        <x-card class="mb-6">
+            <h3 class="mb-1 text-sm font-semibold text-slate-700">Pengingat Email</h3>
+            <p class="mb-3 text-xs text-slate-500">Atur kapan email pengingat dikirim ke peserta yang sudah terdaftar sebagai pengguna. Waktu Indonesia bagian Barat (WIB / UTC+7).</p>
+            <form method="POST" action="{{ route('musyawaroh.reminder.update', $musyawaroh) }}" class="flex flex-wrap items-end gap-3">
+                @csrf
+                @method('PATCH')
+                <div>
+                    <label class="mb-1 block text-xs font-medium" for="reminder_at">Kirim pada</label>
+                    <input id="reminder_at" name="reminder_at" type="datetime-local" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" value="{{ $musyawaroh->reminder_at?->format('Y-m-d\TH:i') }}">
+                </div>
+                <button type="submit" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700">Simpan</button>
+                @if ($musyawaroh->reminder_at)
+                    <span class="text-xs text-slate-500">
+                        @if ($musyawaroh->reminder_sent_at)
+                            Pengingat sudah terkirim {{ $musyawaroh->reminder_sent_at->translatedFormat('d M Y, H:i') }} WIB.
+                        @else
+                            Terjadwal, belum terkirim.
+                        @endif
+                    </span>
+                @endif
+            </form>
+        </x-card>
+    @endif
+
     <div class="grid gap-6 lg:grid-cols-3">
         <x-card class="lg:col-span-1">
             @php

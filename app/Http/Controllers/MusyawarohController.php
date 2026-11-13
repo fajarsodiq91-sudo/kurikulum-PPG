@@ -56,6 +56,7 @@ class MusyawarohController extends Controller
             'start_time' => ['nullable', 'date_format:H:i'],
             'end_time' => ['nullable', 'date_format:H:i', 'after:start_time'],
             'location' => ['nullable', 'string', 'max:255'],
+            'reminder_at' => ['nullable', 'date'],
             'invitees' => ['nullable', 'array'],
             'invitees.*' => ['nullable', 'boolean'],
             'manual_names' => ['nullable', 'array'],
@@ -68,6 +69,7 @@ class MusyawarohController extends Controller
             'start_time' => $validated['start_time'] ?? null,
             'end_time' => $validated['end_time'] ?? null,
             'location' => $validated['location'] ?? null,
+            'reminder_at' => $validated['reminder_at'] ?? null,
             'created_by_id' => $user->id,
         ]);
 
@@ -167,6 +169,27 @@ class MusyawarohController extends Controller
         $attendee->delete();
 
         return redirect()->route('musyawaroh.show', $musyawaroh)->with('success', 'Peserta berhasil dihapus dari daftar hadir.');
+    }
+
+    /**
+     * Lets the organiser change or clear when the reminder email goes out, even after the
+     * musyawaroh was created. Changing the time un-sends a reminder that already went out
+     * at the old time, so the new schedule actually takes effect.
+     */
+    public function updateReminder(Request $request, Musyawaroh $musyawaroh): RedirectResponse
+    {
+        abort_unless($musyawaroh->isEditableBy($request->user()), 403);
+
+        $validated = $request->validate([
+            'reminder_at' => ['nullable', 'date'],
+        ]);
+
+        $musyawaroh->update([
+            'reminder_at' => $validated['reminder_at'] ?? null,
+            'reminder_sent_at' => null,
+        ]);
+
+        return back()->with('success', $validated['reminder_at'] ?? null ? 'Waktu pengingat berhasil diperbarui.' : 'Pengingat dinonaktifkan.');
     }
 
     public function updateAttendance(Request $request, Musyawaroh $musyawaroh): RedirectResponse

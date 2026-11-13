@@ -17,6 +17,7 @@ class Musyawaroh extends Model
         'start_time',
         'end_time',
         'location',
+        'reminder_at',
         'created_by_id',
     ];
 
@@ -24,6 +25,8 @@ class Musyawaroh extends Model
     {
         return [
             'meeting_date' => 'date',
+            'reminder_at' => 'datetime',
+            'reminder_sent_at' => 'datetime',
         ];
     }
 
