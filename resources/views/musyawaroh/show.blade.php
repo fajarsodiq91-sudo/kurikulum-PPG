@@ -5,7 +5,7 @@
 @section('breadcrumb', $musyawaroh->title ?: 'Detail Musyawaroh')
 
 @section('content')
-    @php $user = auth()->user(); @endphp
+    @php $user = auth()->user(); $locked = $musyawaroh->isLocked(); @endphp
 
     <div class="mb-6">
         <p class="text-sm font-semibold text-amber-600">Pengurus</p>
@@ -62,6 +62,9 @@
                 Daftar Hadir ({{ $hadirCount }}/{{ $musyawaroh->attendees->count() }})
             </h3>
             <p class="mb-4 text-xs text-slate-500">Tandai Hadir/Izin/Alpha untuk setiap peserta yang diundang.</p>
+            @if ($locked)
+                <p class="mb-3 text-xs font-medium text-amber-600">Daftar hadir terkunci karena tanggal musyawaroh sudah lewat.</p>
+            @endif
             @if ($musyawaroh->attendees->isEmpty())
                 <p class="text-sm text-slate-400">Belum ada peserta yang diundang.</p>
             @else
@@ -79,75 +82,90 @@
                                 </span>
                                 <div class="inline-flex shrink-0 overflow-hidden rounded-md border border-slate-300 text-[11px] font-medium">
                                     <label class="cursor-pointer px-2 py-1 has-[:checked]:bg-emerald-100 has-[:checked]:text-emerald-700">
-                                        <input type="radio" name="status[{{ $attendee->id }}]" value="hadir" class="sr-only" @checked($attendee->status === 'hadir')>
+                                        <input type="radio" name="status[{{ $attendee->id }}]" value="hadir" class="sr-only" @checked($attendee->status === 'hadir') @disabled($locked)>
                                         Hadir
                                     </label>
                                     <label class="cursor-pointer border-l border-slate-300 px-2 py-1 has-[:checked]:bg-amber-100 has-[:checked]:text-amber-700">
-                                        <input type="radio" name="status[{{ $attendee->id }}]" value="izin" class="sr-only" @checked($attendee->status === 'izin')>
+                                        <input type="radio" name="status[{{ $attendee->id }}]" value="izin" class="sr-only" @checked($attendee->status === 'izin') @disabled($locked)>
                                         Izin
                                     </label>
                                     <label class="cursor-pointer border-l border-slate-300 px-2 py-1 has-[:checked]:bg-rose-100 has-[:checked]:text-rose-700">
-                                        <input type="radio" name="status[{{ $attendee->id }}]" value="alpha" class="sr-only" @checked($attendee->status === 'alpha')>
+                                        <input type="radio" name="status[{{ $attendee->id }}]" value="alpha" class="sr-only" @checked($attendee->status === 'alpha') @disabled($locked)>
                                         Alpha
                                     </label>
                                 </div>
-                                <button type="button" onclick="if (confirm('Hapus {{ addslashes($attendee->displayName()) }} dari daftar hadir?')) { document.getElementById('delete-attendee-{{ $attendee->id }}').submit(); }" class="shrink-0 text-slate-300 hover:text-rose-600" aria-label="Hapus dari daftar hadir">&times;</button>
+                                @unless ($locked)
+                                    <button type="button" onclick="if (confirm('Hapus {{ addslashes($attendee->displayName()) }} dari daftar hadir?')) { document.getElementById('delete-attendee-{{ $attendee->id }}').submit(); }" class="shrink-0 text-slate-300 hover:text-rose-600" aria-label="Hapus dari daftar hadir">&times;</button>
+                                @endunless
                             </li>
                         @endforeach
                     </ul>
-                    <button type="submit" class="w-full rounded-lg bg-brand-600 px-3 py-2 text-xs font-semibold text-white hover:bg-brand-700">Simpan Daftar Hadir</button>
+                    @unless ($locked)
+                        <button type="submit" class="w-full rounded-lg bg-brand-600 px-3 py-2 text-xs font-semibold text-white hover:bg-brand-700">Simpan Daftar Hadir</button>
+                    @endunless
                 </form>
 
-                @foreach ($musyawaroh->attendees as $attendee)
-                    <form id="delete-attendee-{{ $attendee->id }}" method="POST" action="{{ route('musyawaroh.attendees.destroy', [$musyawaroh, $attendee]) }}" class="hidden">
-                        @csrf
-                        @method('DELETE')
-                    </form>
-                @endforeach
+                @unless ($locked)
+                    @foreach ($musyawaroh->attendees as $attendee)
+                        <form id="delete-attendee-{{ $attendee->id }}" method="POST" action="{{ route('musyawaroh.attendees.destroy', [$musyawaroh, $attendee]) }}" class="hidden">
+                            @csrf
+                            @method('DELETE')
+                        </form>
+                    @endforeach
+                @endunless
             @endif
 
-            <div class="mt-4 border-t border-slate-200 pt-4">
-                <p class="mb-1 text-xs font-semibold text-slate-600">Tambah Peserta Lain</p>
-                <p class="mb-2 text-xs text-slate-400">Pengurus lain yang hadir walau tidak diundang, atau orang di luar sistem - keduanya langsung tercatat Hadir.</p>
+            @unless ($locked)
+                <div class="mt-4 border-t border-slate-200 pt-4">
+                    <p class="mb-1 text-xs font-semibold text-slate-600">Tambah Peserta Lain</p>
+                    <p class="mb-2 text-xs text-slate-400">Pengurus lain yang hadir walau tidak diundang, atau orang di luar sistem - keduanya langsung tercatat Hadir.</p>
 
-                @if ($availableMembers->isNotEmpty())
-                    @php
-                        $availableMemberOptions = $availableMembers->map(fn ($member) => [
-                            'id' => $member->user_id,
-                            'name' => $member->user_name.($member->jabatan ? ' ('.$member->jabatan.')' : ''),
-                        ])->values();
-                    @endphp
-                    <form method="POST" action="{{ route('musyawaroh.attendees.store', $musyawaroh) }}" class="mb-2" data-member-search-form data-members="{{ $availableMemberOptions->toJson() }}">
+                    @if ($availableMembers->isNotEmpty())
+                        @php
+                            $availableMemberOptions = $availableMembers->map(fn ($member) => [
+                                'id' => $member->user_id,
+                                'name' => $member->user_name.($member->jabatan ? ' ('.$member->jabatan.')' : ''),
+                            ])->values();
+                        @endphp
+                        <form method="POST" action="{{ route('musyawaroh.attendees.store', $musyawaroh) }}" class="mb-2" data-member-search-form data-members="{{ $availableMemberOptions->toJson() }}">
+                            @csrf
+                            <input type="hidden" name="user_id" data-member-search-value>
+                            <div class="relative">
+                                <input type="text" data-member-search-input autocomplete="off" placeholder="Ketik nama pengurus..." class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs">
+                                <div data-member-search-suggestions class="absolute z-10 mt-1 hidden max-h-56 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 text-xs shadow-lg"></div>
+                            </div>
+                        </form>
+                    @endif
+
+                    <form method="POST" action="{{ route('musyawaroh.attendees.store', $musyawaroh) }}" class="flex gap-2">
                         @csrf
-                        <input type="hidden" name="user_id" data-member-search-value>
-                        <div class="relative">
-                            <input type="text" data-member-search-input autocomplete="off" placeholder="Ketik nama pengurus..." class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs">
-                            <div data-member-search-suggestions class="absolute z-10 mt-1 hidden max-h-56 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 text-xs shadow-lg"></div>
-                        </div>
+                        <input type="text" name="manual_name" placeholder="Nama tamu / belum terdaftar" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs">
+                        <button type="submit" class="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">+ Tambah</button>
                     </form>
-                @endif
-
-                <form method="POST" action="{{ route('musyawaroh.attendees.store', $musyawaroh) }}" class="flex gap-2">
-                    @csrf
-                    <input type="text" name="manual_name" placeholder="Nama tamu / belum terdaftar" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs">
-                    <button type="submit" class="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">+ Tambah</button>
-                </form>
-            </div>
+                </div>
+            @endunless
         </x-card>
 
         <div class="space-y-4 lg:col-span-2">
-            <x-card>
-                <h3 class="mb-1 text-sm font-semibold text-slate-700">Tambah Notulen</h3>
-                <p class="mb-4 text-xs text-slate-500">Tambahkan poin notulen satu per satu. Setelah terkumpul beberapa dan siap, kirim semuanya sekaligus sebagai 1 resume lewat tombol "Kirim Notulen" di bawah.</p>
-                <form method="POST" action="{{ route('notulen.store') }}" class="grid gap-3 sm:grid-cols-[1fr_auto]">
-                    @csrf
-                    <input type="hidden" name="musyawaroh_id" value="{{ $musyawaroh->id }}">
-                    <input type="hidden" name="meeting_date" value="{{ $musyawaroh->meeting_date->format('Y-m-d') }}">
-                    <input type="hidden" name="bucket" value="{{ $musyawaroh->title }}">
-                    <input type="text" name="title" required placeholder="Poin notulen, misal: Persiapan KBM semester baru" class="w-full rounded-lg border border-slate-300 px-3 py-2">
-                    <button type="submit" class="rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Simpan</button>
-                </form>
-            </x-card>
+            @if ($locked)
+                <x-card>
+                    <h3 class="mb-1 text-sm font-semibold text-slate-700">Tambah Notulen</h3>
+                    <p class="text-xs font-medium text-amber-600">Notulen terkunci karena tanggal musyawaroh sudah lewat.</p>
+                </x-card>
+            @else
+                <x-card>
+                    <h3 class="mb-1 text-sm font-semibold text-slate-700">Tambah Notulen</h3>
+                    <p class="mb-4 text-xs text-slate-500">Tambahkan poin notulen satu per satu. Setelah terkumpul beberapa dan siap, kirim semuanya sekaligus sebagai 1 resume lewat tombol "Kirim Notulen" di bawah.</p>
+                    <form method="POST" action="{{ route('notulen.store') }}" class="grid gap-3 sm:grid-cols-[1fr_auto]">
+                        @csrf
+                        <input type="hidden" name="musyawaroh_id" value="{{ $musyawaroh->id }}">
+                        <input type="hidden" name="meeting_date" value="{{ $musyawaroh->meeting_date->format('Y-m-d') }}">
+                        <input type="hidden" name="bucket" value="{{ $musyawaroh->title }}">
+                        <input type="text" name="title" required placeholder="Poin notulen, misal: Persiapan KBM semester baru" class="w-full rounded-lg border border-slate-300 px-3 py-2">
+                        <button type="submit" class="rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Simpan</button>
+                    </form>
+                </x-card>
+            @endif
 
             <x-card>
                 @php $draftCount = $musyawaroh->notulens->where('status', \App\Models\Notulen::STATUS_DRAFT)->count(); @endphp

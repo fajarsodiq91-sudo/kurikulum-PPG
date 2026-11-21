@@ -192,7 +192,7 @@ class MusyawarohTest extends TestCase
         $alphaUser = $this->makeUser('Alpha Orang', $this->kelompokRole, 'group', $group->id);
 
         $this->actingAs($desaUser)->post('/musyawaroh', [
-            'meeting_date' => '2026-11-10',
+            'meeting_date' => now()->addDay()->toDateString(),
             'invitees' => [
                 $izinUser->id => '1',
                 $alphaUser->id => '1',
@@ -640,6 +640,49 @@ class MusyawarohTest extends TestCase
             ->assertRedirect(route('musyawaroh.show', $musyawaroh));
 
         $this->assertDatabaseMissing('musyawaroh_attendees', ['id' => $attendee->id]);
+    }
+
+    public function test_daftar_hadir_and_notulen_are_locked_once_the_meeting_date_has_passed(): void
+    {
+        $village = $this->makeVillage('Desa A');
+        $group = $this->makeGroup($village, 'Kelompok A1');
+        $desaUser = $this->makeUser('Desa A', $this->desaRole, 'village', $village->id);
+        $kelompokUser = $this->makeUser('Kelompok A1', $this->kelompokRole, 'group', $group->id);
+
+        $musyawaroh = Musyawaroh::create(['meeting_date' => now()->subDay()->toDateString(), 'created_by_id' => $desaUser->id]);
+        $attendee = MusyawarohAttendee::create(['musyawaroh_id' => $musyawaroh->id, 'user_id' => $kelompokUser->id, 'status' => 'hadir']);
+        $notulen = Notulen::create([
+            'title' => 'Poin lama',
+            'content' => 'Poin lama',
+            'musyawaroh_id' => $musyawaroh->id,
+            'created_by_id' => $desaUser->id,
+        ]);
+
+        $this->assertTrue($musyawaroh->isLocked());
+
+        $this->actingAs($desaUser)->post("/musyawaroh/{$musyawaroh->id}/attendees", [
+            'manual_name' => 'Tamu Terlambat',
+        ])->assertForbidden();
+
+        $this->actingAs($desaUser)->delete("/musyawaroh/{$musyawaroh->id}/attendees/{$attendee->id}")->assertForbidden();
+
+        $this->actingAs($desaUser)->patch("/musyawaroh/{$musyawaroh->id}/attendance", [
+            'status' => [$attendee->id => 'izin'],
+        ])->assertForbidden();
+
+        $this->actingAs($desaUser)->post('/notulen', [
+            'title' => 'Poin baru',
+            'musyawaroh_id' => $musyawaroh->id,
+        ])->assertForbidden();
+
+        $this->actingAs($desaUser)->put("/notulen/{$notulen->id}", [
+            'title' => 'Coba ubah',
+        ])->assertForbidden();
+
+        $this->actingAs($desaUser)->delete("/notulen/{$notulen->id}")->assertForbidden();
+
+        $this->assertDatabaseHas('musyawaroh_attendees', ['id' => $attendee->id, 'status' => 'hadir']);
+        $this->assertDatabaseHas('notulens', ['id' => $notulen->id, 'title' => 'Poin lama']);
     }
 
     public function test_an_attendee_cannot_be_removed_by_someone_outside_the_musyawarohs_reach(): void

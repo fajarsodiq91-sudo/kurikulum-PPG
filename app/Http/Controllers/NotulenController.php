@@ -25,6 +25,7 @@ class NotulenController extends Controller
             : null;
 
         abort_if($musyawaroh !== null && ! $musyawaroh->isVisibleTo($request->user()), 403);
+        abort_if($musyawaroh?->isLocked(), 403, 'Notulen sudah terkunci karena tanggal musyawaroh telah lewat.');
 
         Notulen::create([
             ...$validated,

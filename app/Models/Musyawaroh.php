@@ -83,4 +83,13 @@ class Musyawaroh extends Model
     {
         return $user->isSuperAdmin() || $this->created_by_id === $user->id;
     }
+
+    /**
+     * Once the meeting date has passed, the daftar hadir and notulen are locked: no more
+     * attendees or notulen entries can be added, and existing ones can no longer be changed.
+     */
+    public function isLocked(): bool
+    {
+        return $this->meeting_date !== null && $this->meeting_date->lt(today());
+    }
 }

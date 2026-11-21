@@ -134,6 +134,7 @@ class MusyawarohController extends Controller
     public function addAttendee(Request $request, Musyawaroh $musyawaroh): RedirectResponse
     {
         abort_unless($musyawaroh->isVisibleTo($request->user()), 403);
+        abort_if($musyawaroh->isLocked(), 403, 'Daftar hadir sudah terkunci karena tanggal musyawaroh telah lewat.');
 
         $validated = $request->validate([
             'user_id' => ['nullable', 'integer', Rule::in(MusyawarohHierarchy::allActiveUserIds())],
@@ -165,6 +166,7 @@ class MusyawarohController extends Controller
     {
         abort_unless($musyawaroh->isVisibleTo($request->user()), 403);
         abort_unless($attendee->musyawaroh_id === $musyawaroh->id, 404);
+        abort_if($musyawaroh->isLocked(), 403, 'Daftar hadir sudah terkunci karena tanggal musyawaroh telah lewat.');
 
         $attendee->delete();
 
@@ -195,6 +197,7 @@ class MusyawarohController extends Controller
     public function updateAttendance(Request $request, Musyawaroh $musyawaroh): RedirectResponse
     {
         abort_unless($musyawaroh->isVisibleTo($request->user()), 403);
+        abort_if($musyawaroh->isLocked(), 403, 'Daftar hadir sudah terkunci karena tanggal musyawaroh telah lewat.');
 
         $validated = $request->validate([
             'status' => ['required', 'array'],

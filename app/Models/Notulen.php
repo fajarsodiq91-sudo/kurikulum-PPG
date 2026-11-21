@@ -91,6 +91,10 @@ class Notulen extends Model
 
     public function isEditableBy(User $user): bool
     {
+        if ($this->musyawaroh !== null && $this->musyawaroh->isLocked()) {
+            return false;
+        }
+
         return $user->isSuperAdmin() || $this->created_by_id === $user->id;
     }
 
@@ -100,6 +104,10 @@ class Notulen extends Model
      */
     public function isContentEditableBy(User $user): bool
     {
+        if ($this->musyawaroh !== null && $this->musyawaroh->isLocked()) {
+            return false;
+        }
+
         return $this->status === self::STATUS_DRAFT && $this->isEditableBy($user);
     }
 
