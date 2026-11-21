@@ -89,6 +89,7 @@ class User extends Authenticatable
         'region' => 'region_id',
         'village' => 'village_id',
         'group' => 'group_id',
+        'teacher_group' => 'group_id',
     ];
 
     /**
@@ -132,11 +133,28 @@ class User extends Authenticatable
         }
 
         return $this->rolesGrantingPermission($permissionSlug)
-            ->map(fn (Role $role): array => [
-                'type' => $role->pivot->scope_type,
-                'id' => $role->pivot->scope_id,
-            ])
+            ->map(fn (Role $role): array => $this->resolveTeacherScope($role->pivot->scope_type, $role->pivot->scope_id))
             ->values();
+    }
+
+    /**
+     * A guru's own account is scoped to their Teacher record (scope_type 'teacher', scope_id
+     * the teacher's id), not to an organisational node directly - resolve it to the teacher's
+     * own kelompok so they see (but, being 'teacher_group' rather than 'group', never have that
+     * widened to the whole desa the way an actual kelompok executor's view-* permission does;
+     * see widenGroupViewScope()) everyone placed in their own kelompok, nothing more.
+     *
+     * @return array{type: string, id: int|null}
+     */
+    private function resolveTeacherScope(string $scopeType, ?int $scopeId): array
+    {
+        if ($scopeType !== 'teacher' || $scopeId === null) {
+            return ['type' => $scopeType, 'id' => $scopeId];
+        }
+
+        $groupId = Teacher::find($scopeId)?->group_id;
+
+        return $groupId !== null ? ['type' => 'teacher_group', 'id' => $groupId] : ['type' => $scopeType, 'id' => $scopeId];
     }
 
     public function hasGlobalAccess(string $permissionSlug): bool

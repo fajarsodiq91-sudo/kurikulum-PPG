@@ -40,6 +40,9 @@
 
     <x-filter-bar :action="route('generus.index')" search-placeholder="Cari nama atau nomor induk...">
         <x-filter-select name="status" label="Status" :options="['active' => 'Aktif', 'pindah_sambung' => 'Pindah Sambung', 'married' => 'Sudah Menikah']" />
+        @if ($canFilterMine)
+            <x-filter-select name="mine" label="Tampilkan" placeholder="Semua Generus Kelompok" :options="['1' => 'Murid Saya']" />
+        @endif
     </x-filter-bar>
 
     <section class="min-w-0 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

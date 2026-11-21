@@ -12,6 +12,7 @@ use App\Models\Level;
 use App\Models\Permission;
 use App\Models\Region;
 use App\Models\Role;
+use App\Models\Teacher;
 use App\Models\User;
 use App\Models\Village;
 use Exception;
@@ -425,6 +426,40 @@ class GenerusTest extends TestCase
             ->get('/generus')
             ->assertOk()
             ->assertSee('Generus Kelompok Sendiri')
+            ->assertDontSee('Generus Kelompok Lain');
+    }
+
+    public function test_a_teacher_account_sees_every_generus_in_their_own_kelompok_and_can_filter_to_their_own_students(): void
+    {
+        [, , $village, $group] = $this->createGenerusImportContext();
+        $otherGroup = $this->createGroupIn($village);
+        $own = $this->createPlacedGenerus($group, 'PPG-SCOPE-001', 'Generus Kelompok Sendiri');
+        $this->createPlacedGenerus($group, 'PPG-SCOPE-002', 'Generus Kelompok Sendiri Lain');
+        $this->createPlacedGenerus($otherGroup, 'PPG-SCOPE-003', 'Generus Kelompok Lain');
+
+        $teacher = Teacher::create([
+            'registration_number' => 'GR-0001',
+            'name' => 'Guru HNH',
+            'group_id' => $group->id,
+            'status' => 'active',
+        ]);
+        $guruUser = User::where('username', 'GR-0001')->firstOrFail();
+
+        // Sees every generus placed in their own kelompok, including ones that aren't "their"
+        // students yet - not just the ones they are explicitly linked to.
+        $this->actingAs($guruUser)->get('/generus')
+            ->assertOk()
+            ->assertSee('Generus Kelompok Sendiri')
+            ->assertSee('Generus Kelompok Sendiri Lain')
+            ->assertDontSee('Generus Kelompok Lain');
+
+        $teacher->students()->attach($own->id);
+
+        // The "Murid Saya" filter narrows the list down to just their own linked students.
+        $this->actingAs($guruUser)->get('/generus?mine=1')
+            ->assertOk()
+            ->assertSee('Generus Kelompok Sendiri')
+            ->assertDontSee('Generus Kelompok Sendiri Lain')
             ->assertDontSee('Generus Kelompok Lain');
     }
 

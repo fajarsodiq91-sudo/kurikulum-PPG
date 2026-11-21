@@ -64,10 +64,12 @@ class GenerusController extends Controller
 
     public function index(Request $request): View
     {
+        $user = $request->user();
         $search = trim((string) $request->query('q', ''));
         $status = $request->query('status', '');
+        $mineOnly = $user?->teacher_id !== null && $request->boolean('mine');
 
-        $generus = Generus::visibleTo($request->user())
+        $generus = Generus::visibleTo($user)
             ->with([
                 'assignments' => fn ($query) => $query->whereNull('ended_at'),
                 'assignments.region',
@@ -79,12 +81,14 @@ class GenerusController extends Controller
                 $query->where(fn ($query) => $query->where('full_name', 'like', $like)->orWhere('registration_number', 'like', $like));
             })
             ->when($status !== '', fn ($query) => $query->where('status', $status))
+            ->when($mineOnly, fn ($query) => $query->whereHas('teachers', fn (Builder $teachers) => $teachers->whereKey($user->teacher_id)))
             ->latest()
             ->paginate(25)
             ->withQueryString();
 
         return view('generus.index', [
             'generus' => $generus,
+            'canFilterMine' => $user?->teacher_id !== null,
         ]);
     }
 
