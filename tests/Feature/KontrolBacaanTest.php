@@ -64,6 +64,45 @@ class KontrolBacaanTest extends TestCase
         ]);
     }
 
+    public function test_a_teacher_sees_their_whole_kelompok_roster_even_for_generus_not_tied_to_them_as_murid_saya(): void
+    {
+        $context = $this->makeContext();
+
+        $teacher = Teacher::create([
+            'registration_number' => '260199002',
+            'name' => 'Guru Kontrol Harian',
+            'gender' => 'male',
+            'status' => 'active',
+            'group_id' => $context['group']->id,
+        ]);
+        $teacher->classGrades()->attach($context['classGrade']->id);
+        $guruUser = User::where('username', '260199002')->firstOrFail();
+
+        // The generus was never ticked as this teacher's own "murid saya" - Kontrol Harian
+        // must still show and accept scores for the whole kelompok, not just tied students.
+        $response = $this->actingAs($guruUser)->get('/kontrol/bacaan');
+        $response->assertOk();
+        $this->assertTrue($response->viewData('roster')->pluck('id')->contains($context['generus']->id));
+
+        $this->actingAs($guruUser)
+            ->post('/kontrol/bacaan', [
+                'group_id' => $context['group']->id,
+                'class_grade_id' => $context['classGrade']->id,
+                'academic_year_id' => $context['academicYear']->id,
+                'semester_id' => $context['semester']->id,
+                'type' => 'harian',
+                'material_id' => [$context['material']->id],
+                'scores' => [
+                    $context['material']->id => [
+                        $context['generus']->id => ['score' => 85, 'status' => 'completed'],
+                    ],
+                ],
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('ujians', ['generus_id' => $context['generus']->id, 'score' => 85]);
+    }
+
     public function test_the_only_manageable_group_and_taught_class_grade_are_preselected(): void
     {
         $context = $this->makeContext();

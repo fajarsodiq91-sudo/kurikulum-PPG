@@ -10,8 +10,9 @@ use Illuminate\Validation\Rules\Exists;
 
 /**
  * Restricts generus-linked modules to the generus a user may work with: a logged-in teacher
- * only sees the students they ticked, and village/group roles only see generus placed in
- * their area. Users with global access (admins, PPG) are unrestricted.
+ * only sees the students they ticked (except for {@see GROUP_WIDE_PERMISSIONS}, where they see
+ * their whole kelompok instead), and village/group roles only see generus placed in their
+ * area. Users with global access (admins, PPG) are unrestricted.
  *
  * Two id sets are exposed because "can see" and "can write" differ for a kelompok-scoped
  * role: they view every generus in their desa (manage + view permission merged, and a
@@ -20,6 +21,19 @@ use Illuminate\Validation\Rules\Exists;
  */
 class StudentScope
 {
+    /**
+     * Permissions whose roster is a teacher's whole kelompok rather than narrowed to just the
+     * students they've personally picked as "murid saya". Kontrol Harian (and the wider Ujian
+     * module it's built on) records a daily/term score for an entire kelas at once - often by
+     * whichever teacher happens to be running that session, not only a student's own assigned
+     * teacher - so narrowing it to "murid saya" would leave most of the class un-scoreable.
+     * Attendance, follow-ups, progress tracking, etc. stay personal: those really are meant to
+     * track one teacher's own mentees.
+     *
+     * @var list<string>
+     */
+    private const GROUP_WIDE_PERMISSIONS = ['manage-ujian', 'view-ujian'];
+
     /**
      * @return list<int>|null Generus ids visible for listing/export, or null when unrestricted.
      */
@@ -46,7 +60,9 @@ class StudentScope
             return null;
         }
 
-        if ($user->teacher_id !== null) {
+        $isGroupWide = collect($permissions)->contains(fn (string $permission): bool => in_array($permission, self::GROUP_WIDE_PERMISSIONS, true));
+
+        if ($user->teacher_id !== null && ! $isGroupWide) {
             return $user->teacher?->students()->pluck('generus.id')->map(fn (mixed $id): int => (int) $id)->all() ?? [];
         }
 
