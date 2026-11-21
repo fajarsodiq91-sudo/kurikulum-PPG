@@ -57,7 +57,7 @@ use App\Http\Controllers\UjianController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn () => redirect()->route('dashboard'));
+Route::get('/', fn () => auth()->check() ? redirect()->route('dashboard') : view('landing'))->name('landing');
 
 Route::get('/tutorial', [TutorialController::class, 'index'])->name('tutorial');
 
