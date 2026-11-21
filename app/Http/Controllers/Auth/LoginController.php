@@ -30,7 +30,10 @@ class LoginController extends Controller
 
         $identifier = str_contains($validated['login'], '@') ? 'email' : 'username';
 
-        if (Auth::attempt([$identifier => $validated['login'], 'password' => $validated['password']], $request->boolean('remember'))) {
+        // Always remember: once signed in, stay signed in (via the long-lived remember
+        // cookie) instead of being forced back to the login screen after a period of
+        // inactivity or when the browser is reopened.
+        if (Auth::attempt([$identifier => $validated['login'], 'password' => $validated['password']], true)) {
             $request->session()->regenerate();
 
             return redirect()->intended('/dashboard');
@@ -104,7 +107,7 @@ class LoginController extends Controller
             ]);
         }
 
-        Auth::login($user);
+        Auth::login($user, true);
         $request->session()->regenerate();
 
         return redirect()->intended('/dashboard');
@@ -126,7 +129,7 @@ class LoginController extends Controller
             return response()->json(['message' => $failureMessage], 422);
         }
 
-        Auth::login($user);
+        Auth::login($user, true);
         $request->session()->regenerate();
 
         return response()->json(['redirect' => redirect()->intended('/dashboard')->getTargetUrl()]);
