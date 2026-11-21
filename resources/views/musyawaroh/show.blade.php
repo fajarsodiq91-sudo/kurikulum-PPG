@@ -292,8 +292,12 @@
                                                         </select>
                                                     </div>
                                                     <div>
-                                                        <span class="mb-1 block text-sm font-medium">Ditugaskan Kepada</span>
+                                                        <span class="mb-1 block text-sm font-medium">Ditugaskan Kepada (orang)</span>
                                                         @include('tasks.partials.assignee-picker', ['recipients' => $recipients, 'selectedIds' => []])
+                                                    </div>
+                                                    <div>
+                                                        <span class="mb-1 block text-sm font-medium">Ditugaskan Kepada Tim (opsional)</span>
+                                                        @include('tasks.partials.team-picker', ['teams' => $teams, 'selectedKeys' => []])
                                                     </div>
                                                     <button type="submit" class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">Simpan Tugas</button>
                                                 </form>

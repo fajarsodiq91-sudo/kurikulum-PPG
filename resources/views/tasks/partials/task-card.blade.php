@@ -38,6 +38,14 @@
         </div>
     @endif
 
+    @if ($task->teams->isNotEmpty())
+        <div class="mt-1.5 flex flex-wrap gap-1">
+            @foreach ($task->teams as $team)
+                <span class="rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-medium text-sky-700">{{ $team->label }}</span>
+            @endforeach
+        </div>
+    @endif
+
     <p class="mt-2 text-xs text-slate-500">
         <span class="font-medium text-slate-700">{{ $task->assignees->pluck('name')->join(', ') }}</span>
         @if ($task->due_date)

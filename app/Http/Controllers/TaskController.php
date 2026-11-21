@@ -28,7 +28,7 @@ class TaskController extends Controller
         $user = $request->user();
 
         $tasks = Task::visibleTo($user)
-            ->with(['assignedBy', 'assignees'])
+            ->with(['assignedBy', 'assignees', 'teams'])
             ->orderByRaw('due_date is null, due_date')
             ->latest('id')
             ->get();
@@ -54,6 +54,7 @@ class TaskController extends Controller
             'tasksByBucket' => $tasksByBucket,
             'assigneeOptions' => $tasks->flatMap(fn (Task $task) => $task->assignees)->unique('id')->sortBy('name')->values(),
             'recipients' => TaskHierarchy::assignableRecipients($user),
+            'teams' => TaskHierarchy::assignableTeams($user),
             'bucketSuggestions' => TaskHierarchy::bucketSuggestionsFor($user),
             'notulens' => $notulens,
             'musyawarohs' => $musyawarohs,
@@ -78,7 +79,7 @@ class TaskController extends Controller
             'notulen_id' => $notulen?->id,
         ]);
 
-        $task->assignees()->sync($validated['assignees']);
+        $this->syncAssigneesAndTeams($task, $validated);
 
         try {
             Notification::send($task->assignees, new TaskNotification($task, 'created', $request->user()));
@@ -101,8 +102,9 @@ class TaskController extends Controller
         abort_unless($task->isEditableBy($request->user()), 403);
 
         return view('tasks.edit', [
-            'task' => $task->load('assignees'),
+            'task' => $task->load(['assignees', 'teams']),
             'recipients' => TaskHierarchy::assignableRecipients($task->assignedBy),
+            'teams' => TaskHierarchy::assignableTeams($task->assignedBy),
             'bucketSuggestions' => TaskHierarchy::bucketSuggestionsFor($request->user()),
         ]);
     }
@@ -131,11 +133,11 @@ class TaskController extends Controller
             Storage::delete($oldAttachmentPath);
         }
 
-        $task->assignees()->sync($validated['assignees']);
+        $resolvedAssigneeIds = $this->syncAssigneesAndTeams($task, $validated);
         $task->load('assignees');
 
-        $newlyAssignedIds = array_diff($validated['assignees'], $previousAssigneeIds);
-        $removedAssigneeIds = array_diff($previousAssigneeIds, $validated['assignees']);
+        $newlyAssignedIds = array_diff($resolvedAssigneeIds, $previousAssigneeIds);
+        $removedAssigneeIds = array_diff($previousAssigneeIds, $resolvedAssigneeIds);
 
         try {
             $notifiableAssignees = $task->assignees->reject(fn (User $assignee): bool => $assignee->is($actor));
@@ -233,17 +235,21 @@ class TaskController extends Controller
     }
 
     /**
-     * Assignees are always validated against who the task's creator could reach, not the
-     * current editor - so an assignee editing a task they didn't create can't expand its
-     * audience, and resubmitting the existing (unchanged) assignee list never breaks.
+     * Assignees and teams are always validated against who/what the task's creator could
+     * reach, not the current editor - so an assignee editing a task they didn't create can't
+     * expand its audience, and resubmitting the existing (unchanged) list never breaks.
+     *
+     * A task needs at least one named assignee or one team, and the two combined must not
+     * resolve to an empty set of recipients (e.g. a team with no active members right now).
      *
      * @return array<string, mixed>
      */
     private function validateTask(Request $request, User $recipientScopeUser): array
     {
         $recipientIds = TaskHierarchy::assignableRecipients($recipientScopeUser)->pluck('id')->all();
+        $teamKeys = TaskHierarchy::assignableTeams($recipientScopeUser)->pluck('key')->all();
 
-        return $request->validate([
+        $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'bucket' => ['nullable', 'string', 'max:255'],
@@ -251,10 +257,54 @@ class TaskController extends Controller
             'attachment' => ['nullable', 'file', 'max:10240', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png'],
             'priority' => ['required', Rule::in(Task::PRIORITIES)],
             'due_date' => ['nullable', 'date'],
-            'assignees' => ['required', 'array', 'min:1'],
+            'assignees' => ['nullable', 'array'],
             'assignees.*' => ['integer', Rule::in($recipientIds)],
+            'teams' => ['nullable', 'array'],
+            'teams.*' => ['string', Rule::in($teamKeys)],
             'notulen_id' => ['nullable', 'integer', Rule::exists('notulens', 'id')],
         ]);
+
+        $validated['assignees'] = $validated['assignees'] ?? [];
+        $validated['teams'] = $validated['teams'] ?? [];
+
+        abort_if($validated['assignees'] === [] && $validated['teams'] === [], 422, 'Pilih minimal satu penerima tugas atau tim.');
+
+        $resolvedIds = collect([...$validated['assignees'], ...TaskHierarchy::teamMemberIds($validated['teams'])])->unique()->values();
+
+        abort_if($resolvedIds->isEmpty(), 422, 'Tim yang dipilih tidak memiliki anggota aktif saat ini.');
+
+        return $validated;
+    }
+
+    /**
+     * Expands the task's chosen teams into their current active members, merges them with the
+     * explicitly picked assignees, syncs both the assignees pivot (which is all Task's
+     * visibility/edit/status rules ever look at) and the task_teams bookkeeping rows, and
+     * returns the resolved assignee ids so the caller can diff old vs new for notifications.
+     *
+     * @param  array<string, mixed>  $validated
+     * @return list<int>
+     */
+    private function syncAssigneesAndTeams(Task $task, array $validated): array
+    {
+        $teams = TaskHierarchy::assignableTeams($task->assignedBy)
+            ->whereIn('key', $validated['teams'])
+            ->values();
+
+        $teamMemberIds = TaskHierarchy::teamMemberIds($teams->pluck('key')->all());
+        $resolvedIds = collect([...$validated['assignees'], ...$teamMemberIds])->unique()->values()->all();
+
+        $task->assignees()->sync($resolvedIds);
+
+        $task->teams()->delete();
+        $task->teams()->createMany($teams->map(fn (array $team): array => [
+            'dapukan_id' => $team['dapukan_id'],
+            'scope_type' => $team['scope_type'],
+            'scope_id' => $team['scope_id'],
+            'label' => $team['label'],
+        ])->all());
+
+        return $resolvedIds;
     }
 
     /**

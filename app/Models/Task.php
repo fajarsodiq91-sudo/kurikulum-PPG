@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Task extends Model
 {
@@ -64,6 +65,15 @@ class Task extends Model
     public function assignees(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'task_assignees')->withTimestamps();
+    }
+
+    /**
+     * The team(s) (jabatan/dapukan) this task was assigned to, if any - see {@see TaskTeam}.
+     * Members of these teams are expanded into {@see self::assignees()} at save time.
+     */
+    public function teams(): HasMany
+    {
+        return $this->hasMany(TaskTeam::class);
     }
 
     /**

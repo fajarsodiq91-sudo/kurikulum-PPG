@@ -64,9 +64,14 @@
                 <p class="mt-1 text-xs text-slate-500">PDF, Word, Excel, PowerPoint, atau gambar. Maks. 10 MB.</p>
             </div>
             <div>
-                <span class="mb-2 block text-sm font-medium text-slate-700">Ditugaskan Kepada</span>
+                <span class="mb-2 block text-sm font-medium text-slate-700">Ditugaskan Kepada (orang)</span>
                 @include('tasks.partials.assignee-picker', ['recipients' => $recipients, 'selectedIds' => old('assignees', $assigneeIds)])
                 <p class="mt-1 text-xs text-slate-500">Hanya pengurus di jalur vertikal Anda (atasan dan cabang Anda sendiri) yang bisa dipilih.</p>
+            </div>
+            <div>
+                <span class="mb-2 block text-sm font-medium text-slate-700">Ditugaskan Kepada Tim (opsional)</span>
+                @include('tasks.partials.team-picker', ['teams' => $teams, 'selectedKeys' => old('teams', $task->teams->map->key()->all())])
+                <p class="mt-1 text-xs text-slate-500">Setiap anggota tim yang dipilih akan menerima tugas ini. Pilih minimal satu orang atau satu tim.</p>
             </div>
 
             <button type="submit" class="mt-2 w-full rounded-lg bg-brand-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800">Simpan Perubahan</button>

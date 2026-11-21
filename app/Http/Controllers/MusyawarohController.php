@@ -121,6 +121,7 @@ class MusyawarohController extends Controller
         return view('musyawaroh.show', [
             'musyawaroh' => $musyawaroh,
             'recipients' => TaskHierarchy::assignableRecipients($request->user()),
+            'teams' => TaskHierarchy::assignableTeams($request->user()),
             'availableMembers' => $availableMembers,
         ]);
     }

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Dapukan;
 use App\Models\Group;
 use App\Models\Permission;
 use App\Models\Region;
@@ -498,6 +499,91 @@ class TaskTest extends TestCase
         $this->actingAs($daerahUser)
             ->get('/tasks')
             ->assertDontSee('Musyawaroh 5 Unsur', false);
+    }
+
+    public function test_a_task_assigned_to_a_team_reaches_every_current_member_and_emails_them(): void
+    {
+        Notification::fake();
+
+        $dapukan = Dapukan::create(['role_slug' => 'ppg', 'group_label' => 'Seksi Bidang', 'name' => 'Bidang Kurikulum', 'sort_order' => 1, 'is_active' => true]);
+
+        $daerahUser = $this->makeUser('Daerah', $this->daerahRole, 'global', null);
+        $kurikulumA = User::create(['name' => 'Kurikulum A', 'email' => 'kurikulum-a@ppg.test', 'password' => Hash::make('password123'), 'status' => 'active']);
+        $kurikulumA->assignRole($this->daerahRole->id, 'global', null, $dapukan->id);
+        $kurikulumB = User::create(['name' => 'Kurikulum B', 'email' => 'kurikulum-b@ppg.test', 'password' => Hash::make('password123'), 'status' => 'active']);
+        $kurikulumB->assignRole($this->daerahRole->id, 'global', null, $dapukan->id);
+
+        $teamKey = $dapukan->id.'|global|';
+
+        $this->actingAs($daerahUser)->post('/tasks', [
+            'title' => 'Siapkan kurikulum semester baru',
+            'priority' => 'medium',
+            'teams' => [$teamKey],
+        ])->assertRedirect('/tasks');
+
+        $task = Task::where('title', 'Siapkan kurikulum semester baru')->first();
+
+        $this->assertDatabaseHas('task_teams', ['task_id' => $task->id, 'dapukan_id' => $dapukan->id, 'scope_type' => 'global']);
+        $this->assertTrue($task->assignees->pluck('id')->contains($kurikulumA->id));
+        $this->assertTrue($task->assignees->pluck('id')->contains($kurikulumB->id));
+
+        Notification::assertSentTo($kurikulumA, TaskNotification::class);
+        Notification::assertSentTo($kurikulumB, TaskNotification::class);
+
+        // Visible to every team member, exactly like an individually-assigned task.
+        $this->actingAs($kurikulumB)->get('/tasks')->assertSee('Siapkan kurikulum semester baru');
+    }
+
+    public function test_a_task_can_combine_individual_assignees_with_a_team(): void
+    {
+        $dapukan = Dapukan::create(['role_slug' => 'ppg', 'group_label' => 'Seksi Bidang', 'name' => 'Bidang Kurikulum', 'sort_order' => 1, 'is_active' => true]);
+
+        $daerahUser = $this->makeUser('Daerah', $this->daerahRole, 'global', null);
+        $village = $this->makeVillage('Desa A');
+        $kelompokUser = $this->makeUser('Kelompok A1', $this->kelompokRole, 'group', $this->makeGroup($village, 'Kelompok A1')->id);
+        $kurikulumMember = User::create(['name' => 'Kurikulum A', 'email' => 'kurikulum-a@ppg.test', 'password' => Hash::make('password123'), 'status' => 'active']);
+        $kurikulumMember->assignRole($this->daerahRole->id, 'global', null, $dapukan->id);
+
+        $this->actingAs($daerahUser)->post('/tasks', [
+            'title' => 'Tugas gabungan',
+            'priority' => 'medium',
+            'assignees' => [$kelompokUser->id],
+            'teams' => [$dapukan->id.'|global|'],
+        ])->assertRedirect('/tasks');
+
+        $task = Task::where('title', 'Tugas gabungan')->first();
+        $this->assertEqualsCanonicalizing([$kelompokUser->id, $kurikulumMember->id], $task->assignees->pluck('id')->all());
+    }
+
+    public function test_a_task_without_any_assignee_or_team_is_rejected(): void
+    {
+        $daerahUser = $this->makeUser('Daerah', $this->daerahRole, 'global', null);
+
+        $this->actingAs($daerahUser)->post('/tasks', [
+            'title' => 'Tugas tanpa penerima',
+            'priority' => 'medium',
+        ])->assertStatus(422);
+
+        $this->assertDatabaseMissing('tasks', ['title' => 'Tugas tanpa penerima']);
+    }
+
+    public function test_a_team_outside_the_assigners_reach_is_rejected(): void
+    {
+        $villageA = $this->makeVillage('Desa A');
+        $dapukan = Dapukan::create(['role_slug' => 'perwakilan-ppg-desa', 'group_label' => 'Bidang Pendidikan', 'name' => 'Bidang Kurikulum', 'sort_order' => 1, 'is_active' => true]);
+
+        $desaAUser = $this->makeUser('Desa A', $this->desaRole, 'village', $villageA->id);
+
+        // A team belonging to a desa this user has no reach into (the village was never joined).
+        $villageB = $this->makeVillage('Desa B');
+
+        $this->actingAs($desaAUser)->post('/tasks', [
+            'title' => 'Tugas tim lintas desa',
+            'priority' => 'medium',
+            'teams' => [$dapukan->id.'|village|'.$villageB->id],
+        ])->assertSessionHasErrors('teams.0');
+
+        $this->assertDatabaseMissing('tasks', ['title' => 'Tugas tim lintas desa']);
     }
 
     public function test_removing_an_assignee_notifies_them_they_are_no_longer_on_the_task(): void
